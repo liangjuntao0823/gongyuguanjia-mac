@@ -153,40 +153,93 @@ struct DealsView: View {
 
     // MARK: 杂收杂支列表
     private func miscList(isIncome: Bool) -> some View {
-        Group {
-            let rows = isIncome ? incomes : expenses
-            if rows.isEmpty {
-                VStack(spacing: 10) {
-                    Image(systemName: isIncome ? "arrow.down.circle" : "arrow.up.circle")
-                        .font(.system(size: 40)).foregroundColor(.gray)
-                    Text(isIncome ? "暂无杂项收入" : "暂无杂项支出")
-                        .font(.system(size: 14)).foregroundColor(.themeText3)
-                    Button(isIncome ? "新增收入" : "新增支出") {
-                        if isIncome { editingIncome = MiscIncome() } else { editingExpense = MiscExpense() }
-                    }.macSecondaryButton()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if isIncome {
+            if incomes.isEmpty {
+                emptyMiscList(isIncome: true)
             } else {
-                List {
-                    ForEach(rows) { row in
-                        HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(row.item).font(.system(size: 13, weight: .medium))
-                                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 11)).foregroundColor(.themeText3) }
-                                Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
-                            }
-                            Spacer()
-                            Text("\(isIncome ? "+" : "-")¥\(FormatKit.money(row.amount))")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(isIncome ? .themeRed : .themeAccentDark)
-                            Button("编辑") {
-                                if isIncome { editingIncome = row } else { editingExpense = row }
-                            }.macSecondaryButton()
-                            Button {
-                                if isIncome { deletingIncome = row } else { deletingExpense = row }
-                            } label: { Image(systemName: "trash") }.macSecondaryButton()
-                        }
-                        .padding(.vertical, 3)
+                incomeList
+            }
+        } else {
+            if expenses.isEmpty {
+                emptyMiscList(isIncome: false)
+            } else {
+                expenseList
+            }
+        }
+    }
+
+    private func emptyMiscList(isIncome: Bool) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: isIncome ? "arrow.down.circle" : "arrow.up.circle")
+                .font(.system(size: 40)).foregroundColor(.gray)
+            Text(isIncome ? "暂无杂项收入" : "暂无杂项支出")
+                .font(.system(size: 14)).foregroundColor(.themeText3)
+            Button(isIncome ? "新增收入" : "新增支出") {
+                if isIncome { editingIncome = MiscIncome() } else { editingExpense = MiscExpense() }
+            }.macSecondaryButton()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var incomeList: some View {
+        List {
+            ForEach(incomes) { row in
+                miscRow(row: row, isIncome: true)
+            }
+        }
+    }
+
+    private var expenseList: some View {
+        List {
+            ForEach(expenses) { row in
+                miscRow(row: row, isIncome: false)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func miscRow(row: MiscIncome, isIncome: Bool) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.item).font(.system(size: 13, weight: .medium))
+                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 11)).foregroundColor(.themeText3) }
+                Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
+            }
+            Spacer()
+            Text("\(isIncome ? "+" : "-")¥\(FormatKit.money(row.amount))")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(isIncome ? .themeRed : .themeAccentDark)
+            Button("编辑") {
+                if isIncome { editingIncome = row } else { editingExpense = row }
+            }.macSecondaryButton()
+            Button {
+                if isIncome { deletingIncome = row } else { deletingExpense = row }
+            } label: { Image(systemName: "trash") }.macSecondaryButton()
+        }
+        .padding(.vertical, 3)
+    }
+
+    @ViewBuilder
+    private func miscRow(row: MiscExpense, isIncome: Bool) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.item).font(.system(size: 13, weight: .medium))
+                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 11)).foregroundColor(.themeText3) }
+                Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
+            }
+            Spacer()
+            Text("\(isIncome ? "+" : "-")¥\(FormatKit.money(row.amount))")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(isIncome ? .themeRed : .themeAccentDark)
+            Button("编辑") {
+                if isIncome { editingIncome = row } else { editingExpense = row }
+            }.macSecondaryButton()
+            Button {
+                if isIncome { deletingIncome = row } else { deletingExpense = row }
+            } label: { Image(systemName: "trash") }.macSecondaryButton()
+        }
+        .padding(.vertical, 3)
+    }
                     }
                 }
             }

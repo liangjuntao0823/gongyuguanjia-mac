@@ -229,6 +229,7 @@ enum DataBackupManager {
             .appendingPathComponent("restore_\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tmpDir) }
+        let decoder = JSONDecoder()
 
         switch ZipStore.unzip(zipURL, to: tmpDir) {
         case .success: break
@@ -428,33 +429,4 @@ enum DataBackupManager {
 
         return .success(hasHouses)
     }
-}
-
-// MARK: - 房源备份 DTO（Mac 自有 zip 结构）
-
-struct HouseBundleDTO: Codable {
-    var schemaVersion: Int
-    var houses: [HouseExportDTO]
-}
-
-struct HouseExportDTO: Codable {
-    var id: UUID
-    var roomNo: String
-    var tower: Int
-    var landlord: String
-    var layout: String
-    var price: Double
-    var password: String
-    var remark: String
-    var statusRaw: String
-    var createdAt: Date
-    var updatedAt: Date
-    var isDeleted: Bool
-    var deletedAt: Date?
-    var mediaItems: [MediaExportDTO]
-}
-
-struct MediaExportDTO: Codable {
-    var fileName: String
-    var kind: String
 }

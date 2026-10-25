@@ -40,10 +40,11 @@ struct DashboardView: View {
                     }
                     Spacer()
                     Button {
-                        if let config = CosConfig.load() {
-                            MacBridge.openURL(CosConfig.statsURL(config: config))
+                        let url = CloudConfig.functionURL
+                        if !url.isEmpty {
+                            MacBridge.openURL(url)
                         } else {
-                            MacToastCenter.show("未配置云端，请先在设置中完成云端配置")
+                            MacToastCenter.show("未配置云函数地址，请先在房源分享设置中填写")
                         }
                     } label: {
                         Label("云端统计后台", systemImage: "chart.bar.fill")

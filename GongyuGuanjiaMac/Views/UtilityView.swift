@@ -7,7 +7,7 @@ struct UtilityView: View {
     @ObservedObject var manager: DataManager
     var presetProperty: Property? = nil
     var onWriteSuccess: (() -> Void)? = nil
-    let onClose: () -> Void
+    var onClose: () -> Void = {}
 
     @State private var selectedProperty: Property?
     @State private var includesMaster = false

@@ -261,10 +261,6 @@ struct SettingsView: View {
     }
 }
 
-enum ClearKind {
-    case deals, properties, payouts, total
-}
-
     private func exportLogs() {
         MacBridge.saveFile(defaultName: "公寓管家日志_\(BackupTimestamp.string()).txt", allowedTypes: [.plainText]) { url in
             guard let url = url else { return }
@@ -276,6 +272,10 @@ enum ClearKind {
     private func openReport() {
         MacBridge.openURL("https://aka.doubaocdn.com/s/BM7BmY6Tab")
     }
+}
+
+enum ClearKind {
+    case deals, properties, payouts, total
 }
 
 // MARK: - 版本更新介绍（Mac 版各版本记录）

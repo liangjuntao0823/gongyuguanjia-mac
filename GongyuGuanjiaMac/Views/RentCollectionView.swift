@@ -200,81 +200,17 @@ struct PropertyRentCard: View {
     private var paid: Bool {
         prop.monthlyRentRecords.contains { $0.year == currentYear && $0.month == currentMonth && $0.isPaid }
     }
+    private var dueCircleColor: Color { paid ? Color(hex: "E8F5E9").opacity(0.2) : Color.red.opacity(0.85) }
+    private var isOverdue: Bool { prop.rentDueDay < Calendar.current.component(.day, from: Date()) && !paid }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                // 交租日 + 房号
-                VStack(spacing: 4) {
-                    Text("\(prop.rentDueDay)号")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                        .background(paid ? Color(hex: "E8F5E9").opacity(0.2) : Color.red.opacity(0.85))
-                        .clipShape(Circle())
-                    Text(prop.roomNumber)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.themeText)
-                }
-                .frame(width: 70)
-
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 6) {
-                        Text(prop.typeChar)
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(prop.typeColor)
-                            .frame(width: 20, height: 20)
-                            .background(prop.typeBgColor)
-                            .clipShape(Circle())
-                        Text(prop.typeDisplayName)
-                            .font(.system(size: 11))
-                            .foregroundColor(prop.typeColor)
-                        Text("已收\(paidMonthsCount)个月")
-                            .font(.system(size: 11))
-                            .foregroundColor(.themeAccentDark)
-                            .padding(.horizontal, 8).padding(.vertical, 2)
-                            .background(Color(hex: "E8F5E9"))
-                            .clipShape(Capsule())
-                        if prop.rentDueDay < Calendar.current.component(.day, from: Date()) && !paid {
-                            Text("逾期")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 8).padding(.vertical, 2)
-                                .background(Color.red)
-                                .clipShape(Capsule())
-                        }
-                    }
-                    HStack(spacing: 8) {
-                        Text(prop.landlord).font(.system(size: 12)).foregroundColor(.themeText2)
-                        Text(prop.unitType).font(.system(size: 12)).foregroundColor(.themeText2)
-                    }
-                    HStack(spacing: 8) {
-                        Text("¥\(Int(prop.rent))/月").font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
-                        Text("押\(Int(prop.deposit))").font(.system(size: 11)).foregroundColor(.themeText3)
-                        if prop.prepayment > 0 { Text("预存\(Int(prop.prepayment))").font(.system(size: 11)).foregroundColor(.themeText3) }
-                        if !prop.leaseStart.isEmpty {
-                            Text("\(prop.leaseStart)至\(prop.leaseEnd)").font(.system(size: 11)).foregroundColor(.themeText3)
-                        }
-                    }
-                }
-
+                dueDayColumn
+                infoColumn
                 Spacer()
-
-                VStack(alignment: .trailing, spacing: 6) {
-                    Text(paid ? "已收" : "待收")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(paid ? .themeAccentDark : .themeRed)
-                    Text("水电 ¥\(Int(totalUtility))")
-                        .font(.system(size: 10))
-                        .foregroundColor(.themeText3)
-                }
-
-                VStack(spacing: 6) {
-                    Button("编辑") { onEdit() }.macSecondaryButton()
-                    Button("退租") { onTerminate() }.macSecondaryButton()
-                    Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
-                }
-                .frame(width: 60)
+                statusColumn
+                actionColumn
             }
             .padding(12)
             .background(Color.white)
@@ -282,6 +218,83 @@ struct PropertyRentCard: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EEEEEE"), lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    private var dueDayColumn: some View {
+        VStack(spacing: 4) {
+            Text("\(prop.rentDueDay)号")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 44, height: 44)
+                .background(dueCircleColor)
+                .clipShape(Circle())
+            Text(prop.roomNumber)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.themeText)
+        }
+        .frame(width: 70)
+    }
+
+    private var infoColumn: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Text(prop.typeChar)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(prop.typeColor)
+                    .frame(width: 20, height: 20)
+                    .background(prop.typeBgColor)
+                    .clipShape(Circle())
+                Text(prop.typeDisplayName)
+                    .font(.system(size: 11))
+                    .foregroundColor(prop.typeColor)
+                Text("已收\(paidMonthsCount)个月")
+                    .font(.system(size: 11))
+                    .foregroundColor(.themeAccentDark)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(Color(hex: "E8F5E9"))
+                    .clipShape(Capsule())
+                if isOverdue {
+                    Text("逾期")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Color.red)
+                        .clipShape(Capsule())
+                }
+            }
+            HStack(spacing: 8) {
+                Text(prop.landlord).font(.system(size: 12)).foregroundColor(.themeText2)
+                Text(prop.unitType).font(.system(size: 12)).foregroundColor(.themeText2)
+            }
+            HStack(spacing: 8) {
+                Text("¥\(Int(prop.rent))/月").font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
+                Text("押\(Int(prop.deposit))").font(.system(size: 11)).foregroundColor(.themeText3)
+                if prop.prepayment > 0 { Text("预存\(Int(prop.prepayment))").font(.system(size: 11)).foregroundColor(.themeText3) }
+                if !prop.leaseStart.isEmpty {
+                    Text("\(prop.leaseStart)至\(prop.leaseEnd)").font(.system(size: 11)).foregroundColor(.themeText3)
+                }
+            }
+        }
+    }
+
+    private var statusColumn: some View {
+        VStack(alignment: .trailing, spacing: 6) {
+            Text(paid ? "已收" : "待收")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(paid ? .themeAccentDark : .themeRed)
+            Text("水电 ¥\(Int(totalUtility))")
+                .font(.system(size: 10))
+                .foregroundColor(.themeText3)
+        }
+    }
+
+    private var actionColumn: some View {
+        VStack(spacing: 6) {
+            Button("编辑") { onEdit() }.macSecondaryButton()
+            Button("退租") { onTerminate() }.macSecondaryButton()
+            Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
+        }
+        .frame(width: 60)
     }
 }
 
@@ -305,20 +318,7 @@ struct TerminatedPropertyRow: View {
                     .font(.system(size: 18))
                     .foregroundColor(.themeText3)
                     .frame(width: 44)
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 8) {
-                        Text(prop.roomNumber).font(.system(size: 16, weight: .bold)).foregroundColor(.themeText)
-                        Text("\(dateText) 退租").font(.system(size: 11)).foregroundColor(.themeText3)
-                    }
-                    HStack(spacing: 8) {
-                        Text(prop.landlord).font(.system(size: 12)).foregroundColor(.themeText2)
-                        Text(prop.unitType).font(.system(size: 12)).foregroundColor(.themeText2)
-                        Text("¥\(Int(prop.rent))/月").font(.system(size: 12)).foregroundColor(.themeText2)
-                    }
-                    if !prop.terminationReason.isEmpty {
-                        Text("原因：\(prop.terminationReason)").font(.system(size: 11)).foregroundColor(.themeText3).lineLimit(1)
-                    }
-                }
+                infoColumn
                 Spacer()
                 Text("已收\(paidMonthsCount)个月")
                     .font(.system(size: 12))
@@ -326,11 +326,7 @@ struct TerminatedPropertyRow: View {
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Color(hex: "E8F5E9"))
                     .clipShape(Capsule())
-                VStack(spacing: 6) {
-                    Button("还原") { onRestore() }.macSecondaryButton()
-                    Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
-                }
-                .frame(width: 60)
+                actionColumn
             }
             .padding(12)
             .background(Color(red: 0.985, green: 0.985, blue: 0.985))
@@ -338,6 +334,31 @@ struct TerminatedPropertyRow: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EEEEEE"), lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    private var infoColumn: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Text(prop.roomNumber).font(.system(size: 16, weight: .bold)).foregroundColor(.themeText)
+                Text("\(dateText) 退租").font(.system(size: 11)).foregroundColor(.themeText3)
+            }
+            HStack(spacing: 8) {
+                Text(prop.landlord).font(.system(size: 12)).foregroundColor(.themeText2)
+                Text(prop.unitType).font(.system(size: 12)).foregroundColor(.themeText2)
+                Text("¥\(Int(prop.rent))/月").font(.system(size: 12)).foregroundColor(.themeText2)
+            }
+            if !prop.terminationReason.isEmpty {
+                Text("原因：\(prop.terminationReason)").font(.system(size: 11)).foregroundColor(.themeText3).lineLimit(1)
+            }
+        }
+    }
+
+    private var actionColumn: some View {
+        VStack(spacing: 6) {
+            Button("还原") { onRestore() }.macSecondaryButton()
+            Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
+        }
+        .frame(width: 60)
     }
 }
 
