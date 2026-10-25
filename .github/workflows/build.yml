@@ -16,7 +16,7 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app || echo "使用默认Xcode"
 
-      - name: Build (unsigned, universal: x86_64 + arm64)
+      - name: "Build (unsigned, universal x86_64+arm64)"
         run: |
           xcodebuild -project GongyuGuanjiaMac.xcodeproj -scheme GongyuGuanjiaMac \
             -configuration Release \
