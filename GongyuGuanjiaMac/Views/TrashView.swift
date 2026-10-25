@@ -27,6 +27,7 @@ struct TrashItem: Identifiable {
 
 struct TrashView: View {
     @ObservedObject var manager: DataManager
+    let onClose: () -> Void
 
     @State private var filter: TrashFilter = .all
     @State private var showClearAllConfirm = false
@@ -122,6 +123,8 @@ struct TrashView: View {
                 Spacer()
                 Button("清空回收站") { showClearAllConfirm = true }
                     .macSecondaryButton()
+                Button("关闭") { onClose() }
+                    .macPrimaryButton()
             }
             .padding(14)
             .background(Color(red: 0.965, green: 0.968, blue: 0.97))
