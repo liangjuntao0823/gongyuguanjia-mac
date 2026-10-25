@@ -28,7 +28,7 @@ enum MainTab: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - 数据管理器（业务编排中枢）
+// MARK: - 数据管理器（业务编排中枢，Mac 版 View 统一从这里读取，避免 SwiftData 多配置路由问题）
 
 @MainActor
 final class DataManager: ObservableObject {
@@ -38,11 +38,18 @@ final class DataManager: ObservableObject {
 
     @Published var selectedTab: MainTab = .dashboard
 
-    // 双 store 数据（View 不直接 @Query，统一从这里读取，避免 SwiftData 多配置路由问题）
-    @Published var houses: [House] = []
+    // 经营数据（main 容器）
     @Published var deals: [DealRecord] = []
     @Published var payouts: [PayoutRecord] = []
     @Published var properties: [Property] = []
+    @Published var todos: [TodoItem] = []
+    @Published var miscIncomes: [MiscIncome] = []
+    @Published var miscExpenses: [MiscExpense] = []
+    @Published var profitCalculations: [ProfitCalculation] = []
+    @Published var utilityHistories: [UtilitySettlementHistory] = []
+
+    // 房源数据（house 容器）
+    @Published var houses: [House] = []
 
     init(mainContext: ModelContext, houseContext: ModelContext) {
         self.mainContext = mainContext
@@ -66,19 +73,23 @@ final class DataManager: ObservableObject {
     }
 
     func refreshHouses() {
-        let fd = FetchDescriptor<House>()
-        houses = (try? houseContext.fetch(fd)) ?? []
+        houses = (try? houseContext.fetch(FetchDescriptor<House>())) ?? []
     }
 
     func refreshData() {
         deals = (try? mainContext.fetch(FetchDescriptor<DealRecord>())) ?? []
         payouts = (try? mainContext.fetch(FetchDescriptor<PayoutRecord>())) ?? []
         properties = (try? mainContext.fetch(FetchDescriptor<Property>())) ?? []
+        todos = (try? mainContext.fetch(FetchDescriptor<TodoItem>())) ?? []
+        miscIncomes = (try? mainContext.fetch(FetchDescriptor<MiscIncome>())) ?? []
+        miscExpenses = (try? mainContext.fetch(FetchDescriptor<MiscExpense>())) ?? []
+        profitCalculations = (try? mainContext.fetch(FetchDescriptor<ProfitCalculation>())) ?? []
+        utilityHistories = (try? mainContext.fetch(FetchDescriptor<UtilitySettlementHistory>())) ?? []
     }
 
-    // MARK: - 房源 CRUD
+    // MARK: - 房源 CRUD（house 容器）
 
-    /// 新增房源：插入 + 自动上传媒体 + 自动生成脱敏 H5（v1.55：新增即生成）
+    /// 新增房源：插入 + 自动上传媒体 + 自动生成脱敏 H5（新增即生成）
     func addHouse(roomNo: String, tower: Int, landlord: String, layout: String,
                   price: Double, password: String, remark: String, status: String,
                   mediaFiles: [(url: URL, kind: String)] = []) -> House {
@@ -91,12 +102,10 @@ final class DataManager: ObservableObject {
                 MediaStore.save(data: data, fileName: fileName, roomKey: house.mediaRoomKey)
             }
             house.mediaItems.append(MediaItem(fileName: fileName, kind: kind))
-            // 上传队列（云端）
             Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
         }
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
-        // 自动生成脱敏 H5
         autoRegenerateMaskedShare(for: house)
         return house
     }
@@ -118,7 +127,6 @@ final class DataManager: ObservableObject {
         autoRegenerateMaskedShare(for: house)
     }
 
-    /// 添加媒体到房源
     func addMedia(to house: House, url: URL, kind: String) {
         let fileName = house.mediaRoomKey + "_" + UUID().uuidString.prefix(8) + "_" + url.lastPathComponent
         if let data = try? Data(contentsOf: url) {
@@ -131,14 +139,12 @@ final class DataManager: ObservableObject {
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
     }
 
-    /// 删除媒体（本地 + 云端）
     func removeMedia(_ item: MediaItem, from house: House) {
         MediaStore.removeMedia(fileName: item.fileName, roomKey: house.mediaRoomKey)
         houseContext.delete(item)
         house.updatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
-        // 云端删除（后台）
         if let config = CosConfig.load() {
             Task {
                 let remoteName = item.kind == "video" ? CosUploader.cloudVideoName(for: item.fileName) : item.fileName
@@ -148,7 +154,6 @@ final class DataManager: ObservableObject {
         autoRegenerateMaskedShare(for: house)
     }
 
-    /// 软删除房源（回收站）
     func softDeleteHouse(_ house: House) {
         house.isDeleted = true
         house.deletedAt = Date()
@@ -157,7 +162,6 @@ final class DataManager: ObservableObject {
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
     }
 
-    /// 恢复回收站房源
     func restoreHouse(_ house: House) {
         house.isDeleted = false
         house.deletedAt = nil
@@ -167,12 +171,9 @@ final class DataManager: ObservableObject {
         autoRegenerateMaskedShare(for: house)
     }
 
-    /// 彻底删除房源（本地媒体 + 云端 h/<roomKey>/ + 分享页 + 账本条目）
     func permanentDeleteHouse(_ house: House) {
         let roomKey = house.mediaRoomKey
-        // 删本地媒体
         MediaStore.removeRoom(roomKey: roomKey)
-        // 删云端（后台）
         if let config = CosConfig.load() {
             Task {
                 try? await CosUploader.deleteObject(path: "h/\(roomKey)", config: config)
@@ -184,7 +185,7 @@ final class DataManager: ObservableObject {
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
     }
 
-    // MARK: - 自动生成/重生成脱敏 H5（v1.55：新增/编辑即生成，防选房链接打不开）
+    // MARK: - 自动生成/重生成脱敏 H5
 
     func autoRegenerateMaskedShare(for house: House) {
         guard CosConfig.load() != nil, !house.mediaItems.isEmpty else { return }
@@ -217,77 +218,260 @@ final class DataManager: ObservableObject {
         )
     }
 
-    // MARK: - 经营数据 CRUD
+    // MARK: - 成交合同 CRUD（对齐 iOS 契约）
 
-    func addDeal(_ record: DealRecord) {
+    func addDeal(date: Date = Date(), roomNumber: String = "", landlord: String = "", unitType: String = "",
+                 leaseStart: Date = Date(), leaseEnd: Date = Date(), leaseDuration: String = "",
+                 rent: Double = 0, deposit: Double = 0, prepayment: Double = 0, rentDueDay: Int? = nil,
+                 agentFeeLandlord: Double = 0, agentFeeTenant: Double = 0, totalFee: Double = 0,
+                 manager: String = "", source: String = "", notes: String = "") -> DealRecord {
+        let record = DealRecord(date: date, roomNumber: roomNumber, landlord: landlord, unitType: unitType,
+                                leaseStart: leaseStart, leaseEnd: leaseEnd, leaseDuration: leaseDuration,
+                                rent: rent, deposit: deposit, prepayment: prepayment, rentDueDay: rentDueDay,
+                                agentFeeLandlord: agentFeeLandlord, agentFeeTenant: agentFeeTenant,
+                                totalFee: totalFee, manager: manager, source: source, notes: notes)
         mainContext.insert(record)
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        return record
     }
 
-    func updateDeal(_ record: DealRecord, roomNo: String, dealDate: Date, dealType: String,
-                    price: Double, commission: Double, fee: Double, paidBy: String, remark: String) {
-        record.roomNo = roomNo
-        record.dealDate = dealDate
-        record.dealType = dealType
-        record.price = price
-        record.commission = commission
-        record.fee = fee
-        record.paidBy = paidBy
-        record.remark = remark
-        record.updatedAt = Date()
+    func softDeleteDeal(_ record: DealRecord) {
+        record.isDeleted = true
+        record.deletedAt = Date()
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func deleteDeal(_ record: DealRecord) {
+    func restoreDeal(_ record: DealRecord) {
+        record.isDeleted = false
+        record.deletedAt = nil
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func permanentDeleteDeal(_ record: DealRecord) {
         mainContext.delete(record)
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func addPayout(_ record: PayoutRecord) {
+    // MARK: - 包租合同 CRUD（对齐 iOS 契约）
+
+    func addPayout(roomNumber: String = "", manager: String = "", unitType: String = "",
+                   leaseStartDate: Date = Date(), leaseEndDate: Date = Date(), leaseDuration: String = "",
+                   rentFreeDays: Int = 0, monthlyRent: Double? = nil, annualRent: Double = 0,
+                   deposit: Double = 0, waterMeterBase: Int = 0, electricMeterBase: Int = 0,
+                   rentDueDay: Int = 1, paymentMethod: String = "月付", notes: String = "") -> PayoutRecord {
+        let record = PayoutRecord(roomNumber: roomNumber, manager: manager, unitType: unitType,
+                                  leaseStartDate: leaseStartDate, leaseEndDate: leaseEndDate,
+                                  leaseDuration: leaseDuration, rentFreeDays: rentFreeDays,
+                                  monthlyRent: monthlyRent, annualRent: annualRent, deposit: deposit,
+                                  waterMeterBase: waterMeterBase, electricMeterBase: electricMeterBase,
+                                  rentDueDay: rentDueDay, paymentMethod: paymentMethod, notes: notes)
         mainContext.insert(record)
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        return record
     }
 
-    func updatePayout(_ record: PayoutRecord, amount: Double, category: String, date: Date, remark: String) {
-        record.amount = amount
-        record.category = category
-        record.date = date
-        record.remark = remark
-        record.updatedAt = Date()
+    func softDeletePayout(_ record: PayoutRecord) {
+        record.isDeleted = true
+        record.deletedAt = Date()
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func deletePayout(_ record: PayoutRecord) {
+    func restorePayout(_ record: PayoutRecord) {
+        record.isDeleted = false
+        record.deletedAt = nil
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func permanentDeletePayout(_ record: PayoutRecord) {
         mainContext.delete(record)
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func addProperty(_ property: Property) {
-        mainContext.insert(property)
+    // MARK: - 收租房源 CRUD（对齐 iOS 契约）
+
+    func addProperty(roomNumber: String = "", landlord: String = "", unitType: String = "",
+                     rent: Double = 0, deposit: Double = 0, prepayment: Double = 0,
+                     leaseStart: String = "", leaseEnd: String = "", leaseDuration: String = "",
+                     rentDueDay: Int = 1, waterMeterBase: Int = 0, electricMeterBase: Int = 0,
+                     propertyType: String = "管理", notes: String = "") -> Property {
+        let prop = Property(roomNumber: roomNumber, landlord: landlord, unitType: unitType,
+                            rent: rent, deposit: deposit, prepayment: prepayment,
+                            leaseStart: leaseStart, leaseEnd: leaseEnd, leaseDuration: leaseDuration,
+                            rentDueDay: rentDueDay, waterMeterBase: waterMeterBase,
+                            electricMeterBase: electricMeterBase, propertyType: propertyType, notes: notes)
+        mainContext.insert(prop)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        return prop
+    }
+
+    func softDeleteProperty(_ prop: Property) {
+        prop.isDeleted = true
+        prop.deletedAt = Date()
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func updateProperty(_ property: Property, name: String, address: String,
-                        monthlyRent: Double, monthlyExpense: Double, remark: String) {
-        property.name = name
-        property.address = address
-        property.monthlyRent = monthlyRent
-        property.monthlyExpense = monthlyExpense
-        property.remark = remark
-        property.updatedAt = Date()
+    func restoreProperty(_ prop: Property) {
+        prop.isDeleted = false
+        prop.deletedAt = nil
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func deleteProperty(_ property: Property) {
-        mainContext.delete(property)
+    func permanentDeleteProperty(_ prop: Property) {
+        mainContext.delete(prop)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    /// 退租：写入终止信息并标记
+    func terminateProperty(_ prop: Property, date: Date?, reason: String,
+                           depositRefund: String, roomDamage: String,
+                           utilitySettlement: String, person: String, phone: String) {
+        prop.isTerminated = true
+        prop.terminationDate = date
+        prop.terminationReason = reason
+        prop.depositRefundStatus = depositRefund
+        prop.roomDamageStatus = roomDamage
+        prop.utilitySettlementStatus = utilitySettlement
+        prop.terminationPerson = person
+        prop.terminationPhone = phone
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    /// 还原退租
+    func restoreTerminatedProperty(_ prop: Property) {
+        prop.isTerminated = false
+        prop.terminationDate = nil
+        prop.terminationReason = ""
+        prop.depositRefundStatus = ""
+        prop.roomDamageStatus = ""
+        prop.utilitySettlementStatus = ""
+        prop.terminationPerson = ""
+        prop.terminationPhone = ""
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    // MARK: - 杂项收支 CRUD
+
+    func addMiscIncome(date: Date = Date(), item: String = "", amount: Double = 0, notes: String = "") {
+        let rec = MiscIncome(date: date, item: item, amount: amount, notes: notes)
+        mainContext.insert(rec)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func addMiscExpense(date: Date = Date(), item: String = "", amount: Double = 0, notes: String = "") {
+        let rec = MiscExpense(date: date, item: item, amount: amount, notes: notes)
+        mainContext.insert(rec)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func softDeleteMiscIncome(_ rec: MiscIncome) {
+        rec.isDeleted = true
+        rec.deletedAt = Date()
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func softDeleteMiscExpense(_ rec: MiscExpense) {
+        rec.isDeleted = true
+        rec.deletedAt = Date()
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func restoreMiscIncome(_ rec: MiscIncome) {
+        rec.isDeleted = false
+        rec.deletedAt = nil
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func restoreMiscExpense(_ rec: MiscExpense) {
+        rec.isDeleted = false
+        rec.deletedAt = nil
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func permanentDeleteMiscIncome(_ rec: MiscIncome) {
+        mainContext.delete(rec)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func permanentDeleteMiscExpense(_ rec: MiscExpense) {
+        mainContext.delete(rec)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    // MARK: - 利润测算 CRUD
+
+    func addProfitCalculation(_ calc: ProfitCalculation) {
+        mainContext.insert(calc)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func deleteProfitCalculation(_ calc: ProfitCalculation) {
+        mainContext.delete(calc)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    // MARK: - 待办 CRUD（SwiftData 模型版）
+
+    func addTodo(content: String, reminderDate: Date? = nil) {
+        guard !content.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let item = TodoItem(content: content, sortOrder: todos.count, reminderDate: reminderDate)
+        mainContext.insert(item)
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func updateTodo(_ item: TodoItem, content: String) {
+        item.content = content
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func toggleTodo(_ item: TodoItem) {
+        item.isCompleted.toggle()
+        item.completedDate = item.isCompleted ? Date() : nil
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func softDeleteTodo(_ item: TodoItem) {
+        item.isDeleted = true
+        item.deletedAt = Date()
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func restoreTodo(_ item: TodoItem) {
+        item.isDeleted = false
+        item.deletedAt = nil
+        try? mainContext.save()
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    func permanentDeleteTodo(_ item: TodoItem) {
+        mainContext.delete(item)
         try? mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
@@ -297,7 +481,6 @@ final class DataManager: ObservableObject {
     func syncFromCloud() async -> CloudSyncResult {
         let result = await CloudHouseSync.pullAndMerge(houseContext: houseContext)
         if case .success(let added, let updated, _) = result {
-            // 下载缺失媒体
             let houses = (try? houseContext.fetch(FetchDescriptor<House>())) ?? []
             if let config = CosConfig.load() {
                 for h in houses where h.isDeleted != true {
@@ -346,10 +529,136 @@ final class DataManager: ObservableObject {
         return s
     }
 
+    /// 月度收支汇总（对齐 iOS DataManager.monthlyStats）
+    func monthlyStats(month: Int, year: Int) -> (income: Double, expense: Double, net: Double) {
+        let calendar = Calendar.current
+        var totalIncome: Double = 0
+        var totalExpense: Double = 0
+
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = 1
+        guard let start = calendar.date(from: components),
+              let end = calendar.date(byAdding: .month, value: 1, to: start) else {
+            return (0, 0, 0)
+        }
+        totalIncome += deals.filter { !$0.isDeleted && $0.date >= start && $0.date < end }.reduce(0) { $0 + $1.totalFee }
+        totalIncome += miscIncomes.filter { !$0.isDeleted && $0.date >= start && $0.date < end }.reduce(0) { $0 + $1.amount }
+        totalExpense += miscExpenses.filter { !$0.isDeleted && $0.date >= start && $0.date < end }.reduce(0) { $0 + $1.amount }
+        return (totalIncome, totalExpense, totalIncome - totalExpense)
+    }
+
+    /// 工作台 KPI 统计（对齐 iOS DataManager.dashboardStats）
+    func dashboardStats() -> DashboardStats {
+        let calendar = Calendar.current
+        let now = Date()
+        let currentMonth = calendar.component(.month, from: now)
+        let currentYear = calendar.component(.year, from: now)
+
+        let allProperties = properties.filter { !$0.isDeleted }
+        let activeRentalProperties = allProperties.filter { !$0.isTerminated }
+
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? now
+
+        let monthlyDealRecords = deals.filter { !$0.isDeleted && $0.date >= monthStart && $0.date < monthEnd }
+        let totalDeals = deals.filter { !$0.isDeleted }.count
+
+        let profits = profitCalculations
+        let incomes = miscIncomes.filter { !$0.isDeleted && $0.date >= monthStart && $0.date < monthEnd }
+        let expenses = miscExpenses.filter { !$0.isDeleted && $0.date >= monthStart && $0.date < monthEnd }
+
+        let activeProperties = activeRentalProperties.filter { $0.typeDisplayName == "管理" }
+
+        // 本月应收/实收租金
+        var monthlyRentReceivable: Double = 0
+        var monthlyRentCollected: Double = 0
+        for prop in activeRentalProperties {
+            for record in prop.monthlyRentRecords {
+                if record.year == currentYear && record.month == currentMonth {
+                    monthlyRentReceivable += record.amount > 0 ? record.amount : prop.rent
+                    if record.isPaid {
+                        monthlyRentCollected += record.amount > 0 ? record.amount : prop.rent
+                    }
+                }
+            }
+            if !prop.monthlyRentRecords.contains(where: { $0.year == currentYear && $0.month == currentMonth }) {
+                monthlyRentReceivable += prop.rent
+            }
+        }
+
+        var monthlyDealFee: Double = 0
+        for deal in monthlyDealRecords { monthlyDealFee += deal.totalFee }
+
+        let totalNetProfit = profits.reduce(0) { $0 + $1.netProfit }
+
+        var monthlyMiscIncome: Double = 0
+        for inc in incomes { monthlyMiscIncome += inc.amount }
+        var monthlyMiscExpense: Double = 0
+        for exp in expenses { monthlyMiscExpense += exp.amount }
+
+        let monthlyNetIncome = monthlyDealFee + monthlyMiscIncome - monthlyMiscExpense
+
+        // 即将到期（30天内）
+        var expiringSoon: [Property] = []
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy.M.d"
+        for prop in activeRentalProperties {
+            if let endDate = dateFormatter.date(from: prop.leaseEnd) {
+                let days = calendar.dateComponents([.day], from: now, to: endDate).day ?? 0
+                if days >= 0 && days <= 30 { expiringSoon.append(prop) }
+            }
+        }
+        expiringSoon.sort { prop1, prop2 in
+            let days1 = (calendar.dateComponents([.day], from: now, to: dateFormatter.date(from: prop1.leaseEnd) ?? now).day ?? 0)
+            let days2 = (calendar.dateComponents([.day], from: now, to: dateFormatter.date(from: prop2.leaseEnd) ?? now).day ?? 0)
+            return days1 < days2
+        }
+
+        return DashboardStats(
+            totalProperties: activeRentalProperties.count,
+            activeProperties: activeProperties.count,
+            managedProperties: activeRentalProperties.filter { $0.isManaged }.count,
+            monthlyRentReceivable: monthlyRentReceivable,
+            monthlyRentCollected: monthlyRentCollected,
+            monthlyDealFee: monthlyDealFee,
+            totalDeals: totalDeals,
+            monthlyDeals: monthlyDealRecords.count,
+            packageProfit: totalNetProfit,
+            expiringSoon: expiringSoon,
+            currentMonth: currentMonth,
+            currentYear: currentYear,
+            monthlyMiscIncome: monthlyMiscIncome,
+            monthlyMiscExpense: monthlyMiscExpense,
+            monthlyNetIncome: monthlyNetIncome
+        )
+    }
+
     // MARK: - 收租/到期计算
 
     /// 生成某房源的下一次收租日（按成交日期月周期）
     static func nextRentDate(after dealDate: Date, months: Int = 1) -> Date {
         Calendar.current.date(byAdding: .month, value: months, to: dealDate) ?? dealDate
     }
+}
+
+// MARK: - 工作台统计结果
+
+struct DashboardStats {
+    var totalProperties: Int
+    var activeProperties: Int
+    var managedProperties: Int
+    var monthlyRentReceivable: Double
+    var monthlyRentCollected: Double
+    var monthlyDealFee: Double
+    var totalDeals: Int
+    var monthlyDeals: Int
+    var packageProfit: Double
+    var expiringSoon: [Property]
+    var currentMonth: Int
+    var currentYear: Int
+    var monthlyMiscIncome: Double
+    var monthlyMiscExpense: Double
+    var monthlyNetIncome: Double
 }

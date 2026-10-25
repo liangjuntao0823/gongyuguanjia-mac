@@ -111,7 +111,11 @@ struct GongyuGuanjiaMacApp: App {
         ])
         // 主容器（经营数据）
         let mainConfig = ModelConfiguration("Main", schema: Schema([
-            DealRecord.self, Property.self, PayoutRecord.self
+            DealRecord.self, Property.self, PayoutRecord.self,
+            RentMonthRecord.self, UtilityQuarterRecord.self, UtilitySettlementRecord.self,
+            UtilitySettlementHistory.self, TodoItem.self,
+            MiscIncome.self, MiscExpense.self,
+            PayoutMonthRecord.self, PayoutUtilityRecord.self, ProfitCalculation.self
         ]), url: DataRoot.defaultStoreURL)
         // 房源容器
         let houseConfig = ModelConfiguration("House", schema: Schema([
@@ -142,7 +146,11 @@ struct GongyuGuanjiaMacApp: App {
                     house = main
                 } catch {
                     // 内存临时模式
-                    let memMain = ModelConfiguration("Main", schema: Schema([DealRecord.self, Property.self, PayoutRecord.self]), isStoredInMemoryOnly: true)
+                    let memMain = ModelConfiguration("Main", schema: Schema([DealRecord.self, Property.self, PayoutRecord.self,
+                                                                             RentMonthRecord.self, UtilityQuarterRecord.self, UtilitySettlementRecord.self,
+                                                                             UtilitySettlementHistory.self, TodoItem.self,
+                                                                             MiscIncome.self, MiscExpense.self,
+                                                                             PayoutMonthRecord.self, PayoutUtilityRecord.self, ProfitCalculation.self]), isStoredInMemoryOnly: true)
                     let memHouse = ModelConfiguration("House", schema: Schema([House.self, MediaItem.self]), isStoredInMemoryOnly: true)
                     main = try? ModelContainer(for: schema, configurations: [memMain, memHouse])
                     house = main

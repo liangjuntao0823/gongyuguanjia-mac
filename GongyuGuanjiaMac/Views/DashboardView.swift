@@ -1,27 +1,38 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 工作台（dashboard）：核心指标 + 快捷入口 + 待办提醒
+// MARK: - 工作台（对齐 iOS：KPI 统计 + 收租/包租/到期提醒 + 待办 + 快捷操作）
 
 struct DashboardView: View {
     @ObservedObject var manager: DataManager
-    @Environment(\.houseModelContext) private var houseEnvContext
 
-    private var houses: [House] { manager.houses }
-    private var deals: [DealRecord] { manager.deals }
-    private var payouts: [PayoutRecord] { manager.payouts }
+    @State private var showTodo = false
+    @State private var showUtility = false
 
-    private var stats: DataManager.HouseStats {
-        manager.houseStats(houses)
+    private var stats: DashboardStats { manager.dashboardStats() }
+    private var activeProperties: [Property] {
+        manager.properties.filter { $0.isDeleted != true && !$0.isTerminated }
+    }
+    private var payouts: [PayoutRecord] { manager.payouts.filter { $0.isDeleted != true } }
+
+    private var dueTodayRent: [Property] {
+        let day = Calendar.current.component(.day, from: Date())
+        return activeProperties.filter {
+            $0.rentDueDay == day &&
+            !($0.monthlyRentRecords.contains { $0.isPaid && Calendar.current.component(.month, from: Date()) == $0.month })
+        }
+    }
+    private var overdueRent: [Property] {
+        let day = Calendar.current.component(.day, from: Date())
+        return activeProperties.filter { $0.rentDueDay < day && !$0.isPaidForCard }
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // 顶部问候
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("早上好，\(CloudUser.displayName)")
+                        Text("公寓管家 · 工作台")
                             .font(.system(size: 22, weight: .bold))
                         Text(FormatKit.dateStr(Date()))
                             .font(.system(size: 13))
@@ -29,34 +40,29 @@ struct DashboardView: View {
                     }
                     Spacer()
                     Button {
-                        manager.selectedTab = .houses
+                        if let config = CosConfig.load() {
+                            MacBridge.openURL(CosConfig.statsURL(config: config))
+                        } else {
+                            MacToastCenter.show("未配置云端，请先在设置中完成云端配置")
+                        }
                     } label: {
-                        Label("管理房源", systemImage: "house")
+                        Label("云端统计后台", systemImage: "chart.bar.fill")
                     }
                     .macPrimaryButton()
                 }
                 .padding(.top, 4)
 
-                // 指标卡
+                // KPI 卡片
                 HStack(spacing: 12) {
-                    StatCard(title: "总房源", value: "\(stats.total)", icon: "house.fill", color: .themeAccent) {
-                        manager.selectedTab = .houses
-                    }
-                    StatCard(title: "待租", value: "\(stats.available)", icon: "checkmark.circle.fill", color: .themeBlue) {
-                        manager.selectedTab = .houses
-                    }
-                    StatCard(title: "已租", value: "\(stats.rented)", icon: "lock.fill", color: .themeWarning) {
-                        manager.selectedTab = .houses
-                    }
-                    StatCard(title: "本月成交", value: "\(deals.count)", icon: "doc.text.fill", color: .themeDanger) {
-                        manager.selectedTab = .deals
-                    }
-                    StatCard(title: "待收租记录", value: "\(payouts.count)", icon: "banknote.fill", color: .purple) {
-                        manager.selectedTab = .rents
-                    }
+                    StatCard(title: "在租房源", value: "\(stats.totalProperties)", icon: "house.fill", color: .themeAccent) { manager.selectedTab = .rents }
+                    StatCard(title: "管理房源", value: "\(stats.activeProperties)", icon: "checkmark.seal.fill", color: .themeBlue) { manager.selectedTab = .rents }
+                    StatCard(title: "本月应收", value: "¥\(Int(stats.monthlyRentReceivable))", icon: "banknote.fill", color: .themeWarning) { manager.selectedTab = .rents }
+                    StatCard(title: "本月实收", value: "¥\(Int(stats.monthlyRentCollected))", icon: "checkmark.circle.fill", color: .themeAccentDark) { manager.selectedTab = .rents }
+                    StatCard(title: "本月中介费", value: "¥\(Int(stats.monthlyDealFee))", icon: "doc.text.fill", color: .themeDanger) { manager.selectedTab = .deals }
+                    StatCard(title: "包租盈亏", value: "¥\(Int(stats.packageProfit))", icon: "chart.line.uptrend.xyaxis", color: stats.packageProfit >= 0 ? .themeAccentDark : .themeRed) { manager.selectedTab = .payouts }
                 }
 
-                // 待处理提醒
+                // 提醒区
                 VStack(alignment: .leading, spacing: 8) {
                     Text("提醒")
                         .font(.system(size: 15, weight: .semibold))
@@ -68,18 +74,27 @@ struct DashboardView: View {
                             .padding(.vertical, 8)
                     } else {
                         ForEach(reminders) { item in
-                            HStack(spacing: 8) {
-                                Image(systemName: item.icon)
-                                    .foregroundColor(item.color)
-                                    .frame(width: 18)
-                                Text(item.text)
-                                    .font(.system(size: 13))
-                                Spacer()
+                            Button {
+                                item.action()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: item.icon)
+                                        .foregroundColor(item.color)
+                                        .frame(width: 18)
+                                    Text(item.text)
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.themeText)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.themeText3)
+                                }
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 10)
+                                .background(Color.white)
+                                .cornerRadius(8)
                             }
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 10)
-                            .background(Color.white)
-                            .cornerRadius(8)
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -88,15 +103,17 @@ struct DashboardView: View {
                 .cornerRadius(12)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder))
 
-                // 快速入口
+                // 快捷操作
                 VStack(alignment: .leading, spacing: 8) {
                     Text("快捷操作")
                         .font(.system(size: 15, weight: .semibold))
                     HStack(spacing: 12) {
+                        QuickAction(icon: "banknote.fill", title: "快捷收租") { manager.selectedTab = .rents }
+                        QuickAction(icon: "briefcase.fill", title: "快捷付租") { manager.selectedTab = .payouts }
                         QuickAction(icon: "plus.circle.fill", title: "新增房源") { manager.selectedTab = .houses }
-                        QuickAction(icon: "arrow.triangle.2.circlepath", title: "云端同步") { manager.selectedTab = .settings }
+                        QuickAction(icon: "checklist", title: "待办事项") { showTodo = true }
+                        QuickAction(icon: "bolt.fill", title: "水电结算") { showUtility = true }
                         QuickAction(icon: "externaldrive.fill", title: "备份中心") { manager.selectedTab = .settings }
-                        QuickAction(icon: "square.and.arrow.up.fill", title: "生成选房链接") { manager.selectedTab = .settings }
                     }
                 }
                 .padding(14)
@@ -109,6 +126,8 @@ struct DashboardView: View {
             .padding(18)
         }
         .background(Color.themeBg)
+        .sheet(isPresented: $showTodo) { TodoViews(manager: manager) { showTodo = false } }
+        .sheet(isPresented: $showUtility) { UtilityView(manager: manager) { showUtility = false } }
     }
 
     private struct ReminderItem: Identifiable {
@@ -116,19 +135,49 @@ struct DashboardView: View {
         let icon: String
         let text: String
         let color: Color
+        let action: () -> Void
     }
 
     private func buildReminders() -> [ReminderItem] {
         var out: [ReminderItem] = []
-        // 待租房源无实拍图
-        let noPhoto = houses.filter { $0.isDeleted != true && $0.isAvailable && !$0.hasRealPhoto }
-        if !noPhoto.isEmpty {
-            out.append(ReminderItem(icon: "camera.fill", text: "\(noPhoto.count) 套待租房源还没有实拍图", color: .themeWarning))
+        // 今天交租
+        if !dueTodayRent.isEmpty {
+            out.append(ReminderItem(icon: "calendar.badge.exclamationmark", text: "今天应收租：\(dueTodayRent.map(\.roomNumber).joined(separator: "、"))",
+                                    color: .themeWarning) { manager.selectedTab = .rents })
         }
-        // 已租房源提醒（租金已收/待收占位：简单提示待办）
-        let rented = houses.filter { $0.isDeleted != true && $0.isRented }
-        if !rented.isEmpty {
-            out.append(ReminderItem(icon: "lock.fill", text: "\(rented.count) 套已租房源在租", color: .themeAccent))
+        // 逾期
+        if !overdueRent.isEmpty {
+            out.append(ReminderItem(icon: "exclamationmark.triangle.fill", text: "逾期未收：\(overdueRent.map(\.roomNumber).joined(separator: "、"))",
+                                    color: .themeRed) { manager.selectedTab = .rents })
+        }
+        // 30 天到期
+        if !stats.expiringSoon.isEmpty {
+            out.append(ReminderItem(icon: "clock.fill", text: "30天内到期：\(stats.expiringSoon.map(\.roomNumber).joined(separator: "、"))",
+                                    color: .themeAccent) { manager.selectedTab = .rents })
+        }
+        // 包租下一期
+        let overduePayouts = payouts.filter { payout in
+            let now = Date()
+            let cal = Calendar.current
+            let dueDay = payout.rentDueDay
+            let comps = cal.dateComponents([.year, .month], from: now)
+            var dueComps = DateComponents()
+            dueComps.year = comps.year
+            dueComps.month = comps.month
+            dueComps.day = dueDay
+            guard let due = cal.date(from: dueComps) else { return false }
+            let diff = cal.dateComponents([.day], from: due, to: now).day ?? 0
+            return diff > 0 && !payout.monthlyPayouts.contains { $0.isPaid }
+        }
+        if !overduePayouts.isEmpty {
+            out.append(ReminderItem(icon: "briefcase.fill", text: "包租待付：\(overduePayouts.map(\.roomNumber).joined(separator: "、"))",
+                                    color: .themeDanger) { manager.selectedTab = .payouts })
+        }
+        // 待办未完成
+        let pendingTodos = manager.todos.filter { $0.isDeleted != true && !$0.isCompleted }
+        if !pendingTodos.isEmpty {
+            out.append(ReminderItem(icon: "checklist", text: "待办事项 \(pendingTodos.count) 条未完成",
+                                    color: .themeBlue) { showTodo = true })
         }
         return out
     }
@@ -153,8 +202,10 @@ struct StatCard: View {
                     Spacer()
                 }
                 Text(value)
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.themeText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(title)
                     .font(.system(size: 12))
                     .foregroundColor(.themeText2)

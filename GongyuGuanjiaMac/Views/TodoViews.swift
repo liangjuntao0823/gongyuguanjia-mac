@@ -1,33 +1,31 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 待办事项（轻量清单；与 iOS 版「待办」对应）
-
-struct TodoItem: Identifiable {
-    let id: UUID
-    var title: String
-    var done: Bool
-    var createdAt: Date
-    init(id: UUID = UUID(), title: String, done: Bool, createdAt: Date) {
-        self.id = id
-        self.title = title
-        self.done = done
-        self.createdAt = createdAt
-    }
-}
+// MARK: - 待办事项（SwiftData 模型版，与 iOS 版对应；数据由 DataManager 统一管理）
 
 struct TodoViews: View {
     @ObservedObject var manager: DataManager
     let onClose: () -> Void
 
-    @State private var items: [TodoItem] = []
     @State private var newTitle = ""
+
+    private var items: [TodoItem] {
+        manager.todos.filter { $0.isDeleted != true }
+            .sorted {
+                if $0.isCompleted != $1.isCompleted { return !$0.isCompleted && $1.isCompleted }
+                if $0.sortOrder != $1.sortOrder { return $0.sortOrder < $1.sortOrder }
+                return $0.createdDate > $1.createdDate
+            }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("待办事项")
                     .font(.system(size: 17, weight: .bold))
+                Text("共 \(items.count) 条")
+                    .font(.system(size: 12))
+                    .foregroundColor(.themeText3)
                 Spacer()
                 Button("关闭") { onClose() }
                     .macPrimaryButton()
@@ -59,24 +57,27 @@ struct TodoViews: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
-                        ForEach($items) { $item in
+                        ForEach(items) { item in
                             HStack(spacing: 10) {
                                 Button {
-                                    item.done.toggle()
-                                    save()
+                                    manager.toggleTodo(item)
                                 } label: {
-                                    Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(item.done ? .themeAccent : .gray)
+                                    Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(item.isCompleted ? .themeAccent : .gray)
                                 }
                                 .buttonStyle(.plain)
-                                Text(item.title)
+                                Text(item.content)
                                     .font(.system(size: 13))
-                                    .strikethrough(item.done)
-                                    .foregroundColor(item.done ? .themeText3 : .themeText)
+                                    .strikethrough(item.isCompleted)
+                                    .foregroundColor(item.isCompleted ? .themeText3 : .themeText)
                                 Spacer()
+                                if let reminder = item.reminderDate {
+                                    Text("⏰ \(reminder.formatted(date: .abbreviated, time: .shortened))")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.themeText3)
+                                }
                                 Button {
-                                    items.removeAll { $0.id == item.id }
-                                    save()
+                                    manager.softDeleteTodo(item)
                                 } label: {
                                     Image(systemName: "trash")
                                         .foregroundColor(.themeDanger)
@@ -92,36 +93,10 @@ struct TodoViews: View {
         }
         .frame(width: 460, height: 480)
         .background(Color.themeBg)
-        .onAppear { load() }
     }
 
     private func add() {
-        let title = newTitle.trimmingCharacters(in: .whitespaces)
-        guard !title.isEmpty else { return }
-        items.append(TodoItem(title: title, done: false, createdAt: Date()))
+        manager.addTodo(content: newTitle)
         newTitle = ""
-        save()
-    }
-
-    private func save() {
-        let data = items.map { ["id": $0.id.uuidString, "title": $0.title, "done": $0.done, "created": $0.createdAt.timeIntervalSince1970] }
-        if let encoded = try? JSONSerialization.data(withJSONObject: data) {
-            UserDefaults.standard.set(encoded, forKey: "todo.items.v1")
-        }
-    }
-
-    private func load() {
-        guard let data = UserDefaults.standard.data(forKey: "todo.items.v1") else { return }
-        guard let arr = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else { return }
-        var out: [TodoItem] = []
-        for item in arr {
-            guard let title = item["title"] as? String else { continue }
-            let idStr = item["id"] as? String ?? UUID().uuidString
-            out.append(TodoItem(id: UUID(uuidString: idStr) ?? UUID(),
-                                title: title,
-                                done: item["done"] as? Bool ?? false,
-                                createdAt: Date(timeIntervalSince1970: item["created"] as? Double ?? 0)))
-        }
-        items = out
     }
 }
