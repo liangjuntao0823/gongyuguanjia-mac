@@ -85,7 +85,7 @@ struct MainSidebar: View {
                 case .rents: RentCollectionView(manager: manager)
                 case .payouts: PayoutView(manager: manager)
                 case .profit: ProfitView(manager: manager)
-                case .settings: SettingsView(manager: manager, houseContext: houseContext)
+                case .settings: SettingsView(manager: manager)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

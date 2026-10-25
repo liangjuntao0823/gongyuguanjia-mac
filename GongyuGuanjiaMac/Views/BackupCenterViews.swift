@@ -184,7 +184,7 @@ struct BackupCenterViews: View {
                                                          uploadCloud: CosConfig.load() != nil)
             switch r {
             case .success: message = "✓ 快速备份完成"
-            case .failure(let e): message = "备份失败：\(e)"
+            case .failure(let e): message = "备份失败：\(e.localizedDescription)"
             }
             working = false
             refresh()
@@ -200,7 +200,7 @@ struct BackupCenterViews: View {
                                                         uploadCloud: CosConfig.load() != nil)
             switch r {
             case .success: message = "✓ 全量备份完成"
-            case .failure(let e): message = "备份失败：\(e)"
+            case .failure(let e): message = "备份失败：\(e.localizedDescription)"
             }
             working = false
             refresh()
@@ -217,7 +217,7 @@ struct BackupCenterViews: View {
                 message = "✓ 恢复完成"
                 NotificationCenter.default.post(name: .macHouseChanged, object: nil)
                 NotificationCenter.default.post(name: .macDataChanged, object: nil)
-            case .failure(let e): message = "恢复失败：\(e)"
+            case .failure(let e): message = "恢复失败：\(e.localizedDescription)"
             }
             working = false
         }
@@ -233,7 +233,7 @@ struct BackupCenterViews: View {
                 message = "✓ 云端备份恢复完成"
                 NotificationCenter.default.post(name: .macHouseChanged, object: nil)
                 NotificationCenter.default.post(name: .macDataChanged, object: nil)
-            case .failure(let e): message = "恢复失败：\(e)"
+            case .failure(let e): message = "恢复失败：\(e.localizedDescription)"
             }
             working = false
         }

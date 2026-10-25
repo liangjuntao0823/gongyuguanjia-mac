@@ -204,7 +204,7 @@ enum CosUploader {
 
     /// COS V5 签名（与 iOS 版逐字节一致）：
     /// HttpString = method\nrawPath\nparams\nheaders\n；签名用未编码路径，请求 URL 用编码路径
-    internal static func presignedURL(for path: String, method: String, expires: Int, headers: [(String, String)], params: [(String, String)], config: CosConfig) throws -> URL {
+    internal static func presignedURL(for path: String, method: String, expires: Int, headers: [(String, String)], params: [(String, String)] = [], config: CosConfig) throws -> URL {
         let now = Int(Date().timeIntervalSince1970)
         let signTime = "\(now);\(now + expires)"
         let keyTime = signTime
@@ -598,6 +598,15 @@ enum CosUploader {
         return dest as Data
     }
 
+    /// 等待 AVAssetExportSession 导出完成（兼容 macOS 14 部署目标）
+    private static func awaitExport(_ session: AVAssetExportSession) async -> Bool {
+        await withCheckedContinuation { cont in
+            session.exportAsynchronously {
+                cont.resume(returning: session.status == .completed)
+            }
+        }
+    }
+
     /// 视频压缩转 mp4（MediumQuality，慢但省流量）
     static func compressedVideoData(from url: URL) async -> Data? {
         let asset = AVURLAsset(url: url)
@@ -607,15 +616,10 @@ enum CosUploader {
         session.outputURL = out
         session.outputFileType = .mp4
         session.shouldOptimizeForNetworkUse = true
-        do {
-            try await session.export(to: out, as: .mp4)
-            let data = try Data(contentsOf: out)
-            try? FileManager.default.removeItem(at: out)
-            return data
-        } catch {
-            try? FileManager.default.removeItem(at: out)
-            return nil
-        }
+        let ok = await awaitExport(session)
+        defer { try? FileManager.default.removeItem(at: out) }
+        guard ok else { return nil }
+        return try? Data(contentsOf: out)
     }
 
     /// 不压缩：转封装 mp4（passthrough，快速、不损画质）
@@ -629,15 +633,10 @@ enum CosUploader {
         session.outputURL = out
         session.outputFileType = .mp4
         session.shouldOptimizeForNetworkUse = true
-        do {
-            try await session.export(to: out, as: .mp4)
-            let data = try Data(contentsOf: out)
-            try? FileManager.default.removeItem(at: out)
-            return data
-        } catch {
-            try? FileManager.default.removeItem(at: out)
-            return nil
-        }
+        let ok = await awaitExport(session)
+        defer { try? FileManager.default.removeItem(at: out) }
+        guard ok else { return nil }
+        return try? Data(contentsOf: out)
     }
 
     // MARK: - 分享记录（云端，按用户名隔离）
@@ -992,7 +991,7 @@ enum CloudHouseLedger {
 extension CosUploader {
 
     /// 单房分享：生成/复用 H5 页面（含媒体增量上传）。返回可复制链接
-    static func shareCard(mediaFiles: [ShareMediaFile], roomKey: String, info: ShareHouseInfo, mode: ShareMode, config: CosConfig, progress: ((Double) -> Void)? = nil) async throws -> URL {
+    static func shareCard(mediaFiles: [ShareMediaFile], roomKey: String, info: ShareHouseInfo, mode: ShareMode, config: CosConfig, progress: ((Double) -> Void)? = nil) async throws -> String {
         guard !mediaFiles.isEmpty else { throw CosError.missingMedia }
         guard !config.customDomain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw CosError.customDomainMissing }
 

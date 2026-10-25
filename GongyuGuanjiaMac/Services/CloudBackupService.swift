@@ -9,20 +9,20 @@ enum CloudBackupService {
 
     /// 上传本地备份 zip 到云端（同名覆盖）
     @discardableResult
-    static func uploadBackup(localURL: URL, config: CosConfig) async -> Result<String, String> {
-        guard let data = try? Data(contentsOf: localURL) else { return .failure("读取本地备份失败") }
+    static func uploadBackup(localURL: URL, config: CosConfig) async -> Result<String, Error> {
+        guard let data = try? Data(contentsOf: localURL) else { return .failure(AppError.message("读取本地备份失败")) }
         let remotePath = CloudUser.backupPrefix + localURL.lastPathComponent
         do {
             try await CosUploader.upload(data: data, to: remotePath, contentType: "application/zip", config: config)
             return .success(remotePath)
         } catch {
-            return .failure(error.localizedDescription)
+            return .failure(error)
         }
     }
 
     /// 下载云端备份到本地（同名），返回本地 URL
     @discardableResult
-    static func downloadBackup(remoteName: String, config: CosConfig) async -> Result<URL, String> {
+    static func downloadBackup(remoteName: String, config: CosConfig) async -> Result<URL, Error> {
         let remotePath = CloudUser.backupPrefix + remoteName
         do {
             let data = try await CosUploader.fetchObjectData(path: remotePath, config: config)
@@ -30,9 +30,9 @@ enum CloudBackupService {
             try data.write(to: local)
             return .success(local)
         } catch let e as CosObjectNotFoundError {
-            return .failure("云端备份不存在")
+            return .failure(AppError.message("云端备份不存在"))
         } catch {
-            return .failure(error.localizedDescription)
+            return .failure(error)
         }
     }
 

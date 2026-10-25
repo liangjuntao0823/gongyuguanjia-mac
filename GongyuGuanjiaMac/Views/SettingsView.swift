@@ -122,7 +122,7 @@ struct SettingsView: View {
         }
         .background(Color.themeBg)
         .sheet(isPresented: $showShareSettings) {
-            HouseSettingsView(manager: manager, houseContext: houseContext) { showShareSettings = false }
+            HouseSettingsView(manager: manager) { showShareSettings = false }
         }
         .sheet(isPresented: $showBackupCenter) {
             BackupCenterViews(manager: manager) { showBackupCenter = false }

@@ -163,7 +163,7 @@ enum DataBackupManager {
     // MARK: 恢复备份
 
     /// 从 zip 恢复（清空现有数据后导入）。returns 是否包含房源数据
-    static func restore(from zipURL: URL, mainContext: ModelContext, houseContext: ModelContext?) async -> Result<Bool, String> {
+    static func restore(from zipURL: URL, mainContext: ModelContext, houseContext: ModelContext?) async -> Result<Bool, Error> {
         let tmpDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("restore_\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
@@ -171,7 +171,7 @@ enum DataBackupManager {
 
         switch ZipStore.unzip(zipURL, to: tmpDir) {
         case .success: break
-        case .failure(let e): return .failure(e.localizedDescription)
+        case .failure(let e): return .failure(e)
         }
 
         // 1) 经营数据
@@ -179,7 +179,7 @@ enum DataBackupManager {
         guard FileManager.default.fileExists(atPath: businessURL.path),
               let data = try? Data(contentsOf: businessURL),
               let business = try? decoder.decode(BusinessBackupDTO.self, from: data) else {
-            return .failure("备份缺少经营数据（business.json）")
+            return .failure(AppError.message("备份缺少经营数据（business.json）"))
         }
 
         // 清空现有经营数据

@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - 备份日志（本机操作记录 + 云端操作记录）
 
-struct BackupLogEntry: Identifiable, Hashable {
+struct BackupLogEntry: Identifiable, Hashable, Codable {
     let id: UUID
     let time: Date
     let title: String
@@ -20,28 +20,14 @@ enum BackupLogStore {
         var logs = load()
         logs.insert(entry, at: 0)
         if logs.count > maxCount { logs = Array(logs.prefix(maxCount)) }
-        if let data = try? JSONEncoder().encode(logs.map {
-            ["id": $0.id.uuidString, "time": $0.time.timeIntervalSince1970, "title": $0.title, "detail": $0.detail, "kind": $0.kind]
-        }) {
+        if let data = try? JSONEncoder().encode(logs) {
             UserDefaults.standard.set(data, forKey: key)
         }
     }
 
     static func load() -> [BackupLogEntry] {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
-        var out: [BackupLogEntry] = []
-        for item in arr {
-            guard let idStr = item["id"] as? String, let id = UUID(uuidString: idStr),
-                  let time = item["time"] as? Double else { continue }
-            out.append(BackupLogEntry(
-                id: id, time: Date(timeIntervalSince1970: time),
-                title: item["title"] as? String ?? "",
-                detail: item["detail"] as? String ?? "",
-                kind: item["kind"] as? String ?? "local"
-            ))
-        }
-        return out
+        guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
+        return (try? JSONDecoder().decode([BackupLogEntry].self, from: data)) ?? []
     }
 
     static func clear() {

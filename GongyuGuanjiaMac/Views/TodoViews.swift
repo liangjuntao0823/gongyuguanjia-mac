@@ -105,15 +105,17 @@ struct TodoViews: View {
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: "todo.items.v1"),
-              let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return }
-        items = arr.compactMap { item in
-            guard let title = item["title"] as? String else { return nil }
+        guard let data = UserDefaults.standard.data(forKey: "todo.items.v1") else { return }
+        guard let arr = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else { return }
+        var out: [TodoItem] = []
+        for item in arr {
+            guard let title = item["title"] as? String else { continue }
             let idStr = item["id"] as? String ?? UUID().uuidString
-            return TodoItem(id: UUID(uuidString: idStr) ?? UUID(),
-                            title: title,
-                            done: item["done"] as? Bool ?? false,
-                            createdAt: Date(timeIntervalSince1970: item["created"] as? Double ?? 0))
+            out.append(TodoItem(id: UUID(uuidString: idStr) ?? UUID(),
+                                title: title,
+                                done: item["done"] as? Bool ?? false,
+                                createdAt: Date(timeIntervalSince1970: item["created"] as? Double ?? 0)))
         }
+        items = out
     }
 }

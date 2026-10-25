@@ -50,12 +50,12 @@ enum BackupV5Manager {
     }
 
     /// 恢复本地备份
-    static func restoreLocal(url: URL, mainContext: ModelContext, houseContext: ModelContext) async -> Result<Bool, String> {
+    static func restoreLocal(url: URL, mainContext: ModelContext, houseContext: ModelContext) async -> Result<Bool, Error> {
         await DataBackupManager.restore(from: url, mainContext: mainContext, houseContext: houseContext)
     }
 
     /// 恢复云端备份（先下载再恢复）
-    static func restoreCloud(name: String, config: CosConfig, mainContext: ModelContext, houseContext: ModelContext) async -> Result<Bool, String> {
+    static func restoreCloud(name: String, config: CosConfig, mainContext: ModelContext, houseContext: ModelContext) async -> Result<Bool, Error> {
         let result = await CloudBackupService.downloadBackup(remoteName: name, config: config)
         switch result {
         case .success(let url):

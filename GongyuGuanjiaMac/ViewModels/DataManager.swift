@@ -92,7 +92,7 @@ final class DataManager: ObservableObject {
             }
             house.mediaItems.append(MediaItem(fileName: fileName, kind: kind))
             // 上传队列（云端）
-            HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind)
+            Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
         }
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
@@ -127,7 +127,7 @@ final class DataManager: ObservableObject {
         house.mediaItems.append(MediaItem(fileName: fileName, kind: kind))
         house.updatedAt = Date()
         try? houseContext.save()
-        HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind)
+        Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
     }
 

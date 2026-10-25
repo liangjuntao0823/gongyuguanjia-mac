@@ -209,3 +209,12 @@ extension View {
     func macPrimaryButton() -> some View { buttonStyle(MacPrimaryButtonStyle()) }
     func macSecondaryButton() -> some View { buttonStyle(MacSecondaryButtonStyle()) }
 }
+
+// MARK: - 通用错误（Result 的 Failure 必须 conform Error）
+
+enum AppError: LocalizedError {
+    case message(String)
+    var errorDescription: String? {
+        switch self { case .message(let m): return m }
+    }
+}

@@ -9,7 +9,7 @@ actor HouseMediaUploadQueue {
     private var isUploading = false
     private var pending: [(roomKey: String, fileName: String, kind: String)] = []
 
-    struct Task {
+    struct QueueItem {
         let roomKey: String
         let fileName: String
         let kind: String
@@ -21,7 +21,7 @@ actor HouseMediaUploadQueue {
         Task { await drainIfNeeded() }
     }
 
-    func enqueueBatch(_ tasks: [Task]) {
+    func enqueueBatch(_ tasks: [QueueItem]) {
         for t in tasks { pending.append((t.roomKey, t.fileName, t.kind)) }
         Task { await drainIfNeeded() }
     }

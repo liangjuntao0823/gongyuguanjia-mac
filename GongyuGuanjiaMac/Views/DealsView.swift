@@ -7,6 +7,10 @@ import UniformTypeIdentifiers
 struct DealsView: View {
     @ObservedObject var manager: DataManager
 
+    /// UTType 未内置微软 Excel 专有类型，用扩展名构造
+    private static let xlsType = UTType(filenameExtension: "xls") ?? .data
+    private static let csvType = UTType(filenameExtension: "csv") ?? .data
+
     @State private var searchText = ""
     @State private var showAdd = false
     @State private var editingDeal: DealRecord?
@@ -133,7 +137,7 @@ struct DealsView: View {
             ])
         }
         let data = ExcelService.makeExcelHTML(rows: rows, sheetName: "成交记录")
-        MacBridge.saveFile(defaultName: "成交记录_\(BackupTimestamp.string()).xls", allowedTypes: [.xls, .spreadsheet]) { url in
+        MacBridge.saveFile(defaultName: "成交记录_\(BackupTimestamp.string()).xls", allowedTypes: [Self.xlsType, .spreadsheet]) { url in
             guard let url = url else { return }
             try? data.write(to: url)
             MacToastCenter.show("已导出 \(sorted.count) 条成交记录")
@@ -141,7 +145,7 @@ struct DealsView: View {
     }
 
     private func importExcel() {
-        MacBridge.openFiles(allowedTypes: [.xls, .csv, .spreadsheet], allowsMultiple: false) { urls in
+        MacBridge.openFiles(allowedTypes: [Self.xlsType, Self.csvType, .spreadsheet], allowsMultiple: false) { urls in
             guard let url = urls.first, let data = try? Data(contentsOf: url) else { return }
             let rows = ExcelService.parseImported(data)
             guard rows.count > 1 else {
