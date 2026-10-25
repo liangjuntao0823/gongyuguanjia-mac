@@ -259,7 +259,6 @@ struct SettingsView: View {
         clearMessage = "已清空 \(count) 条记录（建议尽快做一次备份）"
         MacToastCenter.show("已清空")
     }
-}
 
     private func exportLogs() {
         MacBridge.saveFile(defaultName: "公寓管家日志_\(BackupTimestamp.string()).txt", allowedTypes: [.plainText]) { url in

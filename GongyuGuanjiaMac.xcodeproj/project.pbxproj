@@ -46,6 +46,11 @@
 		B10000000000000000000025 /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000025 /* TrashView.swift */; };
 		B10000000000000000000026 /* UtilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000026 /* UtilityView.swift */; };
 		B10000000000000000000027 /* UserGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000027 /* UserGuideView.swift */; };
+		B10000000000000000000029 /* SyncCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000002B /* SyncCore.swift */; };
+		B1000000000000000000002A /* SyncDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000002C /* SyncDTO.swift */; };
+		B1000000000000000000002B /* SwiftDataSyncSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000002D /* SwiftDataSyncSnapshot.swift */; };
+		B1000000000000000000002C /* ManualSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000002E /* ManualSyncView.swift */; };
+		B1000000000000000000002D /* HouseBatchImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000002F /* HouseBatchImportView.swift */; };
 		B10000000000000000000028 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000028 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -89,6 +94,11 @@
 		F10000000000000000000025 /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		F10000000000000000000026 /* UtilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityView.swift; sourceTree = "<group>"; };
 		F10000000000000000000027 /* UserGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserGuideView.swift; sourceTree = "<group>"; };
+		F1000000000000000000002B /* SyncCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCore.swift; sourceTree = "<group>"; };
+		F1000000000000000000002C /* SyncDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDTO.swift; sourceTree = "<group>"; };
+		F1000000000000000000002D /* SwiftDataSyncSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataSyncSnapshot.swift; sourceTree = "<group>"; };
+		F1000000000000000000002E /* ManualSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualSyncView.swift; sourceTree = "<group>"; };
+		F1000000000000000000002F /* HouseBatchImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseBatchImportView.swift; sourceTree = "<group>"; };
 		F10000000000000000000028 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F10000000000000000000029 /* GongyuGuanjiaMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GongyuGuanjiaMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1000000000000000000002A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -165,6 +175,9 @@
 				F10000000000000000000013 /* CrashLogCollector.swift */,
 				F10000000000000000000014 /* LocalNotificationManager.swift */,
 				F10000000000000000000015 /* ExcelService.swift */,
+				F1000000000000000000002B /* SyncCore.swift */,
+				F1000000000000000000002C /* SyncDTO.swift */,
+				F1000000000000000000002D /* SwiftDataSyncSnapshot.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -197,6 +210,8 @@
 				F10000000000000000000025 /* TrashView.swift */,
 				F10000000000000000000026 /* UtilityView.swift */,
 				F10000000000000000000027 /* UserGuideView.swift */,
+				F1000000000000000000002E /* ManualSyncView.swift */,
+				F1000000000000000000002F /* HouseBatchImportView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -310,6 +325,11 @@
 				B10000000000000000000025 /* TrashView.swift in Sources */,
 				B10000000000000000000026 /* UtilityView.swift in Sources */,
 				B10000000000000000000027 /* UserGuideView.swift in Sources */,
+				B10000000000000000000029 /* SyncCore.swift in Sources */,
+				B1000000000000000000002A /* SyncDTO.swift in Sources */,
+				B1000000000000000000002B /* SwiftDataSyncSnapshot.swift in Sources */,
+				B1000000000000000000002C /* ManualSyncView.swift in Sources */,
+				B1000000000000000000002D /* HouseBatchImportView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

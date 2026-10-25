@@ -62,28 +62,28 @@ struct TrashView: View {
         let deleteHint = makeDeleteForever
         if filter == .all || filter == .houses {
             for h in deletedHouses {
-                out.append(TrashItem(kind: .houses, title: h.displayRoomNo, subtitle: "\(h.unitType) · 房源", deletedAt: h.deletedAt,
+                out.append(TrashItem(kind: .houses, title: h.displayRoomNo, subtitle: "\(h.layout) · 房源", deletedAt: h.deletedAt,
                                      restore: { manager.restoreHouse(h); _ = restoreHint(.houses)() },
                                      deleteForever: { manager.permanentDeleteHouse(h); _ = deleteHint(.houses)() }))
             }
         }
         if filter == .all || filter == .deals {
             for d in deletedDeals {
-                out.append(TrashItem(kind: .deals, title: "\(d.roomNo) \(d.dealType)", subtitle: "¥\(Int(d.totalFee)) · 成交", deletedAt: d.deletedAt,
+                out.append(TrashItem(kind: .deals, title: "\(d.roomNumber)", subtitle: "¥\(Int(d.totalFee)) · 成交", deletedAt: d.deletedAt,
                                      restore: { manager.restoreDeal(d); _ = restoreHint(.deals)() },
                                      deleteForever: { manager.permanentDeleteDeal(d); _ = deleteHint(.deals)() }))
             }
         }
         if filter == .all || filter == .incomes {
             for i in deletedIncomes {
-                out.append(TrashItem(kind: .incomes, title: i.title, subtitle: "¥\(Int(i.amount)) · 杂项收入", deletedAt: i.deletedAt,
+                out.append(TrashItem(kind: .incomes, title: i.item, subtitle: "¥\(Int(i.amount)) · 杂项收入", deletedAt: i.deletedAt,
                                      restore: { manager.restoreMiscIncome(i); _ = restoreHint(.incomes)() },
                                      deleteForever: { manager.permanentDeleteMiscIncome(i); _ = deleteHint(.incomes)() }))
             }
         }
         if filter == .all || filter == .expenses {
             for e in deletedExpenses {
-                out.append(TrashItem(kind: .expenses, title: e.title, subtitle: "¥\(Int(e.amount)) · 杂项支出", deletedAt: e.deletedAt,
+                out.append(TrashItem(kind: .expenses, title: e.item, subtitle: "¥\(Int(e.amount)) · 杂项支出", deletedAt: e.deletedAt,
                                      restore: { manager.restoreMiscExpense(e); _ = restoreHint(.expenses)() },
                                      deleteForever: { manager.permanentDeleteMiscExpense(e); _ = deleteHint(.expenses)() }))
             }
@@ -104,7 +104,7 @@ struct TrashView: View {
         }
         if filter == .all || filter == .todos {
             for t in deletedTodos {
-                out.append(TrashItem(kind: .todos, title: t.title, subtitle: "待办", deletedAt: t.deletedAt,
+                out.append(TrashItem(kind: .todos, title: t.content, subtitle: "待办", deletedAt: t.deletedAt,
                                      restore: { manager.restoreTodo(t); _ = restoreHint(.todos)() },
                                      deleteForever: { manager.permanentDeleteTodo(t); _ = deleteHint(.todos)() }))
             }

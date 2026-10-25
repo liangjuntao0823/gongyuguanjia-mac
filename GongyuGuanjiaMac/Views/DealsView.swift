@@ -152,6 +152,7 @@ struct DealsView: View {
     }
 
     // MARK: 杂收杂支列表
+    @ViewBuilder
     private func miscList(isIncome: Bool) -> some View {
         if isIncome {
             if incomes.isEmpty {
@@ -206,15 +207,11 @@ struct DealsView: View {
                 Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
             }
             Spacer()
-            Text("\(isIncome ? "+" : "-")¥\(FormatKit.money(row.amount))")
+            Text("+¥\(FormatKit.money(row.amount))")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(isIncome ? .themeRed : .themeAccentDark)
-            Button("编辑") {
-                if isIncome { editingIncome = row } else { editingExpense = row }
-            }.macSecondaryButton()
-            Button {
-                if isIncome { deletingIncome = row } else { deletingExpense = row }
-            } label: { Image(systemName: "trash") }.macSecondaryButton()
+                .foregroundColor(.themeRed)
+            Button("编辑") { editingIncome = row }.macSecondaryButton()
+            Button { deletingIncome = row } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
         .padding(.vertical, 3)
     }
@@ -228,22 +225,13 @@ struct DealsView: View {
                 Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
             }
             Spacer()
-            Text("\(isIncome ? "+" : "-")¥\(FormatKit.money(row.amount))")
+            Text("-¥\(FormatKit.money(row.amount))")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(isIncome ? .themeRed : .themeAccentDark)
-            Button("编辑") {
-                if isIncome { editingIncome = row } else { editingExpense = row }
-            }.macSecondaryButton()
-            Button {
-                if isIncome { deletingIncome = row } else { deletingExpense = row }
-            } label: { Image(systemName: "trash") }.macSecondaryButton()
+                .foregroundColor(.themeAccentDark)
+            Button("编辑") { editingExpense = row }.macSecondaryButton()
+            Button { deletingExpense = row } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
         .padding(.vertical, 3)
-    }
-                    }
-                }
-            }
-        }
     }
 
     // MARK: 导出 / 导入
