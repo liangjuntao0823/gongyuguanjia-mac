@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var showLogs = false
     @State private var showVersionHistory = false
     @State private var showInterconnection = false
+    @State private var showManualSync = false
     @State private var showClearSheet = false
     @State private var clearConfirm = false
     @State private var clearMessage = ""
@@ -82,6 +83,7 @@ struct SettingsView: View {
                     section("日志与历史") {
                         HStack(spacing: 10) {
                             Button("崩溃/操作日志") { showLogs = true }.macSecondaryButton()
+                            Button("手动同步/迁移") { showManualSync = true }.macSecondaryButton()
                             Button("版本更新介绍") { showVersionHistory = true }.macSecondaryButton()
                             Button("三端互通说明") { showInterconnection = true }.macSecondaryButton()
                             Spacer()
@@ -148,6 +150,7 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showVersionHistory) { VersionHistoryView { showVersionHistory = false } }
         .sheet(isPresented: $showInterconnection) { InterconnectionInfoView { showInterconnection = false } }
+        .sheet(isPresented: $showManualSync) { ManualSyncView(manager: manager) { showManualSync = false } }
         .confirmationDialog("清空数据将删除所选板块的全部记录（删除前请先备份）。",
                             isPresented: $showClearSheet, titleVisibility: .visible) {
             Button("清空成交数据", role: .destructive) { performClear(kind: .deals) }
