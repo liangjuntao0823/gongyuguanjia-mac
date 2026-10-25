@@ -424,12 +424,12 @@ struct ShareMenuView: View {
         let mediaFiles = house.mediaItems.map { ShareMediaFile(name: $0.fileName, kind: $0.kind) }
         Task {
             do {
-                let url = try await CosUploader.shareCard(
+                let link = try await CosUploader.shareCard(
                     mediaFiles: mediaFiles, roomKey: house.mediaRoomKey,
                     info: info, mode: mode, config: CosConfig.load()!
                 )
-                resultMessage = "已生成分享链接：\(url.absoluteString)"
-                resultLink = url.absoluteString
+                resultMessage = "已生成分享链接：\(link)"
+                resultLink = link
                 BackupLogStore.log("分享\(mode.modeLabel)", detail: "\(house.displayRoomNo)", kind: "local")
             } catch {
                 resultMessage = "生成失败：\(error.localizedDescription)"

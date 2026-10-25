@@ -184,7 +184,7 @@ struct BackupCenterViews: View {
                                                          uploadCloud: CosConfig.load() != nil)
             switch r {
             case .success: message = "✓ 快速备份完成"
-            case .failure(let e): message = "备份失败：\(e.localizedDescription)"
+            case .failure(let e): message = "备份失败：\(e)"
             }
             working = false
             refresh()
@@ -200,7 +200,7 @@ struct BackupCenterViews: View {
                                                         uploadCloud: CosConfig.load() != nil)
             switch r {
             case .success: message = "✓ 全量备份完成"
-            case .failure(let e): message = "备份失败：\(e.localizedDescription)"
+            case .failure(let e): message = "备份失败：\(e)"
             }
             working = false
             refresh()

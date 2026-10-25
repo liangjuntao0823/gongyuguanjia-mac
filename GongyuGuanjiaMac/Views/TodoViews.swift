@@ -4,10 +4,16 @@ import SwiftData
 // MARK: - 待办事项（轻量清单；与 iOS 版「待办」对应）
 
 struct TodoItem: Identifiable {
-    let id = UUID()
+    let id: UUID
     var title: String
     var done: Bool
     var createdAt: Date
+    init(id: UUID = UUID(), title: String, done: Bool, createdAt: Date) {
+        self.id = id
+        self.title = title
+        self.done = done
+        self.createdAt = createdAt
+    }
 }
 
 struct TodoViews: View {
