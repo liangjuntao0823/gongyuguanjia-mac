@@ -128,7 +128,7 @@ struct DashboardView: View {
         }
         .background(Color.themeBg)
         .sheet(isPresented: $showTodo) { TodoViews(manager: manager) { showTodo = false } }
-        .sheet(isPresented: $showUtility) { UtilityView(manager: manager) { showUtility = false } }
+        .sheet(isPresented: $showUtility) { UtilityView(manager: manager, onClose: { showUtility = false }) }
     }
 
     private struct ReminderItem: Identifiable {

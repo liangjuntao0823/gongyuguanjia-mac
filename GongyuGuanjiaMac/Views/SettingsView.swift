@@ -122,7 +122,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showShareSettings) { HouseSettingsView(manager: manager) { showShareSettings = false } }
         .sheet(isPresented: $showBackupCenter) { BackupCenterViews(manager: manager) { showBackupCenter = false } }
         .sheet(isPresented: $showTrash) { TrashView(manager: manager) { showTrash = false } }
-        .sheet(isPresented: $showUtility) { UtilityView(manager: manager) { showUtility = false } }
+        .sheet(isPresented: $showUtility) { UtilityView(manager: manager, onClose: { showUtility = false }) }
         .sheet(isPresented: $showUserGuide) { UserGuideView(manager: manager) { showUserGuide = false } }
         .sheet(isPresented: $showLogs) {
             VStack(spacing: 0) {
