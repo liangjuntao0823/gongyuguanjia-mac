@@ -10,7 +10,7 @@
 ## 构建
 
 ```bash
-xcodebuild -project 公寓管家Mac.xcodeproj -scheme 公寓管家 -configuration Release build
+xcodebuild -project GongyuGuanjiaMac.xcodeproj -scheme GongyuGuanjiaMac -configuration Release build
 ```
 
 或直接 GitHub Actions（.github/workflows/build.yml）自动构建 unsigned .app。
@@ -24,7 +24,7 @@ xcodebuild -project 公寓管家Mac.xcodeproj -scheme 公寓管家 -configuratio
 ## 目录
 
 ```
-公寓管家Mac/
+GongyuGuanjiaMac/
 ├── App.swift              入口 + 双容器 + 启动初始化
 ├── Theme.swift            主题
 ├── MacBridge.swift        iOS→macOS 桥接（剪贴板/文件面板/分享/保存）

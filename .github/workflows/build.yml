@@ -18,7 +18,7 @@ jobs:
 
       - name: Build (unsigned, ad-hoc)
         run: |
-          xcodebuild -project 公寓管家Mac.xcodeproj -scheme 公寓管家 \
+          xcodebuild -project GongyuGuanjiaMac.xcodeproj -scheme GongyuGuanjiaMac \
             -configuration Release \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
@@ -27,10 +27,10 @@ jobs:
 
       - name: Package .app
         run: |
-          APP_PATH="build/Build/Products/Release/公寓管家.app"
+          APP_PATH="build/Build/Products/Release/GongyuGuanjiaMac.app"
           VERSION=$(defaults read "$APP_PATH/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "1.0")
           mkdir -p dist
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "dist/公寓管家Mac-$VERSION.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "dist/GongyuGuanjiaMac-$VERSION.zip"
           echo "--- 产物 ---"
           ls -la dist/
           echo "VERSION=$VERSION" >> $GITHUB_ENV

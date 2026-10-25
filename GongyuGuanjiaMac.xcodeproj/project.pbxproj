@@ -90,7 +90,7 @@
 		F10000000000000000000026 /* UtilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityView.swift; sourceTree = "<group>"; };
 		F10000000000000000000027 /* UserGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserGuideView.swift; sourceTree = "<group>"; };
 		F10000000000000000000028 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F10000000000000000000029 /* 公寓管家.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = 公寓管家.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F10000000000000000000029 /* GongyuGuanjiaMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GongyuGuanjiaMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1000000000000000000002A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -108,12 +108,12 @@
 		D10000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				D10000000000000000000002 /* 公寓管家Mac */,
+				D10000000000000000000002 /* GongyuGuanjiaMac */,
 				D10000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		D10000000000000000000002 /* 公寓管家Mac */ = {
+		D10000000000000000000002 /* GongyuGuanjiaMac */ = {
 			isa = PBXGroup;
 			children = (
 				F10000000000000000000001 /* App.swift */,
@@ -126,13 +126,13 @@
 				F10000000000000000000028 /* Assets.xcassets */,
 				F1000000000000000000002A /* Info.plist */,
 			);
-			path = 公寓管家Mac;
+			path = GongyuGuanjiaMac;
 			sourceTree = "<group>";
 		};
 		D10000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F10000000000000000000029 /* 公寓管家.app */,
+				F10000000000000000000029 /* GongyuGuanjiaMac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -204,9 +204,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A10000000000000000000001 /* 公寓管家 */ = {
+		A10000000000000000000001 /* GongyuGuanjiaMac */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C10000000000000000000002 /* Build configuration list for PBXNativeTarget "公寓管家" */;
+			buildConfigurationList = C10000000000000000000002 /* Build configuration list for PBXNativeTarget "GongyuGuanjiaMac" */;
 			buildPhases = (
 				E10000000000000000000001 /* Sources */,
 				E10000000000000000000002 /* Frameworks */,
@@ -216,9 +216,9 @@
 			);
 			dependencies = (
 			);
-			name = 公寓管家;
-			productName = 公寓管家;
-			productReference = F10000000000000000000029 /* 公寓管家.app */;
+			name = GongyuGuanjiaMac;
+			productName = GongyuGuanjiaMac;
+			productReference = F10000000000000000000029 /* GongyuGuanjiaMac.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -236,7 +236,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C10000000000000000000001 /* Build configuration list for PBXProject "公寓管家Mac" */;
+			buildConfigurationList = C10000000000000000000001 /* Build configuration list for PBXProject "GongyuGuanjiaMac" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = zh-Hans;
 			hasScannedForEncodings = 0;
@@ -250,7 +250,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A10000000000000000000001 /* 公寓管家 */,
+				A10000000000000000000001 /* GongyuGuanjiaMac */,
 			);
 		};
 /* End PBXProject section */
@@ -437,7 +437,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = 公寓管家Mac/Info.plist;
+				INFOPLIST_FILE = GongyuGuanjiaMac/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -458,7 +458,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = 公寓管家Mac/Info.plist;
+				INFOPLIST_FILE = GongyuGuanjiaMac/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -474,7 +474,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C10000000000000000000001 /* Build configuration list for PBXProject "公寓管家Mac" */ = {
+		C10000000000000000000001 /* Build configuration list for PBXProject "GongyuGuanjiaMac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				G10000000000000000000001 /* Debug */,
@@ -483,7 +483,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C10000000000000000000002 /* Build configuration list for PBXNativeTarget "公寓管家" */ = {
+		C10000000000000000000002 /* Build configuration list for PBXNativeTarget "GongyuGuanjiaMac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				G10000000000000000000003 /* Debug */,
