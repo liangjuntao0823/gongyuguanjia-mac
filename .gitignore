@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Xcode
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# SwiftPM
+.build/
+
+# 产物
+dist/
+*.ipa
+*.dmg

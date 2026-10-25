@@ -1,0 +1,43 @@
+name: Build Mac App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app || echo "使用默认Xcode"
+
+      - name: Build (unsigned, ad-hoc)
+        run: |
+          xcodebuild -project 公寓管家Mac.xcodeproj -scheme 公寓管家 \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package .app
+        run: |
+          APP_PATH="build/Build/Products/Release/公寓管家.app"
+          VERSION=$(defaults read "$APP_PATH/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "1.0")
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "dist/公寓管家Mac-$VERSION.zip"
+          echo "--- 产物 ---"
+          ls -la dist/
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gongyuguanjia-mac-${{ env.VERSION }}
+          path: dist/*.zip
+          if-no-files-found: error
