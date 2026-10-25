@@ -81,6 +81,7 @@ struct HouseListView: View {
     @State private var viewMode = "网格"
     @State private var selectedHouse: House?
     @State private var showNew = false
+    @State private var showBatchImport = false
 
     private var houses: [House] { manager.houses }
 
@@ -114,6 +115,12 @@ struct HouseListView: View {
                 Text("房源管理")
                     .font(.system(size: 19, weight: .bold))
                 Spacer()
+                Button {
+                    showBatchImport = true
+                } label: {
+                    Label("批量导入", systemImage: "square.and.arrow.down")
+                }
+                .macSecondaryButton()
                 Button {
                     showNew = true
                 } label: {
@@ -225,6 +232,11 @@ struct HouseListView: View {
         .sheet(item: $selectedHouse) { house in
             HouseDetailView(manager: manager, house: house) {
                 selectedHouse = nil
+            }
+        }
+        .sheet(isPresented: $showBatchImport) {
+            HouseBatchImportView(manager: manager) {
+                showBatchImport = false
             }
         }
     }
