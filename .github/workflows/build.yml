@@ -16,18 +16,21 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app || echo "使用默认Xcode"
 
-      - name: "Build (unsigned, universal x86_64+arm64)"
+      - name: "Build (ad-hoc signed, universal x86_64+arm64)"
         run: |
           xcodebuild -project GongyuGuanjiaMac.xcodeproj -scheme GongyuGuanjiaMac \
             -configuration Release \
             -derivedDataPath build \
             ARCHS="x86_64 arm64" \
             ONLY_ACTIVE_ARCH=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
             build
           echo "=== 产物架构 ==="
           file build/Build/Products/Release/GongyuGuanjiaMac.app/Contents/MacOS/GongyuGuanjiaMac || lipo -info build/Build/Products/Release/GongyuGuanjiaMac.app/Contents/MacOS/GongyuGuanjiaMac
+          echo "=== 签名状态 ==="
+          codesign -dv build/Build/Products/Release/GongyuGuanjiaMac.app 2>&1 | head -5
 
       - name: Package .app
         run: |
