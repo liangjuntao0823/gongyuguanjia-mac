@@ -121,7 +121,7 @@ final class DataManager: ObservableObject {
         houseContext.insert(house)
         var usedNames = Set(house.mediaItems.map { $0.fileName })
         for (url, kind) in mediaFiles {
-            let fileName = makeMediaFileName(roomKey: house.mediaRoomKey, sourceName: url.lastPathComponent, kind: kind, usedNames: usedNames)
+            let fileName = Self.makeMediaFileName(roomKey: house.mediaRoomKey, sourceName: url.lastPathComponent, kind: kind, usedNames: usedNames)
             usedNames.insert(fileName)
             if let data = try? Data(contentsOf: url) {
                 MediaStore.save(data: data, fileName: fileName, roomKey: house.mediaRoomKey)
@@ -158,7 +158,7 @@ final class DataManager: ObservableObject {
 
     func addMedia(to house: House, url: URL, kind: String) {
         var usedNames = Set(house.mediaItems.map { $0.fileName })
-        let fileName = makeMediaFileName(roomKey: house.mediaRoomKey, sourceName: url.lastPathComponent, kind: kind, usedNames: usedNames)
+        let fileName = Self.makeMediaFileName(roomKey: house.mediaRoomKey, sourceName: url.lastPathComponent, kind: kind, usedNames: usedNames)
         usedNames.insert(fileName)
         if let data = try? Data(contentsOf: url) {
             MediaStore.save(data: data, fileName: fileName, roomKey: house.mediaRoomKey)
