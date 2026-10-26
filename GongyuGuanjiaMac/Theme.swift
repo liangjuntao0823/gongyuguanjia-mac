@@ -18,6 +18,8 @@ extension Color {
     static let themeOrange = Color(red: 0.94, green: 0.55, blue: 0.10)
     static let themeWarning = Color(red: 0.85, green: 0.60, blue: 0.10)
     static let themeBlue = Color(red: 0.10, green: 0.42, blue: 0.80)
+    static let themeAmber = Color(red: 0.85, green: 0.60, blue: 0.10)   // 琥珀（需结算水电）
+    static let themeAccentWeak = Color(red: 0.85, green: 0.93, blue: 0.89) // 浅绿底（已刷新提示）
 
     /// 从十六进制字符串创建颜色（如 "7B61FF"）
     init(hex: String) {
