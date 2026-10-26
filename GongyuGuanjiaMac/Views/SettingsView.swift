@@ -536,6 +536,10 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.1", "2026-10-27", [
+            "修复收租/包租板块排版：卡片恢复桌面端全宽横排（上一版误改为窄网格导致信息挤压错乱）",
+            "包租/收租卡片操作按钮改为横排（详情/编辑/删除），符合 Mac 桌面操作习惯",
+        ]),
         ("v1.2", "2026-10-27", [
             "房源数据字段与 iOS 完全对齐（房号前缀 1-/2-、photoSummary 有/无实拍图、lastUpdatedAt），双向同步互通",
             "批量导入三入口：CSV 清单 / zip 媒体包 / 扫描 media 补录，无前缀房号标红跳过",

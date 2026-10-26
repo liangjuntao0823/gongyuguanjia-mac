@@ -116,7 +116,7 @@ struct PayoutView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 260, maximum: 340), spacing: 12)], spacing: 12) {
+                    LazyVStack(spacing: 12) {
                         ForEach(filteredPayouts) { payout in
                             PayoutRow(payout: payout,
                                       nextInfo: nextPayoutInfo(for: payout),
@@ -284,12 +284,12 @@ struct PayoutRow: View {
     }
 
     private var actionColumn: some View {
-        VStack(spacing: 6) {
+        HStack(spacing: 6) {
             Button("详情") { onTap() }.macSecondaryButton()
             Button("编辑") { onEdit() }.macSecondaryButton()
             Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
-        .frame(width: 60)
+        .frame(width: 200)
     }
 }
 

@@ -102,7 +102,7 @@ struct RentCollectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 250, maximum: 330), spacing: 12)], spacing: 12) {
+                    LazyVStack(spacing: 12) {
                         ForEach(filteredProperties) { prop in
                             if prop.isTerminated {
                                 TerminatedPropertyRow(prop: prop,
@@ -289,12 +289,12 @@ struct PropertyRentCard: View {
     }
 
     private var actionColumn: some View {
-        VStack(spacing: 6) {
+        HStack(spacing: 6) {
             Button("编辑") { onEdit() }.macSecondaryButton()
             Button("退租") { onTerminate() }.macSecondaryButton()
             Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
-        .frame(width: 60)
+        .frame(width: 190)
     }
 }
 
