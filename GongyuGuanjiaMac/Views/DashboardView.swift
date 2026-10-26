@@ -268,33 +268,14 @@ struct DashboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 顶栏用户区（对齐 iOS：标题 + 副标题(剩余天数) + 右侧时间日期）
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0.91, green: 0.91, blue: 0.91))
-                    .frame(width: 46, height: 46)
-                    .overlay(Image(systemName: "person.fill").font(.system(size: 20)).foregroundColor(.white))
-                VStack(alignment: .leading, spacing: 5) {
-                    Button { editText = userTitle; showEditTitle = true } label: {
-                        Text(userTitle)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.themeText)
-                            .lineLimit(1)
-                    }
-                    .buttonStyle(.plain)
-                    MonthCountdownView(month: currentMonth,
-                                       days: timeRemainingInMonth.days,
-                                       hours: timeRemainingInMonth.hours)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(timeString).font(.system(size: 20, weight: .bold)).foregroundColor(.themeText)
-                    Text(dateStringShort).font(.system(size: 14)).foregroundColor(.themeText2)
-                }
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 14)
-            .padding(.bottom, 12)
+            // 顶栏用户区（对齐 iOS：标题 + 副标题(剩余天数) + 右侧时间日期；拆分子视图避免类型检查超时）
+            UserHeaderView(userTitle: userTitle,
+                           currentMonth: currentMonth,
+                           remainDays: timeRemainingInMonth.days,
+                           remainHours: timeRemainingInMonth.hours,
+                           timeString: timeString,
+                           dateStringShort: dateStringShort,
+                           onEditTitle: { editText = userTitle; showEditTitle = true })
             Divider()
 
             ScrollView {
@@ -929,5 +910,44 @@ struct MonthCountdownView: View {
             Text("\(hours)").font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
             Text("小时，加油").font(.system(size: 14)).foregroundColor(.themeText2)
         }
+    }
+}
+
+// MARK: - 顶栏用户区（对齐 iOS：头像 + 标题 + 剩余天数 + 右侧时间日期）
+
+struct UserHeaderView: View {
+    let userTitle: String
+    let currentMonth: Int
+    let remainDays: Int
+    let remainHours: Int
+    let timeString: String
+    let dateStringShort: String
+    let onEditTitle: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(red: 0.91, green: 0.91, blue: 0.91))
+                .frame(width: 46, height: 46)
+                .overlay(Image(systemName: "person.fill").font(.system(size: 20)).foregroundColor(.white))
+            VStack(alignment: .leading, spacing: 5) {
+                Button(action: onEditTitle) {
+                    Text(userTitle)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.themeText)
+                        .lineLimit(1)
+                }
+                .buttonStyle(.plain)
+                MonthCountdownView(month: currentMonth, days: remainDays, hours: remainHours)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(timeString).font(.system(size: 20, weight: .bold)).foregroundColor(.themeText)
+                Text(dateStringShort).font(.system(size: 14)).foregroundColor(.themeText2)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
     }
 }

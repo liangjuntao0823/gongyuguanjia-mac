@@ -24,6 +24,11 @@ enum LocalNotificationManager {
         set { UserDefaults.standard.set(newValue, forKey: "notify.advanceDays") }
     }
 
+    /// 按提醒类型读取声音设置（system/custom，设置页可调）
+    static func soundKey(for kind: String) -> String {
+        UserDefaults.standard.string(forKey: kind) ?? "system"
+    }
+
     // MARK: 定时提醒（一次性）
 
     static func schedule(title: String, body: String, at date: Date, id: String, tab: Int? = nil, soundKind: String? = nil) {

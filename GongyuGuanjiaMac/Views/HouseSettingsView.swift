@@ -37,6 +37,7 @@ struct HouseSettingsView: View {
     @State private var roomsLink = ""
     @State private var generatingRooms = false
     @State private var roomsMessage = ""
+    @State private var roomsLinkExpiry = 2   // 选房链接有效期（天），默认 2，iOS 同 key
 
     @State private var qrPreview: NSImage?
     @State private var hasQR = false
