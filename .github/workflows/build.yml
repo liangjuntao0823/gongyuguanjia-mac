@@ -31,13 +31,6 @@ jobs:
           echo "=== 签名状态 ==="
           codesign -dv build/Build/Products/Release/GongyuGuanjiaMac.app 2>&1 | head -5
 
-      - name: Ad-hoc codesign (防止 macOS 报已损坏)
-        run: |
-          APP_PATH="build/Build/Products/Release/GongyuGuanjiaMac.app"
-          codesign --force --deep --sign - "$APP_PATH"
-          echo "=== 签名后状态 ==="
-          codesign -dv "$APP_PATH" 2>&1 | head -5
-
       - name: Package .app
         run: |
           APP_PATH="build/Build/Products/Release/GongyuGuanjiaMac.app"
