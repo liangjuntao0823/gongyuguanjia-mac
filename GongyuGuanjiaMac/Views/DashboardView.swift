@@ -572,7 +572,6 @@ struct DashboardView: View {
             ScrollView {
                 dashboardContent
             }
-            }
             .background(Color.themeBg)
         }
         .onAppear {

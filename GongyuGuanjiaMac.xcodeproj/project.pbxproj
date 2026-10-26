@@ -31,7 +31,7 @@
 		B10000000000000000000016 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000016 /* DataManager.swift */; };
 		B10000000000000000000017 /* MainSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000017 /* MainSidebar.swift */; };
 		B10000000000000000000018 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000018 /* DashboardView.swift */; };
-		B10000000000000000000029 /* BillAndMediaViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000029 /* BillAndMediaViews.swift */; };
+		B10000000000000000000030 /* BillAndMediaViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000030 /* BillAndMediaViews.swift */; };
 		B10000000000000000000019 /* HouseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000019 /* HouseListView.swift */; };
 		B1000000000000000000001A /* HouseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000001A /* HouseDetailView.swift */; };
 		B1000000000000000000001B /* HouseEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000001B /* HouseEditView.swift */; };
@@ -80,7 +80,7 @@
 		F10000000000000000000016 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		F10000000000000000000017 /* MainSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSidebar.swift; sourceTree = "<group>"; };
 		F10000000000000000000018 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
-		F10000000000000000000029 /* BillAndMediaViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillAndMediaViews.swift; sourceTree = "<group>"; };
+		F10000000000000000000030 /* BillAndMediaViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillAndMediaViews.swift; sourceTree = "<group>"; };
 		F10000000000000000000019 /* HouseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseListView.swift; sourceTree = "<group>"; };
 		F1000000000000000000001A /* HouseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseDetailView.swift; sourceTree = "<group>"; };
 		F1000000000000000000001B /* HouseEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HouseEditView.swift; sourceTree = "<group>"; };
@@ -197,7 +197,7 @@
 			children = (
 				F10000000000000000000017 /* MainSidebar.swift */,
 				F10000000000000000000018 /* DashboardView.swift */,
-				F10000000000000000000029 /* BillAndMediaViews.swift */,
+				F10000000000000000000030 /* BillAndMediaViews.swift */,
 				F10000000000000000000019 /* HouseListView.swift */,
 				F1000000000000000000001A /* HouseDetailView.swift */,
 				F1000000000000000000001B /* HouseEditView.swift */,
@@ -313,7 +313,7 @@
 				B10000000000000000000016 /* DataManager.swift in Sources */,
 				B10000000000000000000017 /* MainSidebar.swift in Sources */,
 				B10000000000000000000018 /* DashboardView.swift in Sources */,
-				B10000000000000000000029 /* BillAndMediaViews.swift in Sources */,
+				B10000000000000000000030 /* BillAndMediaViews.swift in Sources */,
 				B10000000000000000000019 /* HouseListView.swift in Sources */,
 				B1000000000000000000001A /* HouseDetailView.swift in Sources */,
 				B1000000000000000000001B /* HouseEditView.swift in Sources */,
