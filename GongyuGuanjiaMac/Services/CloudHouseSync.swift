@@ -1,8 +1,9 @@
 import Foundation
 import SwiftData
 
-// MARK: - 云端房源同步（与 iOS 版同机制：共享账本 h/_houses.json + 媒体 h/<roomKey>/）
-// v1.2 对齐 iOS：状态值域英文(available/rented)、房号带 1-/2- 前缀、404=空账本、云端删除跟随删除、同步差异确认
+// MARK: - 云端房源同步（与 iOS 版同机制：一房一文件账本 h/<roomKey>/info.json + 媒体同目录）
+// v1.2.1 对齐 iOS v1.71 方案 A：不再使用 h/_houses.json 汇总文件；
+// 状态值域英文(available/rented)、房号带 1-/2- 前缀、404=空账本、云端删除跟随删除、同步差异确认
 
 enum CloudSyncResult {
     case success(added: Int, updated: Int, removed: Int, detail: String)
@@ -43,19 +44,30 @@ enum CloudHouseSync {
         return roomNo
     }
 
-    // MARK: 上传本机全部房源到账本
+    // MARK: 上传本机全部房源到账本（一房一文件）
 
-    /// 把本地房源全量写入云端账本（覆盖写，最后写入优先，与 iOS 一致）
+    /// 单套账本对象路径（媒体与账本同目录，与 iOS recordPath 一致）
+    static func recordPath(roomKey: String) -> String {
+        "h/\(roomKey)/info.json"
+    }
+
+    /// 把本地房源逐套写入云端账本（修改一套只写一套，最后写入优先，与 iOS v1.71 一致）
     static func pushAll(houseContext: ModelContext) async -> CloudSyncResult {
         guard let config = CosConfig.load() else { return .failure("未配置云存储") }
-        var records: [CloudHouseRecord] = []
         do {
             let houses = try houseContext.fetch(FetchDescriptor<House>())
+            var pushed = 0
+            var removed = 0
             for house in houses {
-                guard house.isDeleted != true else { continue }
+                if house.isDeleted == true {
+                    // 本地已删除（回收站/彻底删除）→ 云端账本删除该套（媒体目录保留，恢复不丢图）
+                    try? await CosUploader.deleteObject(path: recordPath(roomKey: house.mediaRoomKey), config: config)
+                    removed += 1
+                    continue
+                }
                 let mediaNames = house.mediaItems.map { $0.fileName }
                 let effectiveUpdatedAt = house.lastUpdatedAt ?? house.updatedAt
-                records.append(CloudHouseRecord(
+                let record = CloudHouseRecord(
                     roomKey: house.mediaRoomKey,
                     roomNo: roomNoToCloud(house.roomNo, tower: house.tower),
                     tower: house.tower,
@@ -68,13 +80,50 @@ enum CloudHouseSync {
                     updatedAt: effectiveUpdatedAt,
                     updatedBy: CloudUser.username,
                     mediaNames: mediaNames
-                ))
+                )
+                try await saveRecord(record, config: config)
+                pushed += 1
             }
-            try await CloudHouseLedger.save(records, config: config)
-            return .success(added: records.count, updated: 0, removed: 0, detail: "已上传 \(records.count) 套")
+            let detail = "已上传 \(pushed) 套" + (removed > 0 ? "，云端删除 \(removed) 套" : "")
+            return .success(added: pushed, updated: 0, removed: removed, detail: detail)
         } catch {
             return .failure(error.localizedDescription)
         }
+    }
+
+    /// 写单套账本（覆盖写，JSON ISO8601 日期，与 iOS saveRecord 同构）
+    static func saveRecord(_ record: CloudHouseRecord, config: CosConfig) async throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(record)
+        try await CosUploader.upload(data: data, to: recordPath(roomKey: record.roomKey),
+                                     contentType: "application/json", config: config)
+    }
+
+    /// 拉取云端全部账本（一房一文件）：列出 h/ 下全部对象 → 过滤各房 info.json → 并发读取
+    /// 404（某套无 info.json）跳过该套；列表/网络/非 404 一律报错（绝不当作空账本误删本地）
+    static func fetchAll(config: CosConfig) async throws -> [CloudHouseRecord] {
+        let objects = try await CosUploader.listObjects(prefix: "h/", config: config)
+        var keys = Set<String>()
+        for obj in objects {
+            // h/<roomKey>/info.json 形式（忽略 _houses.json 等历史散文件与媒体文件）
+            let name = obj.name
+            guard name.hasSuffix("/info.json"), !name.contains("_houses.json") else { continue }
+            let parts = name.split(separator: "/").map(String.init)
+            if parts.count == 3 && parts[0] == "h" { keys.insert(parts[1]) }
+        }
+        var records: [CloudHouseRecord] = []
+        for key in keys.sorted() {
+            do {
+                let data = try await CosUploader.fetchObjectData(path: recordPath(roomKey: key), config: config)
+                if let r = try? JSONDecoder().decode(CloudHouseRecord.self, from: data) {
+                    records.append(r)
+                }
+            } catch let e as CosObjectNotFoundError {
+                _ = e   // 该套无账本 → 跳过
+            }
+        }
+        return records
     }
 
     // MARK: 从云端拉取合并（dryRun 模式返回差异明细，apply 模式执行写入）
@@ -88,12 +137,11 @@ enum CloudHouseSync {
                              progress: ((Double, String) -> Void)? = nil) async -> CloudSyncResult {
         guard let config = CosConfig.load() else { return .failure("未配置云存储") }
 
-        let fetchResult = await CloudHouseLedger.fetch(config: config)
-        guard case .success(let cloudRecords) = fetchResult else {
-            if case .failure(let e) = fetchResult {
-                return .failure("无法读取云端账本：\(e.localizedDescription)")
-            }
-            return .failure("无法读取云端账本")
+        let cloudRecords: [CloudHouseRecord]
+        do {
+            cloudRecords = try await fetchAll(config: config)
+        } catch {
+            return .failure("无法读取云端账本：\(error.localizedDescription)")
         }
 
         let localHouses = (try? houseContext.fetch(FetchDescriptor<House>())) ?? []
