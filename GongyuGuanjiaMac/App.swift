@@ -101,7 +101,15 @@ struct GongyuGuanjiaMacApp: App {
         // 建立目录骨架
         DataRoot.ensureAll()
 
-        // 双容器（容器 schema 由各配置自动推断全集，避免 13+2 模型与顶层 schema 不一致导致启动 fatalError）
+        // 双容器：容器级 schema 必须是所有配置模型的并集（13 经营 + 2 房源），否则 SwiftData 启动 fatalError
+        let schema = Schema([
+            DealRecord.self, Property.self, PayoutRecord.self,
+            RentMonthRecord.self, UtilityQuarterRecord.self, UtilitySettlementRecord.self,
+            UtilitySettlementHistory.self, TodoItem.self,
+            MiscIncome.self, MiscExpense.self,
+            PayoutMonthRecord.self, PayoutUtilityRecord.self, ProfitCalculation.self,
+            House.self, MediaItem.self,
+        ])
         // 主容器（经营数据）
         let mainConfig = ModelConfiguration("Main", schema: Schema([
             DealRecord.self, Property.self, PayoutRecord.self,
@@ -118,7 +126,7 @@ struct GongyuGuanjiaMacApp: App {
         var main: ModelContainer?
         var house: ModelContainer?
         do {
-            main = try ModelContainer(for: nil, configurations: [mainConfig, houseConfig])
+            main = try ModelContainer(for: schema, configurations: [mainConfig, houseConfig])
             house = main
         } catch {
             // 降级：隔离损坏 store 后重试
@@ -131,11 +139,11 @@ struct GongyuGuanjiaMacApp: App {
                 }
             }
             do {
-                main = try ModelContainer(for: nil, configurations: [mainConfig, houseConfig])
+                main = try ModelContainer(for: schema, configurations: [mainConfig, houseConfig])
                 house = main
             } catch {
                 do {
-                    main = try ModelContainer(for: nil, configurations: [mainConfig, houseConfig])
+                    main = try ModelContainer(for: schema, configurations: [mainConfig, houseConfig])
                     house = main
                 } catch {
                     // 内存临时模式
@@ -145,7 +153,7 @@ struct GongyuGuanjiaMacApp: App {
                                                                              MiscIncome.self, MiscExpense.self,
                                                                              PayoutMonthRecord.self, PayoutUtilityRecord.self, ProfitCalculation.self]), isStoredInMemoryOnly: true)
                     let memHouse = ModelConfiguration("House", schema: Schema([House.self, MediaItem.self]), isStoredInMemoryOnly: true)
-                    main = try? ModelContainer(for: nil, configurations: [memMain, memHouse])
+                    main = try? ModelContainer(for: schema, configurations: [memMain, memHouse])
                     house = main
                     if main == nil {
                         fatalError("数据库无法创建")
