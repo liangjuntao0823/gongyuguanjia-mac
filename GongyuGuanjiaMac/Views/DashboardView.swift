@@ -707,7 +707,8 @@ struct DashboardSectionCard<Content: View, Trailing: View>: View {
     let title: String
     let subtitle: String
     @Binding var isCollapsed: Bool
-    @ViewBuilder let trailing: () -> Trailing
+    // 默认空尾部视图：调用方可不传 trailing（成员式 init 自动获得默认值）
+    @ViewBuilder var trailing: () -> Trailing = { EmptyView() }
     @ViewBuilder let content: () -> Content
 
     var body: some View {
