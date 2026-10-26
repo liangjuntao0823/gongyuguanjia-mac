@@ -282,16 +282,9 @@ struct DashboardView: View {
                             .lineLimit(1)
                     }
                     .buttonStyle(.plain)
-                    HStack(spacing: 0) {
-                        Text("\(currentMonth)月还剩")
-                            .font(.system(size: 14)).foregroundColor(.themeText2)
-                        Text("\(timeRemainingInMonth.days)")
-                            .font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
-                        Text("天").font(.system(size: 14)).foregroundColor(.themeText2)
-                        Text("\(timeRemainingInMonth.hours)")
-                            .font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
-                        Text("小时，加油").font(.system(size: 14)).foregroundColor(.themeText2)
-                    }
+                    MonthCountdownView(month: currentMonth,
+                                       days: timeRemainingInMonth.days,
+                                       hours: timeRemainingInMonth.hours)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
@@ -918,5 +911,23 @@ struct TodoFormView: View {
         }
         manager.refreshData()
         onClose()
+    }
+}
+
+// MARK: - 月份倒计时（顶栏副标题，拆分子视图避免类型检查超时）
+
+struct MonthCountdownView: View {
+    let month: Int
+    let days: Int
+    let hours: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("\(month)月还剩").font(.system(size: 14)).foregroundColor(.themeText2)
+            Text("\(days)").font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
+            Text("天").font(.system(size: 14)).foregroundColor(.themeText2)
+            Text("\(hours)").font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
+            Text("小时，加油").font(.system(size: 14)).foregroundColor(.themeText2)
+        }
     }
 }
