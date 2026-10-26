@@ -266,20 +266,23 @@ struct DashboardView: View {
 
     // MARK: - Body
 
-    var body: some View {
-        VStack(spacing: 0) {
-            // 顶栏用户区（对齐 iOS：标题 + 副标题(剩余天数) + 右侧时间日期；拆分子视图避免类型检查超时）
-            UserHeaderView(userTitle: userTitle,
-                           currentMonth: currentMonth,
-                           remainDays: timeRemainingInMonth.days,
-                           remainHours: timeRemainingInMonth.hours,
-                           timeString: timeString,
-                           dateStringShort: dateStringShort,
-                           onEditTitle: { editText = userTitle; showEditTitle = true })
-            Divider()
+    // MARK: 工作台分区（拆分子视图，避免编译器类型检查超时）
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+    @ViewBuilder private var dashboardContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            refreshTipRow
+            quickActionsSection
+            kpiSection
+            todoSection
+            rentReminderSection
+            payoutReminderSection
+            expiringSection
+            refreshButtonRow
+        }
+        .padding(18)
+    }
+
+    @ViewBuilder private var refreshTipRow: some View {
                     if showRefreshTip {
                         HStack {
                             Spacer()
@@ -293,6 +296,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var quickActionsSection: some View {
                     // 快捷操作（8 个，全部打开编辑表单）
                     DashboardSectionCard(title: "快捷操作", subtitle: "", isCollapsed: $quickActionsCollapsed) {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
@@ -307,6 +313,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var kpiSection: some View {
                     // KPI 看板（6 卡，对齐 iOS）
                     DashboardSectionCard(title: "KPI 看板", subtitle: "", isCollapsed: $kpiCollapsed) {
                         VStack(spacing: 10) {
@@ -344,6 +353,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var todoSection: some View {
                     // 待办事项
                     DashboardSectionCard(title: "待办事项", subtitle: "\(pendingTodos.count)项", isCollapsed: $todosCollapsed, trailing: {
                         Button("全部待办") { showAllTodos = true }
@@ -388,6 +400,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var rentReminderSection: some View {
                     // 未收租提醒
                     DashboardSectionCard(title: "未收租提醒", subtitle: "\(rentReminders.count)套", isCollapsed: $rentReminderCollapsed) {
                         if rentReminders.isEmpty {
@@ -434,6 +449,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var payoutReminderSection: some View {
                     // 包租房付租提醒
                     DashboardSectionCard(title: "包租房付租提醒", subtitle: "\(payoutReminders.count)套", isCollapsed: $payoutReminderCollapsed) {
                         if payoutReminders.isEmpty {
@@ -479,6 +497,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var expiringSection: some View {
                     // 即将到期（前 3 套）
                     DashboardSectionCard(title: "即将到期", subtitle: "\(stats.expiringSoon.count)套", isCollapsed: $expiryCollapsed) {
                         if stats.expiringSoon.isEmpty {
@@ -516,6 +537,9 @@ struct DashboardView: View {
                         }
                     }
 
+    }
+
+    @ViewBuilder private var refreshButtonRow: some View {
                     // 刷新
                     HStack {
                         Spacer()
@@ -531,8 +555,23 @@ struct DashboardView: View {
                         .macSecondaryButton()
                     }
                     .padding(.bottom, 8)
-                }
-                .padding(18)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 顶栏用户区（对齐 iOS：标题 + 副标题(剩余天数) + 右侧时间日期；拆分子视图避免类型检查超时）
+            UserHeaderView(userTitle: userTitle,
+                           currentMonth: currentMonth,
+                           remainDays: timeRemainingInMonth.days,
+                           remainHours: timeRemainingInMonth.hours,
+                           timeString: timeString,
+                           dateStringShort: dateStringShort,
+                           onEditTitle: { editText = userTitle; showEditTitle = true })
+            Divider()
+
+            ScrollView {
+                dashboardContent
+            }
             }
             .background(Color.themeBg)
         }
