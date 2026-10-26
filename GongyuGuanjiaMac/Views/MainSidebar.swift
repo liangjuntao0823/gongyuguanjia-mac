@@ -23,11 +23,11 @@ struct MainSidebar: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("公寓管家")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
                         .padding(.leading, 14)
                         .padding(.top, 16)
                     Text("Mac 版 · v\(MacBridge.appVersion)")
-                        .font(.system(size: 12))
+                        .font(.system(size: 14))
                         .foregroundColor(.themeText3)
                         .padding(.leading, 14)
                         .padding(.top, 1)
@@ -39,16 +39,16 @@ struct MainSidebar: View {
                     Button {
                         manager.selectedTab = tab
                     } label: {
-                        HStack(spacing: 9) {
+                        HStack(spacing: 10) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 15))
-                                .frame(width: 20)
+                                .font(.system(size: 18))
+                                .frame(width: 22)
                             Text(tab.rawValue)
-                                .font(.system(size: 13, weight: manager.selectedTab == tab ? .semibold : .regular))
+                                .font(.system(size: 16, weight: manager.selectedTab == tab ? .semibold : .regular))
                             Spacer()
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 13)
+                        .padding(.vertical, 9)
                         .foregroundColor(manager.selectedTab == tab ? Color.white : Color.themeText)
                         .background(manager.selectedTab == tab ? Color.themeAccent : Color.clear)
                         .cornerRadius(8)
@@ -62,16 +62,16 @@ struct MainSidebar: View {
                 // 底部用户信息
                 VStack(alignment: .leading, spacing: 4) {
                     Text("当前用户：\(CloudUser.displayName)")
-                        .font(.system(size: 13))
+                        .font(.system(size: 15))
                     Text("云配置：\(CosConfig.load() != nil ? "已配置" : "未配置")")
-                        .font(.system(size: 13))
+                        .font(.system(size: 15))
                         .foregroundColor(CosConfig.load() != nil ? .themeAccent : .themeDanger)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.gray.opacity(0.07))
             }
-            .frame(width: 190)
+            .frame(width: 210)
             .background(Color(red: 0.965, green: 0.968, blue: 0.97))
 
             Divider()
@@ -143,20 +143,20 @@ struct InitWizardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("首次使用 · 云端配置")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button {
                     onClose()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(size: 19))
                         .foregroundColor(.gray)
                 }
                 .buttonStyle(.plain)
             }
 
             Text("填写与 iOS 版相同的腾讯云 COS 配置和云函数地址，房源数据即可与 iOS 版互通。")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundColor(.themeText2)
 
             Group {
@@ -172,7 +172,7 @@ struct InitWizardView: View {
 
             if !message.isEmpty {
                 Text(message)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(success ? .themeAccent : .themeDanger)
             }
 

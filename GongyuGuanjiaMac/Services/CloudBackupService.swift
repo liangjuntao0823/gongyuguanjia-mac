@@ -73,6 +73,15 @@ enum CloudBackupService {
         set { UserDefaults.standard.set(newValue, forKey: "autoBackupRetentionDays") }
     }
 
+    /// 频率中文标签（设置页/备份中心共用）
+    static var frequencyLabel: String {
+        switch autoBackupFrequency {
+        case "weekly": return "每周"
+        case "monthly": return "每月"
+        default: return "每天"
+        }
+    }
+
     /// 按频率判断距上次备份是否到期
     private static func backupInterval() -> TimeInterval {
         switch autoBackupFrequency {

@@ -82,7 +82,7 @@ struct ProfitView: View {
         VStack(spacing: 0) {
             HStack {
                 Text("汇总 · \(filteredTotal.year)年")
-                    .font(.system(size: 19, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                 Spacer()
                 Button("刷新") {
                     NotificationCenter.default.post(name: .macDataChanged, object: nil)
@@ -112,10 +112,10 @@ struct ProfitView: View {
                     // 月度列表
                     VStack(alignment: .leading, spacing: 8) {
                         Text("月度明细（最近在前）")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                         if monthlySummaries.isEmpty {
                             Text("暂无统计数据")
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundColor(.themeText3)
                                 .padding(.vertical, 12)
                         } else {
@@ -131,7 +131,7 @@ struct ProfitView: View {
                                 TableColumn("净收入") { s in
                                     Text("¥\(Int(s.netIncome))")
                                         .foregroundColor(s.netIncome >= 0 ? .themeAccentDark : .themeRed)
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.system(size: 13, weight: .semibold))
                                 }
                                 .width(100)
                             }
@@ -160,8 +160,8 @@ struct SummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 13)).foregroundColor(.themeText3)
-            Text(value).font(.system(size: 18, weight: .bold)).foregroundColor(color)
+            Text(title).font(.system(size: 14)).foregroundColor(.themeText3)
+            Text(value).font(.system(size: 19, weight: .bold)).foregroundColor(color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

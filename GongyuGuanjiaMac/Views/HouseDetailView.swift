@@ -25,7 +25,7 @@ struct HouseDetailView: View {
             // 标题栏（关闭按钮）
             HStack {
                 Text("房源详情")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                 Spacer()
                 Button("关闭") { onClose() }
                     .macSecondaryButton()
@@ -44,30 +44,30 @@ struct HouseDetailView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 8) {
                                 Text(house.displayRoomNo)
-                                    .font(.system(size: 22, weight: .bold))
+                                    .font(.system(size: 23, weight: .bold))
                                 StatusBadge(status: house.status)
                                 Text(house.towerLabel)
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 14))
                                     .foregroundColor(.themeText3)
                             }
                             Text("户型：\(house.layout)")
-                                .font(.system(size: 15))
+                                .font(.system(size: 16))
                             Text("租金：¥\(Int(house.price)) / 月")
-                                .font(.system(size: 15))
+                                .font(.system(size: 16))
                                 .foregroundColor(.themeDanger)
                             Text("房东：\(house.landlord)")
-                                .font(.system(size: 15))
+                                .font(.system(size: 16))
                             if !house.password.isEmpty {
                                 Text("门锁密码：\(house.password)")
-                                    .font(.system(size: 15))
+                                    .font(.system(size: 16))
                             }
                             if !house.remark.isEmpty {
                                 Text("备注：\(house.remark)")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 15))
                                     .foregroundColor(.themeText2)
                             }
                             Text(house.photoSummary)
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundColor(.themeText3)
                         }
                         Spacer()
@@ -105,7 +105,7 @@ struct HouseDetailView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Text("实拍媒体（\(house.mediaItems.count)）")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 16, weight: .semibold))
                             Spacer()
                             Button {
                                 addMedia()
@@ -117,7 +117,7 @@ struct HouseDetailView: View {
 
                         if house.mediaItems.isEmpty {
                             Text("暂无媒体，点击右上「添加图片/视频」上传实拍图")
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                                 .foregroundColor(.themeText3)
                                 .padding(.vertical, 20)
                         } else {
@@ -141,7 +141,7 @@ struct HouseDetailView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text("正在生成分享链接…")
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                         }
                         .padding(.vertical, 6)
                     }
@@ -150,7 +150,7 @@ struct HouseDetailView: View {
                             Image(systemName: shareMessage.contains("失败") ? "xmark.circle.fill" : "checkmark.circle.fill")
                                 .foregroundColor(shareMessage.contains("失败") ? .themeDanger : .themeAccent)
                             Text(shareMessage)
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                             Spacer()
                             if shareMessage.contains("链接") && !shareMessage.contains("失败") {
                                 Button("复制链接") {
@@ -261,7 +261,7 @@ struct MediaItemCell: View {
                     onDelete()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
                         .background(Color.black.opacity(0.4), in: Circle())
                 }
@@ -269,7 +269,7 @@ struct MediaItemCell: View {
                 .padding(4)
             }
             Text(item.fileName)
-                .font(.system(size: 9))
+                .font(.system(size: 10))
                 .foregroundColor(.themeText3)
                 .lineLimit(1)
                 .padding(4)
@@ -286,7 +286,7 @@ struct MediaItemCell: View {
                             showImage = false
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 22))
+                                .font(.system(size: 23))
                                 .foregroundColor(.white)
                         }
                         .buttonStyle(.plain)
@@ -337,13 +337,13 @@ struct ShareMenuView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("分享房源 \(house.displayRoomNo)")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button {
                     onClose()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.system(size: 19))
                         .foregroundColor(.gray)
                 }
                 .buttonStyle(.plain)
@@ -356,21 +356,21 @@ struct ShareMenuView: View {
             .pickerStyle(.radioGroup)
 
             Text("脱敏版适合发给租客初步挑选；完整版适合已确定意向的租客。")
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundColor(.themeText3)
 
             if working {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text("正在生成 H5 页面并上传云端…")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                 }
             }
 
             if !resultMessage.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(resultMessage)
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(resultMessage.contains("失败") ? .themeDanger : .themeAccent)
                     if !resultLink.isEmpty {
                         HStack(spacing: 8) {

@@ -22,9 +22,9 @@ struct TodoViews: View {
         VStack(spacing: 0) {
             HStack {
                 Text("待办事项")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                 Text("共 \(items.count) 条")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(.themeText3)
                 Spacer()
                 Button("关闭") { onClose() }
@@ -51,7 +51,7 @@ struct TodoViews: View {
                             .font(.system(size: 36))
                             .foregroundColor(.gray)
                         Text("暂无待办")
-                            .font(.system(size: 14))
+                            .font(.system(size: 15))
                             .foregroundColor(.themeText3)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -67,13 +67,13 @@ struct TodoViews: View {
                                 }
                                 .buttonStyle(.plain)
                                 Text(item.content)
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 15))
                                     .strikethrough(item.isCompleted)
                                     .foregroundColor(item.isCompleted ? .themeText3 : .themeText)
                                 Spacer()
                                 if let reminder = item.reminderDate {
                                     Text("⏰ \(reminder.formatted(date: .abbreviated, time: .shortened))")
-                                        .font(.system(size: 10))
+                                        .font(.system(size: 11))
                                         .foregroundColor(.themeText3)
                                 }
                                 Button {

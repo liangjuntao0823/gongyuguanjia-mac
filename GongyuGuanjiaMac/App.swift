@@ -54,6 +54,13 @@ enum DataRoot {
         return dir
     }
 
+    /// 工作台头像目录（自定义头像）
+    static var avatarDirectory: URL {
+        let dir = DataRoot.directory.appendingPathComponent("Avatar", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
     /// 日志目录
     static var logsDirectory: URL {
         let dir = DataRoot.directory.appendingPathComponent("Logs", isDirectory: true)

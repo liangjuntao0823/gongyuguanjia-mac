@@ -52,7 +52,7 @@ struct RentCollectionView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Text("收租管理").font(.system(size: 19, weight: .bold))
+                Text("收租管理").font(.system(size: 20, weight: .bold))
                 Spacer()
                 TextField("搜索房号/房东/户型…", text: $searchText)
                     .textFieldStyle(.roundedBorder)
@@ -94,7 +94,7 @@ struct RentCollectionView: View {
             if filteredProperties.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "banknote").font(.system(size: 40)).foregroundColor(.gray)
-                    Text(selectedStatus == 0 ? "暂无在租房源" : "暂无退租房源").font(.system(size: 15)).foregroundColor(.themeText3)
+                    Text(selectedStatus == 0 ? "暂无在租房源" : "暂无退租房源").font(.system(size: 16)).foregroundColor(.themeText3)
                     if selectedStatus == 0 {
                         Button("新增房源") { showingAddProperty = true }.macSecondaryButton()
                     }
@@ -102,7 +102,7 @@ struct RentCollectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 10) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 250, maximum: 330), spacing: 12)], spacing: 12) {
                         ForEach(filteredProperties) { prop in
                             if prop.isTerminated {
                                 TerminatedPropertyRow(prop: prop,
@@ -152,7 +152,7 @@ struct RentCollectionView: View {
             selectedDueDay = day
         } label: {
             Text(title)
-                .font(.system(size: 12, weight: isSelected ? .bold : .regular))
+                .font(.system(size: 13, weight: isSelected ? .bold : .regular))
                 .padding(.horizontal, 12).padding(.vertical, 5)
                 .background(isSelected ? Color.themeAccent : Color(red: 0.93, green: 0.94, blue: 0.95))
                 .foregroundColor(isSelected ? .white : .themeText)
@@ -223,13 +223,13 @@ struct PropertyRentCard: View {
     private var dueDayColumn: some View {
         VStack(spacing: 4) {
             Text("\(prop.rentDueDay)号")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(dueCircleColor)
                 .clipShape(Circle())
             Text(prop.roomNumber)
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(size: 17, weight: .bold))
                 .foregroundColor(.themeText)
         }
         .frame(width: 70)
@@ -239,23 +239,23 @@ struct PropertyRentCard: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
                 Text(prop.typeChar)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(prop.typeColor)
                     .frame(width: 20, height: 20)
                     .background(prop.typeBgColor)
                     .clipShape(Circle())
                 Text(prop.typeDisplayName)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(prop.typeColor)
                 Text("已收\(paidMonthsCount)个月")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeAccentDark)
                     .padding(.horizontal, 8).padding(.vertical, 2)
                     .background(Color(hex: "E8F5E9"))
                     .clipShape(Capsule())
                 if isOverdue {
                     Text("逾期")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 8).padding(.vertical, 2)
                         .background(Color.red)
@@ -263,15 +263,15 @@ struct PropertyRentCard: View {
                 }
             }
             HStack(spacing: 8) {
-                Text(prop.landlord).font(.system(size: 13)).foregroundColor(.themeText2)
-                Text(prop.unitType).font(.system(size: 13)).foregroundColor(.themeText2)
+                Text(prop.landlord).font(.system(size: 14)).foregroundColor(.themeText2)
+                Text(prop.unitType).font(.system(size: 14)).foregroundColor(.themeText2)
             }
             HStack(spacing: 8) {
-                Text("¥\(Int(prop.rent))/月").font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
-                Text("押\(Int(prop.deposit))").font(.system(size: 12)).foregroundColor(.themeText3)
-                if prop.prepayment > 0 { Text("预存\(Int(prop.prepayment))").font(.system(size: 12)).foregroundColor(.themeText3) }
+                Text("¥\(Int(prop.rent))/月").font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
+                Text("押\(Int(prop.deposit))").font(.system(size: 13)).foregroundColor(.themeText3)
+                if prop.prepayment > 0 { Text("预存\(Int(prop.prepayment))").font(.system(size: 13)).foregroundColor(.themeText3) }
                 if !prop.leaseStart.isEmpty {
-                    Text("\(prop.leaseStart)至\(prop.leaseEnd)").font(.system(size: 12)).foregroundColor(.themeText3)
+                    Text("\(prop.leaseStart)至\(prop.leaseEnd)").font(.system(size: 13)).foregroundColor(.themeText3)
                 }
             }
         }
@@ -280,10 +280,10 @@ struct PropertyRentCard: View {
     private var statusColumn: some View {
         VStack(alignment: .trailing, spacing: 6) {
             Text(paid ? "已收" : "待收")
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(paid ? .themeAccentDark : .themeRed)
             Text("水电 ¥\(Int(totalUtility))")
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .foregroundColor(.themeText3)
         }
     }
@@ -315,13 +315,13 @@ struct TerminatedPropertyRow: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 Image(systemName: "flag.checkered")
-                    .font(.system(size: 18))
+                    .font(.system(size: 19))
                     .foregroundColor(.themeText3)
                     .frame(width: 44)
                 infoColumn
                 Spacer()
                 Text("已收\(paidMonthsCount)个月")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(.themeAccentDark)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Color(hex: "E8F5E9"))
@@ -339,16 +339,16 @@ struct TerminatedPropertyRow: View {
     private var infoColumn: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
-                Text(prop.roomNumber).font(.system(size: 16, weight: .bold)).foregroundColor(.themeText)
-                Text("\(dateText) 退租").font(.system(size: 12)).foregroundColor(.themeText3)
+                Text(prop.roomNumber).font(.system(size: 17, weight: .bold)).foregroundColor(.themeText)
+                Text("\(dateText) 退租").font(.system(size: 13)).foregroundColor(.themeText3)
             }
             HStack(spacing: 8) {
-                Text(prop.landlord).font(.system(size: 13)).foregroundColor(.themeText2)
-                Text(prop.unitType).font(.system(size: 13)).foregroundColor(.themeText2)
-                Text("¥\(Int(prop.rent))/月").font(.system(size: 13)).foregroundColor(.themeText2)
+                Text(prop.landlord).font(.system(size: 14)).foregroundColor(.themeText2)
+                Text(prop.unitType).font(.system(size: 14)).foregroundColor(.themeText2)
+                Text("¥\(Int(prop.rent))/月").font(.system(size: 14)).foregroundColor(.themeText2)
             }
             if !prop.terminationReason.isEmpty {
-                Text("原因：\(prop.terminationReason)").font(.system(size: 12)).foregroundColor(.themeText3).lineLimit(1)
+                Text("原因：\(prop.terminationReason)").font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
             }
         }
     }
@@ -379,14 +379,14 @@ struct MonthRentRow: View {
                 NotificationCenter.default.post(name: .macDataChanged, object: nil)
             } label: {
                 Image(systemName: record.isPaid ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18))
+                    .font(.system(size: 19))
                     .foregroundColor(record.isPaid ? .themeAccentDark : .gray)
             }
             .buttonStyle(.plain)
-            Text(label).font(.system(size: 14)).foregroundColor(.themeText)
+            Text(label).font(.system(size: 15)).foregroundColor(.themeText)
             Spacer()
             Text("¥\(FormatKit.money(record.amount))")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(record.isPaid ? .themeText2 : .themeText)
         }
         .padding(.vertical, 4)
@@ -404,14 +404,14 @@ struct UtilityPlanRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Text(record.statement.isEmpty ? "\(record.year)年\(record.frequency == "monthly" ? "\(record.period)月" : "\(record.period)季度")" : record.statement)
-                .font(.system(size: 14))
+                .font(.system(size: 15))
             Spacer()
             Text("电 ¥\(FormatKit.money(record.electricAmount))")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
             Text("水 ¥\(FormatKit.money(record.waterAmount))")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
             Text("结余 ¥\(FormatKit.money(record.balance))")
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundColor(record.balance >= 0 ? .themeAccentDark : .themeRed)
             Button {
                 record.isSettled.toggle()
@@ -421,7 +421,7 @@ struct UtilityPlanRow: View {
                 onDataChanged()
             } label: {
                 Text(record.isSettled ? "已结算" : "未结算")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(record.isSettled ? Color(hex: "E8F5E9") : Color(hex: "F0F0F0"))
                     .clipShape(Capsule())
@@ -456,7 +456,7 @@ struct PropertyDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("房源详情 · \(property.roomNumber)").font(.system(size: 16, weight: .bold))
+                Text("房源详情 · \(property.roomNumber)").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("编辑") { showEditProperty = true }.macSecondaryButton()
                 Button("关闭") { onClose() }.macPrimaryButton()
@@ -494,7 +494,7 @@ struct PropertyDetailView: View {
 
                     sectionWithAction("月度收租（打勾后金额锁定）", actionTitle: "编辑计划", action: { showRentPlanEditor = true }) {
                         if sortedRecords.isEmpty {
-                            Text("暂无收租记录，点「编辑计划」生成").font(.system(size: 13)).foregroundColor(.themeText3)
+                            Text("暂无收租记录，点「编辑计划」生成").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
                             ForEach(sortedRecords) { record in
                                 MonthRentRow(manager: manager, prop: property, record: record,
@@ -506,7 +506,7 @@ struct PropertyDetailView: View {
 
                     sectionWithAction("水电结算（金额可输入，取消结算需确认）", actionTitle: "编辑计划", action: { showUtilityPlanEditor = true }) {
                         if cachedUtilityRecords.isEmpty {
-                            Text("暂无结算计划，请编辑房源后保存生成").font(.system(size: 13)).foregroundColor(.themeText3)
+                            Text("暂无结算计划，请编辑房源后保存生成").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
                             ForEach(cachedUtilityRecords) { record in
                                 UtilityPlanRow(manager: manager, prop: property, record: record, onDataChanged: { dataRefreshID = UUID() })
@@ -555,7 +555,7 @@ struct PropertyDetailView: View {
 
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 12, weight: .bold)).foregroundColor(.themeText2)
+            Text(title).font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
             VStack(spacing: 5) { content() }
             Divider().opacity(0.5)
         }
@@ -563,7 +563,7 @@ struct PropertyDetailView: View {
     private func sectionWithAction(_ title: String, actionTitle: String, action: @escaping () -> Void, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title).font(.system(size: 12, weight: .bold)).foregroundColor(.themeText2)
+                Text(title).font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
                 Spacer()
                 Button(actionTitle) { action() }.macSecondaryButton()
             }
@@ -573,8 +573,8 @@ struct PropertyDetailView: View {
     }
     private func row(_ key: String, _ value: String) -> some View {
         HStack(alignment: .top) {
-            Text(key).font(.system(size: 13)).foregroundColor(.themeText3).frame(width: 90, alignment: .leading)
-            Text(value).font(.system(size: 14)).textSelection(.enabled)
+            Text(key).font(.system(size: 14)).foregroundColor(.themeText3).frame(width: 90, alignment: .leading)
+            Text(value).font(.system(size: 15)).textSelection(.enabled)
             Spacer()
         }
         .padding(.vertical, 1)
@@ -607,9 +607,9 @@ struct PropertyEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(property == nil ? "新增收租房源" : "编辑房源").font(.system(size: 16, weight: .bold))
+                Text(property == nil ? "新增收租房源" : "编辑房源").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             ScrollView {
@@ -649,9 +649,9 @@ struct PropertyEditor: View {
                 }
                 .textFieldStyle(.roundedBorder)
             }
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 13)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14)).foregroundColor(.themeDanger) }
             HStack {
-                Text("保存后自动生成收租计划与水电结算计划").font(.system(size: 12)).foregroundColor(.themeText3)
+                Text("保存后自动生成收租计划与水电结算计划").font(.system(size: 13)).foregroundColor(.themeText3)
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()
                 Button("保存") { save() }.macPrimaryButton()
@@ -743,9 +743,9 @@ struct TerminationFormView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("退租 · \(property.roomNumber)").font(.system(size: 16, weight: .bold))
+                Text("退租 · \(property.roomNumber)").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             ScrollView {
@@ -762,7 +762,7 @@ struct TerminationFormView: View {
                 }
                 .textFieldStyle(.roundedBorder)
             }
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 13)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14)).foregroundColor(.themeDanger) }
             HStack {
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()
@@ -795,9 +795,9 @@ struct RentPlanEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("编辑收租计划 · \(property.roomNumber)").font(.system(size: 16, weight: .bold))
+                Text("编辑收租计划 · \(property.roomNumber)").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             List {
@@ -878,16 +878,16 @@ struct UtilityPlanEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("编辑水电结算计划 · \(property.roomNumber)").font(.system(size: 16, weight: .bold))
+                Text("编辑水电结算计划 · \(property.roomNumber)").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             List {
                 ForEach($drafts) { $d in
                     HStack(spacing: 10) {
                         Text(d.frequency == "monthly" ? "\(d.period)月" : "\(d.period)季度")
-                            .font(.system(size: 14))
+                            .font(.system(size: 15))
                             .frame(width: 70, alignment: .leading)
                         TextField("电费", text: $d.electricAmount).textFieldStyle(.roundedBorder).frame(width: 80)
                         TextField("水费", text: $d.waterAmount).textFieldStyle(.roundedBorder).frame(width: 80)

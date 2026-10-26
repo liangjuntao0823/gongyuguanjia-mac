@@ -50,7 +50,7 @@ enum DataBackupManager {
     private static func createBackup(mainContext: ModelContext, houseContext: ModelContext?, to zipURL: URL, includeMedia: Bool) async -> BackupResult {
         // 1) 经营数据（iOS 同款 dict 结构）
         var business: [String: Any] = [:]
-        business["schemaVersion"] = 3
+        business["schemaVersion"] = 4   // 与 iOS v4 备份结构对齐（只对齐结构不复制代码）
         business["exportedAt"] = isoFormatter.string(from: Date())
         business["app"] = "公寓管家Mac"
         business["version"] = MacBridge.appVersion
@@ -181,7 +181,8 @@ enum DataBackupManager {
                     HouseExportDTO(
                         id: h.id, roomNo: h.roomNo, tower: h.tower, landlord: h.landlord,
                         layout: h.layout, price: h.price, password: h.password, remark: h.remark,
-                        statusRaw: h.statusRaw, createdAt: h.createdAt, updatedAt: h.updatedAt,
+                        statusRaw: (h.isRented ? "rented" : "available"), createdAt: h.createdAt,
+                        updatedAt: h.updatedAt, lastUpdatedAt: h.lastUpdatedAt,
                         isDeleted: h.isDeleted, deletedAt: h.deletedAt,
                         mediaItems: h.mediaItems.map { MediaExportDTO(fileName: $0.fileName, kind: $0.kind) }
                     )
@@ -242,6 +243,10 @@ enum DataBackupManager {
               let data = try? Data(contentsOf: businessURL),
               let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return .failure(AppError.message("备份缺少经营数据（business.json）"))
+        }
+        // 宽容解析：schemaVersion 高于当前支持时仍尝试解析（提示来源版本，不阻断恢复）
+        if let ver = dict["schemaVersion"] as? Int, ver > 4 {
+            BackupLogStore.log("备份恢复提示", detail: "备份来自更高版本（schema \(ver)），已尽力兼容解析，部分新字段可能缺失", kind: "restore")
         }
 
         // 清空现有经营数据
@@ -394,13 +399,20 @@ enum DataBackupManager {
            let bundle = try? decoder.decode(HouseBundleDTO.self, from: data) {
             for h in (try? houseContext.fetch(FetchDescriptor<House>())) ?? [] { houseContext.delete(h) }
             try? houseContext.save()
+            var invalidRooms: [String] = []
             for exp in bundle.houses {
+                // 前缀校验（与 iOS v1.69 一致）：无 1-/2- 前缀 → 跳过并收集提示
+                if !exp.roomNo.hasPrefix("1-") && !exp.roomNo.hasPrefix("2-") {
+                    invalidRooms.append(exp.roomNo)
+                    continue
+                }
                 let house = House(roomNo: exp.roomNo, tower: exp.tower, landlord: exp.landlord,
                                   layout: exp.layout, price: exp.price, password: exp.password,
-                                  remark: exp.remark, status: exp.statusRaw)
+                                  remark: exp.remark, status: CloudHouseSync.statusFromCloud(exp.statusRaw))
                 house.id = exp.id
                 house.createdAt = exp.createdAt
                 house.updatedAt = exp.updatedAt
+                house.lastUpdatedAt = exp.lastUpdatedAt
                 house.isDeleted = exp.isDeleted
                 house.deletedAt = exp.deletedAt
                 house.cloudStatus = .local
@@ -411,6 +423,9 @@ enum DataBackupManager {
             }
             try? houseContext.save()
             hasHouses = true
+            if !invalidRooms.isEmpty {
+                BackupLogStore.log("备份恢复提示", detail: "跳过 \(invalidRooms.count) 套无前缀房号：\(invalidRooms.joined(separator: "、"))（需以 1-/2- 开头）", kind: "restore")
+            }
         }
 
         // 3) 媒体（全量备份恢复）

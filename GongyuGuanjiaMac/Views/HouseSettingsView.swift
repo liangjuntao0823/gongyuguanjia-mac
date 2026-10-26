@@ -46,7 +46,7 @@ struct HouseSettingsView: View {
         VStack(spacing: 0) {
             HStack {
                 Text("房源分享设置")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                 Spacer()
                 Button("关闭") { onClose() }
                     .macSecondaryButton()
@@ -73,7 +73,7 @@ struct HouseSettingsView: View {
 
                         if !verifyMessage.isEmpty {
                             Text(verifyMessage)
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundColor(verifyMessage.contains("✓") ? .themeAccent : .themeDanger)
                         }
                         HStack {
@@ -135,17 +135,17 @@ struct HouseSettingsView: View {
                                 MediaSettingsStore.compressUpload = newValue
                             }
                         Text("关闭后视频/图片原样上传，画质无损但较慢。")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText3)
                     }
 
                     // 选房链接
                     sectionCard("公开选房链接") {
                         Text("生成一个「米兰公馆 · 在租房源」H5，自动列出所有未出租房源，支持按户型筛选。")
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundColor(.themeText2)
                         HStack(spacing: 10) {
-                            Text("链接有效期").font(.system(size: 14)).foregroundColor(.themeText2)
+                            Text("链接有效期").font(.system(size: 15)).foregroundColor(.themeText2)
                             Picker("", selection: $roomsLinkExpiry) {
                                 Text("1 天").tag(1)
                                 Text("2 天").tag(2)
@@ -182,12 +182,12 @@ struct HouseSettingsView: View {
                         }
                         if !roomsMessage.isEmpty {
                             Text(roomsMessage)
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundColor(roomsMessage.contains("失败") ? .themeDanger : .themeAccent)
                         }
                         if !roomsLink.isEmpty {
                             Text(roomsLink)
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.themeText2)
                                 .textSelection(.enabled)
                         }
@@ -350,7 +350,7 @@ struct HouseSettingsView: View {
     private func sectionCard<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
             content()
         }
         .padding(14)

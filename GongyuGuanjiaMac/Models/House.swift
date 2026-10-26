@@ -16,6 +16,7 @@ final class House {
     var statusRaw: String       // "待租" / "已租"
     var createdAt: Date
     var updatedAt: Date
+    var lastUpdatedAt: Date?      // 与 iOS 对齐：编辑/状态切换刷新（账本 updatedAt 优先取它）
     var isDeleted: Bool?
     var deletedAt: Date?
     var cloudStatusRaw: String? // "local" / "cloud" / "both"
@@ -68,15 +69,19 @@ final class House {
     // MARK: 展示
     var towerLabel: String { "\(tower)座" }
 
-    /// 房号展示：2 座自动加「2-」前缀，1 座不带（若录入带 1- 前缀则原样保留，兼容历史）
+    /// 房号展示：与 iOS v1.63+ 对齐——1 座带「1-」前缀、2 座带「2-」前缀（若录入已带前缀则原样保留，兼容历史）
     var displayRoomNo: String {
         if tower == 2 && !roomNo.hasPrefix("2-") { return "2-\(roomNo)" }
+        if tower == 1 && !roomNo.hasPrefix("1-") { return "1-\(roomNo)" }
         return roomNo
     }
 
-    /// 媒体目录名（云端 key 也用这个）：2 座带前缀，去非法字符
+    /// 媒体目录名（云端 key 也用这个）：与 iOS 对齐——1 座带 1- 前缀、2 座带 2- 前缀，去非法字符
     var mediaRoomKey: String {
-        let raw = tower == 2 ? "2-\(roomNo)" : roomNo
+        let raw: String
+        if tower == 2 && !roomNo.hasPrefix("2-") { raw = "2-\(roomNo)" }
+        else if tower == 1 && !roomNo.hasPrefix("1-") { raw = "1-\(roomNo)" }
+        else { raw = roomNo }
         let illegal = CharacterSet(charactersIn: "/:\\?%*|\"<>")
         return raw.components(separatedBy: illegal).joined(separator: "-")
     }
@@ -99,10 +104,9 @@ final class House {
     var videoCount: Int { mediaItems.filter { $0.kind == "video" }.count }
     var hasRealPhoto: Bool { imageCount > 0 }
 
-    /// 列表显示「有实拍图 N 张」/「无实拍图」（v1.54 口径）
+    /// 列表显示「有实拍图」/「无实拍图」（与 iOS v1.69 口径一致，不显示张数）
     var photoSummary: String {
-        if imageCount == 0 { return "无实拍图" }
-        return "有实拍图 \(imageCount) 张"
+        imageCount == 0 ? "无实拍图" : "有实拍图"
     }
 }
 
@@ -136,6 +140,7 @@ struct HouseExportDTO: Codable {
     var statusRaw: String
     var createdAt: Date
     var updatedAt: Date
+    var lastUpdatedAt: Date?
     var isDeleted: Bool?
     var deletedAt: Date?
     var mediaItems: [MediaExportDTO]

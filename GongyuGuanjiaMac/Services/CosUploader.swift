@@ -451,8 +451,9 @@ enum CosUploader {
     // MARK: - 媒体上传（房源）
 
     /// 上传房源媒体：h/<roomKey>/<fileName>（媒体永远进共享区，与 iOS 互通）
+    /// v1.2 修复：本地路径带 roomKey（Mac 独有 bug）+ 桶内幂等跳过（防重复刷流量）
     static func uploadHouseMedia(fileName: String, kind: String, roomKey: String, config: CosConfig, compress: Bool) async throws {
-        let localURL = MediaStore.fileURL(fileName: fileName)
+        let localURL = MediaStore.fileURL(fileName: fileName, roomKey: roomKey)
         guard FileManager.default.fileExists(atPath: localURL.path) else {
             throw CosError.uploadFailed("本地文件不存在：\(fileName)")
         }
@@ -460,6 +461,8 @@ enum CosUploader {
         // 视频统一转 mp4（安卓/微信可播），云端路径 .mp4
         let remoteName = (kind == "video") ? cloudVideoName(for: fileName) : fileName
         let remotePath = "h/\(roomKey)/\(remoteName)"
+        // 幂等跳过：桶内已有同名对象不再重复上传（与 iOS 一致）
+        if await remoteObjectExists(path: remotePath, config: config) { return }
 
         if kind == "video" {
             // 压缩开关
@@ -477,9 +480,9 @@ enum CosUploader {
                     try await uploadFileAsIs(localURL: localURL, to: remotePath, contentType: contentType, config: config)
                 }
             }
-            // 视频首帧图（分享页封面用）
+            // 视频首帧图（分享页封面用）：与 iOS 一致放用户区 users/<用户名>/shares/<roomKey>/
             if let thumb = makeVideoThumbJPEG(from: localURL) {
-                let thumbPath = "h/\(roomKey)/\(cloudVideoName(for: fileName)).vthumb.jpg"
+                let thumbPath = "\(CloudUser.sharePagePrefix)\(roomKey)/\(cloudVideoName(for: fileName)).vthumb.jpg"
                 try? await upload(data: thumb, to: thumbPath, contentType: "image/jpeg", config: config)
             }
         } else {
@@ -971,10 +974,18 @@ struct CloudHouseRecord: Codable, Identifiable {
 enum CloudHouseLedger {
     static let path = "h/_houses.json"
 
-    /// 读取云端账本（404/网络错误 → nil）
-    static func fetch(config: CosConfig) async -> [CloudHouseRecord]? {
-        guard let data = try? await CosUploader.fetchObjectData(path: path, config: config) else { return nil }
-        return try? JSONDecoder().decode([CloudHouseRecord].self, from: data)
+    /// 读取云端账本（与 iOS v1.42 语义一致：404=空账本，网络/其他错误上抛）
+    static func fetch(config: CosConfig) async -> Result<[CloudHouseRecord], Error> {
+        do {
+            let data = try await CosUploader.fetchObjectData(path: path, config: config)
+            let records = (try? JSONDecoder().decode([CloudHouseRecord].self, from: data)) ?? []
+            return .success(records)
+        } catch let e as CosObjectNotFoundError {
+            _ = e
+            return .success([])   // 账本不存在 = 空账本（首次使用正常空同步）
+        } catch {
+            return .failure(error) // 断网等 → 报错（绝不静默当空）
+        }
     }
 
     /// 覆盖写账本
@@ -1035,7 +1046,7 @@ extension CosUploader {
         // 4) 封面：视频首帧 / 第一张图
         var coverSrc = ""
         if let firstVideo = videos.first {
-            let vthumb = "h/\(roomKey)/\(cloudVideoName(for: firstVideo.name)).vthumb.jpg"
+            let vthumb = "\(CloudUser.sharePagePrefix)\(roomKey)/\(cloudVideoName(for: firstVideo.name)).vthumb.jpg"
             if let u = try? presignedGetURL(for: vthumb, expires: shareLinkExpires, config: config) {
                 coverSrc = u.absoluteString
             }
@@ -1086,6 +1097,87 @@ extension CosUploader {
 
         // 10) 分享记录
         try? await appendShareRecord(roomKey: roomKey, displayRoomNo: info.displayRoomNo, mode: mode, url: shareURL, config: config)
+
+        progress?(1.0)
+        return shareURL
+    }
+
+    // MARK: 合集分享（多选 N 套房源 → 一个合集 H5，对齐 iOS 合集卡片）
+
+    static func shareCollection(rooms: [ShareCollectionItem], config: CosConfig,
+                                progress: ((Double) -> Void)? = nil) async throws -> String {
+        guard !rooms.isEmpty else { throw CosError.missingMedia }
+        guard !config.customDomain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw CosError.customDomainMissing }
+
+        // 1) 逐间上传缺失媒体（增量），并组装签名 URL
+        var prepared: [PreparedRoom] = []
+        var totalTasks = 0
+        for room in rooms { totalTasks += room.mediaFiles.count }
+        totalTasks = max(totalTasks, 1)
+        var doneTasks = 0
+        func bump() {
+            doneTasks += 1
+            progress?(min(Double(doneTasks) / Double(totalTasks), 1.0))
+        }
+
+        for room in rooms {
+            let videos = room.mediaFiles.filter { $0.kind == "video" }
+            let images = room.mediaFiles.filter { $0.kind == "image" }
+            let sortedMedia = videos + images
+            for m in sortedMedia {
+                let remoteName = (m.kind == "video") ? cloudVideoName(for: m.name) : m.name
+                let exists = await remoteObjectExists(path: "h/\(room.roomKey)/\(remoteName)", config: config)
+                if !exists {
+                    try await uploadHouseMedia(fileName: m.name, kind: m.kind, roomKey: room.roomKey,
+                                               config: config, compress: MediaSettingsStore.compressUpload)
+                }
+                bump()
+            }
+            var videoTags: [String] = []
+            var imageURLs: [String] = []
+            for m in sortedMedia {
+                if m.kind == "video" {
+                    videoTags.append((try presignedGetURL(for: "h/\(room.roomKey)/\(cloudVideoName(for: m.name))", expires: shareLinkExpires, config: config)).absoluteString)
+                } else {
+                    imageURLs.append((try presignedGetURL(for: "h/\(room.roomKey)/\(m.name)", expires: shareLinkExpires, config: config)).absoluteString)
+                }
+            }
+            var coverSrc = ""
+            if let firstVideo = videos.first {
+                let vthumb = "\(CloudUser.sharePagePrefix)\(room.roomKey)/\(cloudVideoName(for: firstVideo.name)).vthumb.jpg"
+                if let u = try? presignedGetURL(for: vthumb, expires: shareLinkExpires, config: config) {
+                    coverSrc = u.absoluteString
+                }
+            }
+            if coverSrc.isEmpty, let firstImage = images.first {
+                coverSrc = (try presignedGetURL(for: "h/\(room.roomKey)/\(firstImage.name)", expires: shareLinkExpires, config: config)).absoluteString
+            }
+            prepared.append(PreparedRoom(item: room, videoTags: videoTags, imageURLs: imageURLs, coverSrc: coverSrc))
+        }
+
+        // 2) 名片信息 + 二维码
+        let name = ShareNameStore.displayName
+        let phone = ShareNameStore.displayPhone
+        var qrSrc = ""
+        if let qrJPEG = makeQRCodeJPEG() {
+            try? await upload(data: qrJPEG, to: CloudUser.qrPath, contentType: "image/jpeg", config: config)
+            qrSrc = (try presignedGetURL(for: CloudUser.qrPath, expires: shareLinkExpires, config: config)).absoluteString
+        }
+
+        // 3) 页面路径：users/<用户名>/shares/collection-<时间戳>/index
+        let ts = BackupTimestamp.string()
+        let pagePath = "\(CloudUser.sharePagePrefix)collection-\(ts)/index"
+        let shareURL = (try presignedGetURL(for: pagePath, expires: shareLinkExpires, config: config)).absoluteString
+
+        // 4) 组装合集 HTML（封面取第一间房）
+        let wm = watermarkOverlayHTML(WatermarkSettingsStore.current)
+        let track = cloudTrackScript(room: rooms.first?.roomKey ?? "", mode: "collection")
+        let html = buildCollectionHTML(rooms: prepared, mode: .masked, name: name, phone: phone,
+                                       coverSrc: prepared.first?.coverSrc ?? "", qrSrc: qrSrc, wm: wm, trackScript: track)
+
+        // 5) 上传页面
+        try await upload(data: Data(html.utf8), to: pagePath, contentType: "text/html", config: config)
+        try? await appendShareRecord(roomKey: "collection-\(ts)", displayRoomNo: "合集(\(rooms.count)套)", mode: .masked, url: shareURL, config: config)
 
         progress?(1.0)
         return shareURL

@@ -10,7 +10,7 @@ struct UserGuideView: View {
         VStack(spacing: 0) {
             HStack {
                 Text("使用说明")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                 Spacer()
                 Button("关闭") { onClose() }
                     .macPrimaryButton()
@@ -24,7 +24,7 @@ struct UserGuideView: View {
                     // 快速上手
                     VStack(alignment: .leading, spacing: 6) {
                         Text("快速上手")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                         guideRow("1", "首次使用：点「设置」→「打开房源分享设置」，填写与 iOS 版相同的腾讯云配置和用户名，点「保存并验证」。")
                         guideRow("2", "新增房源：在「房源」页点「新增房源」，填写房号/房东/户型/租金，可选择实拍图与视频。保存后自动生成脱敏版分享页。")
                         guideRow("3", "同步互通：在「设置」→「云端同步」点「推送」或「拉取」，与 iOS 版数据互通（同一用户名）。")
@@ -39,7 +39,7 @@ struct UserGuideView: View {
                     // 数据与备份
                     VStack(alignment: .leading, spacing: 6) {
                         Text("数据与备份")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                         guideRow("•", "数据保存在本机「应用支持/公寓管家Mac」，不在云端存敏感明文（密钥在系统钥匙串）。")
                         guideRow("•", "快速备份：经营数据 + 房源字段；全量备份：另含全部实拍媒体。")
                         guideRow("•", "自动备份每 6 小时一次，备份后自动上传云端（需已配置云端）。")
@@ -53,9 +53,9 @@ struct UserGuideView: View {
                     // 版本介绍
                     VStack(alignment: .leading, spacing: 6) {
                         Text("版本介绍")
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                         Text("v1.0.0（当前版本）")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.themeAccent)
                         Text("""
                         Mac 版首发。与 iOS 版功能完全一致：
@@ -69,7 +69,7 @@ struct UserGuideView: View {
                         · 分享：单房源脱敏/完整 H5 页，公开选房 H5（自动列出未出租房源+户型筛选+名片沉底）
                         · 与 iOS 版共用同一腾讯云 COS + 云函数后台，数据实时互通
                         """)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundColor(.themeText2)
                             .lineSpacing(4)
                     }
@@ -90,14 +90,14 @@ struct UserGuideView: View {
     private func guideRow(_ badge: String, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Text(badge)
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 12, weight: .bold))
                 .foregroundColor(.white)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(Color.themeAccent)
                 .cornerRadius(5)
             Text(text)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundColor(.themeText2)
                 .lineSpacing(3)
         }

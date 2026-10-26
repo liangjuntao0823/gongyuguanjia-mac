@@ -89,9 +89,9 @@ struct PayoutView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Text("包租管理").font(.system(size: 19, weight: .bold))
+                Text("包租管理").font(.system(size: 20, weight: .bold))
                 Text("共 \(payouts.count) 份合同")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(.themeText3)
                 Spacer()
                 TextField("搜索房号/包租人/户型…", text: $searchText)
@@ -110,13 +110,13 @@ struct PayoutView: View {
             if filteredPayouts.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "briefcase").font(.system(size: 40)).foregroundColor(.gray)
-                    Text("暂无包租合同").font(.system(size: 15)).foregroundColor(.themeText3)
+                    Text("暂无包租合同").font(.system(size: 16)).foregroundColor(.themeText3)
                     Button("新增包租合同") { showingAddPayout = true }.macSecondaryButton()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 10) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 260, maximum: 340), spacing: 12)], spacing: 12) {
                         ForEach(filteredPayouts) { payout in
                             PayoutRow(payout: payout,
                                       nextInfo: nextPayoutInfo(for: payout),
@@ -237,13 +237,13 @@ struct PayoutRow: View {
     private var dueDayColumn: some View {
         VStack(spacing: 4) {
             Text("\(payout.rentDueDay)号")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(nextInfo.isOverdue ? Color.red.opacity(0.85) : Color(hex: "7B61FF").opacity(0.85))
                 .clipShape(Circle())
             Text(payout.roomNumber)
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(size: 17, weight: .bold))
                 .foregroundColor(.themeText)
         }
         .frame(width: 70)
@@ -252,18 +252,18 @@ struct PayoutRow: View {
     private var infoColumn: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
-                Text(payout.manager).font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
-                Text(payout.unitType).font(.system(size: 13)).foregroundColor(.themeText2)
-                Text(payout.paymentMethod).font(.system(size: 12)).foregroundColor(.themeAccentDark)
+                Text(payout.manager).font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
+                Text(payout.unitType).font(.system(size: 14)).foregroundColor(.themeText2)
+                Text(payout.paymentMethod).font(.system(size: 13)).foregroundColor(.themeAccentDark)
             }
             HStack(spacing: 8) {
-                Text("年租 ¥\(Int(payout.annualRent))").font(.system(size: 12, weight: .semibold)).foregroundColor(.themeText)
-                if payout.monthlyRent != nil { Text("月打租 ¥\(Int(payout.monthlyRent ?? 0))").font(.system(size: 12)).foregroundColor(.themeText3) }
-                Text("免租 \(payout.rentFreeDays)天").font(.system(size: 12)).foregroundColor(.themeText3)
+                Text("年租 ¥\(Int(payout.annualRent))").font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
+                if payout.monthlyRent != nil { Text("月打租 ¥\(Int(payout.monthlyRent ?? 0))").font(.system(size: 13)).foregroundColor(.themeText3) }
+                Text("免租 \(payout.rentFreeDays)天").font(.system(size: 13)).foregroundColor(.themeText3)
             }
             if !nextText.isEmpty {
                 Text(nextText)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(nextInfo.isOverdue ? .themeRed : .themeText3)
             }
         }
@@ -272,13 +272,13 @@ struct PayoutRow: View {
     private var paidColumn: some View {
         VStack(alignment: .trailing, spacing: 4) {
             Text("已打 \(paidCount)/\(periodCount) 期")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(paidCount == periodCount ? .themeAccentDark : .themeText2)
             Text("¥\(Int(paidAmount))")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.themeText)
             Text("水电结算 ¥\(Int(paidUtility))")
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .foregroundColor(.themeText3)
         }
     }
@@ -320,9 +320,9 @@ struct PayoutEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(payout == nil ? "新增包租合同" : "编辑包租合同").font(.system(size: 16, weight: .bold))
+                Text(payout == nil ? "新增包租合同" : "编辑包租合同").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             ScrollView {
@@ -368,9 +368,9 @@ struct PayoutEditor: View {
                 }
                 .textFieldStyle(.roundedBorder)
             }
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 13)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14)).foregroundColor(.themeDanger) }
             HStack {
-                Text("保存后按支付方式生成打租记录").font(.system(size: 12)).foregroundColor(.themeText3)
+                Text("保存后按支付方式生成打租记录").font(.system(size: 13)).foregroundColor(.themeText3)
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()
                 Button("保存") { save() }.macPrimaryButton()
@@ -474,7 +474,7 @@ struct PayoutDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("包租详情 · \(payout.roomNumber)").font(.system(size: 16, weight: .bold))
+                Text("包租详情 · \(payout.roomNumber)").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("关闭") { onClose() }.macPrimaryButton()
             }
@@ -485,7 +485,7 @@ struct PayoutDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("合同信息").font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
+                        Text("合同信息").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
                         row("包租人", payout.manager)
                         row("户型", payout.unitType)
                         row("租期", "\(FormatKit.dateStr(payout.leaseStartDate)) 至 \(FormatKit.dateStr(payout.leaseEndDate))（\(payout.leaseDuration)）")
@@ -501,9 +501,9 @@ struct PayoutDetailView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("打租记录（勾选即已付）").font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
+                        Text("打租记录（勾选即已付）").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
                         if sortedPayouts.isEmpty {
-                            Text("暂无打租记录").font(.system(size: 13)).foregroundColor(.themeText3)
+                            Text("暂无打租记录").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
                             ForEach(sortedPayouts) { record in
                                 HStack(spacing: 10) {
@@ -514,16 +514,16 @@ struct PayoutDetailView: View {
                                         NotificationCenter.default.post(name: .macDataChanged, object: nil)
                                     } label: {
                                         Image(systemName: record.isPaid ? "checkmark.circle.fill" : "circle")
-                                            .font(.system(size: 18))
+                                            .font(.system(size: 19))
                                             .foregroundColor(record.isPaid ? .themeAccentDark : .gray)
                                     }
                                     .buttonStyle(.plain)
                                     Text("\(record.month)月")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                         .frame(width: 60, alignment: .leading)
                                     Spacer()
                                     Text("¥\(FormatKit.money(record.amount))")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                 }
                                 .padding(.vertical, 3)
                             }
@@ -531,18 +531,18 @@ struct PayoutDetailView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("水电结算记录").font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
+                        Text("水电结算记录").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
                         if payout.monthlyUtilityRecords.isEmpty {
-                            Text("暂无结算记录").font(.system(size: 13)).foregroundColor(.themeText3)
+                            Text("暂无结算记录").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
                             ForEach(payout.monthlyUtilityRecords.sorted { $0.date > $1.date }) { rec in
                                 HStack(spacing: 10) {
-                                    Text(FormatKit.dateStr(rec.date)).font(.system(size: 13))
+                                    Text(FormatKit.dateStr(rec.date)).font(.system(size: 14))
                                     Spacer()
-                                    Text("水 ¥\(FormatKit.money(rec.waterAmount))").font(.system(size: 13))
-                                    Text("电 ¥\(FormatKit.money(rec.electricAmount))").font(.system(size: 13))
+                                    Text("水 ¥\(FormatKit.money(rec.waterAmount))").font(.system(size: 14))
+                                    Text("电 ¥\(FormatKit.money(rec.electricAmount))").font(.system(size: 14))
                                     Text(rec.isSettled ? "已结算" : "未结算")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 13))
                                         .foregroundColor(rec.isSettled ? .themeAccentDark : .themeText3)
                                 }
                                 .padding(.vertical, 2)
@@ -561,8 +561,8 @@ struct PayoutDetailView: View {
 
     private func row(_ key: String, _ value: String) -> some View {
         HStack(alignment: .top) {
-            Text(key).font(.system(size: 13)).foregroundColor(.themeText3).frame(width: 90, alignment: .leading)
-            Text(value).font(.system(size: 14)).textSelection(.enabled)
+            Text(key).font(.system(size: 14)).foregroundColor(.themeText3).frame(width: 90, alignment: .leading)
+            Text(value).font(.system(size: 15)).textSelection(.enabled)
             Spacer()
         }
         .padding(.vertical, 1)

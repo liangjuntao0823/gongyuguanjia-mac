@@ -87,6 +87,29 @@ final class DataManager: ObservableObject {
         utilityHistories = (try? mainContext.fetch(FetchDescriptor<UtilitySettlementHistory>())) ?? []
     }
 
+    // MARK: - 媒体命名（与 iOS 对齐：roomKey-TAG-uid-N.ext，防双端拉取互删关系）
+
+    /// 生成 iOS 同款媒体文件名：\(roomKey)-\(TAG)-\(uid8)-\(n).\(ext)
+    static func makeMediaFileName(roomKey: String, sourceName: String, kind: String, usedNames: Set<String>) -> String {
+        let ext = (sourceName as NSString).pathExtension.lowercased()
+        let tag: String
+        switch ext {
+        case "png": tag = "PNG"
+        case "heic": tag = "HEIC"
+        case "gif": tag = "GIF"
+        case "mp4", "mov", "m4v": tag = "MP4"
+        default: tag = "JPG"
+        }
+        let uid = String(UUID().uuidString.prefix(8)).uppercased()
+        var n = 1
+        var name = "\(roomKey)-\(tag)-\(uid)-\(n).\(ext)"
+        while usedNames.contains(name) {
+            n += 1
+            name = "\(roomKey)-\(tag)-\(uid)-\(n).\(ext)"
+        }
+        return name
+    }
+
     // MARK: - 房源 CRUD（house 容器）
 
     /// 新增房源：插入 + 自动上传媒体 + 自动生成脱敏 H5（新增即生成）
@@ -96,17 +119,21 @@ final class DataManager: ObservableObject {
         let house = House(roomNo: roomNo, tower: tower, landlord: landlord, layout: layout,
                           price: price, password: password, remark: remark, status: status)
         houseContext.insert(house)
+        var usedNames = Set(house.mediaItems.map { $0.fileName })
         for (url, kind) in mediaFiles {
-            let fileName = house.mediaRoomKey + "_" + UUID().uuidString.prefix(8) + "_" + url.lastPathComponent
+            let fileName = makeMediaFileName(roomKey: house.mediaRoomKey, sourceName: url.lastPathComponent, kind: kind, usedNames: usedNames)
+            usedNames.insert(fileName)
             if let data = try? Data(contentsOf: url) {
                 MediaStore.save(data: data, fileName: fileName, roomKey: house.mediaRoomKey)
             }
             house.mediaItems.append(MediaItem(fileName: fileName, kind: kind))
             Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
         }
+        house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         autoRegenerateMaskedShare(for: house)
+        CloudOps.log(category: "房源", action: "新增", result: "成功", detail: "\(house.displayRoomNo) · 媒体 \(mediaFiles.count) 个", room: house.mediaRoomKey)
         return house
     }
 
@@ -122,18 +149,23 @@ final class DataManager: ObservableObject {
         house.remark = remark
         house.status = status
         house.updatedAt = Date()
+        house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         autoRegenerateMaskedShare(for: house)
+        CloudOps.log(category: "房源", action: "更新", result: "成功", detail: "\(house.displayRoomNo)", room: house.mediaRoomKey)
     }
 
     func addMedia(to house: House, url: URL, kind: String) {
-        let fileName = house.mediaRoomKey + "_" + UUID().uuidString.prefix(8) + "_" + url.lastPathComponent
+        var usedNames = Set(house.mediaItems.map { $0.fileName })
+        let fileName = makeMediaFileName(roomKey: house.mediaRoomKey, sourceName: url.lastPathComponent, kind: kind, usedNames: usedNames)
+        usedNames.insert(fileName)
         if let data = try? Data(contentsOf: url) {
             MediaStore.save(data: data, fileName: fileName, roomKey: house.mediaRoomKey)
         }
         house.mediaItems.append(MediaItem(fileName: fileName, kind: kind))
         house.updatedAt = Date()
+        house.lastUpdatedAt = Date()
         try? houseContext.save()
         Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
@@ -152,14 +184,17 @@ final class DataManager: ObservableObject {
             }
         }
         autoRegenerateMaskedShare(for: house)
+        CloudOps.log(category: "房源", action: "删媒体", result: "成功", detail: "\(house.displayRoomNo) · \(item.fileName)", room: house.mediaRoomKey)
     }
 
     func softDeleteHouse(_ house: House) {
         house.isDeleted = true
         house.deletedAt = Date()
         house.updatedAt = Date()
+        house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        CloudOps.log(category: "房源", action: "删除", result: "成功", detail: "\(house.displayRoomNo) · 媒体 \(house.mediaItems.count) 个", room: house.mediaRoomKey)
     }
 
     func restoreHouse(_ house: House) {
@@ -183,6 +218,7 @@ final class DataManager: ObservableObject {
         houseContext.delete(house)
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        CloudOps.log(category: "房源", action: "彻底删除", result: "成功", detail: "\(roomKey)", room: roomKey)
     }
 
     // MARK: - 自动生成/重生成脱敏 H5
@@ -478,28 +514,31 @@ final class DataManager: ObservableObject {
 
     // MARK: - 云端同步
 
-    func syncFromCloud() async -> CloudSyncResult {
-        let result = await CloudHouseSync.pullAndMerge(houseContext: houseContext)
-        if case .success(let added, let updated, _) = result {
+    func syncFromCloud(progress: ((Double, String) -> Void)? = nil) async -> CloudSyncResult {
+        let result = await CloudHouseSync.pullAndMerge(houseContext: houseContext, apply: true, progress: progress)
+        if case .success(let added, let updated, let removed, let detail) = result {
             let houses = (try? houseContext.fetch(FetchDescriptor<House>())) ?? []
             if let config = CosConfig.load() {
                 for h in houses where h.isDeleted != true {
                     await CloudHouseSync.downloadMissingMedia(house: h, config: config)
                 }
             }
-            BackupLogStore.log("云端同步", detail: "新增\(added) 更新\(updated)", kind: "sync")
-            return result
+            BackupLogStore.log("云端同步", detail: detail, kind: "sync")
+            CloudOps.log(category: "同步", action: "拉取", result: "成功", detail: detail)
+            return .success(added: added, updated: updated, removed: removed, detail: detail)
         }
         if case .failure(let msg) = result {
             BackupLogStore.log("云端同步失败", detail: msg, kind: "sync")
+            CloudOps.log(category: "同步", action: "拉取", result: "失败", detail: msg)
         }
         return result
     }
 
     func pushToCloud() async -> CloudSyncResult {
         let result = await CloudHouseSync.pushAll(houseContext: houseContext)
-        if case .success(let added, _, _) = result {
-            BackupLogStore.log("房源上传云端", detail: "共 \(added) 套", kind: "sync")
+        if case .success(let added, _, _, let detail) = result {
+            BackupLogStore.log("房源上传云端", detail: detail, kind: "sync")
+            CloudOps.log(category: "同步", action: "上传", result: "成功", detail: detail)
         }
         return result
     }

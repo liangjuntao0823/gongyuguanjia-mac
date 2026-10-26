@@ -18,7 +18,7 @@ struct BackupCenterViews: View {
         VStack(spacing: 0) {
             HStack {
                 Text("备份中心")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                 Spacer()
                 Button("刷新") { refresh() }
                     .macSecondaryButton()
@@ -30,9 +30,9 @@ struct BackupCenterViews: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-                // 自动备份
+                // 自动备份（频率由设置页「自动备份」统一控制，避免双口径冲突）
                 HStack(spacing: 10) {
-                    Toggle("自动备份（每 6 小时，备份后自动上传云端）", isOn: $autoBackup)
+                    Toggle("自动备份（按设置页频率：\(CloudBackupService.frequencyLabel)，备份后自动上传云端）", isOn: $autoBackup)
                         .onChange(of: autoBackup) { _, v in
                             CloudBackupService.autoBackupEnabled = v
                         }
@@ -52,38 +52,38 @@ struct BackupCenterViews: View {
                 if working {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text("处理中…").font(.system(size: 13))
+                        Text("处理中…").font(.system(size: 14))
                     }
                 }
                 if !message.isEmpty {
                     Text(message)
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundColor(message.contains("失败") ? .themeDanger : .themeAccent)
                 }
 
                 // 本地备份
                 VStack(alignment: .leading, spacing: 6) {
                     Text("本地备份（\(localItems.count)）")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     if localItems.isEmpty {
-                        Text("暂无本地备份").font(.system(size: 13)).foregroundColor(.themeText3)
+                        Text("暂无本地备份").font(.system(size: 14)).foregroundColor(.themeText3)
                     } else {
                         List(localItems, id: \.url) { item in
                             HStack {
                                 Text(item.url.lastPathComponent)
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 14))
                                     .lineLimit(1)
                                 Text(FormatKit.dateTimeStr(item.date))
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .foregroundColor(.themeText3)
                                 Text(item.isFull ? "全量" : "快速")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 1)
                                     .background(item.isFull ? Color.purple.opacity(0.15) : Color.blue.opacity(0.15))
                                     .cornerRadius(4)
                                 Text("\(ByteCountFormatter.string(fromByteCount: item.size, countStyle: .file))")
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button("恢复") {
@@ -106,20 +106,20 @@ struct BackupCenterViews: View {
                 // 云端备份
                 VStack(alignment: .leading, spacing: 6) {
                     Text("云端备份（\(cloudItems.count)）")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     if cloudItems.isEmpty {
-                        Text("暂无云端备份（配置云端后自动上传）").font(.system(size: 13)).foregroundColor(.themeText3)
+                        Text("暂无云端备份（配置云端后自动上传）").font(.system(size: 14)).foregroundColor(.themeText3)
                     } else {
                         List(cloudItems, id: \.name) { item in
                             HStack {
                                 Text(item.name)
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 14))
                                     .lineLimit(1)
                                 Text(FormatKit.dateTimeStr(item.date))
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .foregroundColor(.themeText3)
                                 Text("\(ByteCountFormatter.string(fromByteCount: item.size, countStyle: .file))")
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button("下载并恢复") {

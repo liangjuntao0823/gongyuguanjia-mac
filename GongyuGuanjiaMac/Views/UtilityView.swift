@@ -68,7 +68,7 @@ struct UtilityView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("水电结算").font(.system(size: 16, weight: .bold))
+                Text("水电结算").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("计算历史") { showHistory = true }.macSecondaryButton()
                 Button("关闭") { onClose() }.macSecondaryButton()
@@ -117,7 +117,7 @@ struct UtilityView: View {
                     }
                     section("结算单") {
                         Text(statement)
-                            .font(.system(size: 15))
+                            .font(.system(size: 16))
                             .textSelection(.enabled)
                             .padding(.vertical, 6)
                         HStack(spacing: 10) {
@@ -174,25 +174,25 @@ struct UtilityView: View {
 
     private func amountRow(_ title: String, _ text: Binding<String>, unit: String = "") -> some View {
         HStack {
-            Text(title).font(.system(size: 14))
+            Text(title).font(.system(size: 15))
             Spacer()
             TextField("请输入", text: text)
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 120)
-            if !unit.isEmpty { Text(unit).font(.system(size: 13)).foregroundColor(.themeText3) }
+            if !unit.isEmpty { Text(unit).font(.system(size: 14)).foregroundColor(.themeText3) }
         }
     }
     private func infoRow(_ title: String, _ value: String) -> some View {
         HStack {
-            Text(title).font(.system(size: 14))
+            Text(title).font(.system(size: 15))
             Spacer()
-            Text(value).font(.system(size: 13, weight: .semibold))
+            Text(value).font(.system(size: 14, weight: .semibold))
         }
     }
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
+            Text(title).font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
             content()
         }
         .padding(12)
@@ -235,7 +235,7 @@ struct UtilityHistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("计算历史").font(.system(size: 16, weight: .bold))
+                Text("计算历史").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("关闭") { dismiss() }.macPrimaryButton()
             }
@@ -258,9 +258,9 @@ struct UtilityHistoryView: View {
                     $0.statement.localizedCaseInsensitiveContains(searchText)
                 }) { item in
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(item.roomNumber + "房").font(.system(size: 14, weight: .semibold))
-                        Text(item.settledAt.formatted(date: .numeric, time: .shortened)).font(.system(size: 12)).foregroundColor(.themeText3)
-                        Text(item.statement).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                        Text(item.roomNumber + "房").font(.system(size: 15, weight: .semibold))
+                        Text(item.settledAt.formatted(date: .numeric, time: .shortened)).font(.system(size: 13)).foregroundColor(.themeText3)
+                        Text(item.statement).font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { selected = item }
@@ -312,7 +312,7 @@ struct UtilityHistoryEditView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("编辑结算单").font(.system(size: 16, weight: .bold))
+                Text("编辑结算单").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("取消") { dismiss() }.macSecondaryButton()
                 Button("保存") {
@@ -326,7 +326,7 @@ struct UtilityHistoryEditView: View {
             .padding(14)
             Divider()
             TextEditor(text: $text)
-                .font(.system(size: 14))
+                .font(.system(size: 15))
                 .padding(10)
         }
         .frame(width: 520, height: 380)
@@ -340,7 +340,7 @@ struct UtilityHistoryPreview: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(history.roomNumber + "房结算单").font(.system(size: 16, weight: .bold))
+                Text(history.roomNumber + "房结算单").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("关闭") { dismiss() }.macPrimaryButton()
             }
@@ -359,10 +359,10 @@ struct UtilityStatementCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(history.roomNumber + "房水电结算单").font(.system(size: 22, weight: .bold))
+            Text(history.roomNumber + "房水电结算单").font(.system(size: 23, weight: .bold))
             Text(history.settledAt.formatted(date: .long, time: .omitted)).foregroundColor(.secondary)
             Divider()
-            Text(history.statement).font(.system(size: 16)).fixedSize(horizontal: false, vertical: true)
+            Text(history.statement).font(.system(size: 17)).fixedSize(horizontal: false, vertical: true)
             Divider()
             HStack {
                 Text("电费 \(Int(history.electricCost))元")
@@ -405,7 +405,7 @@ struct UtilityPeriodChoiceView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("写入结算周期").font(.system(size: 16, weight: .bold))
+                Text("写入结算周期").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("取消") { dismiss() }.macSecondaryButton()
             }
@@ -434,13 +434,13 @@ struct UtilityPeriodChoiceView: View {
                         onDone()
                     } label: {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(periodTitle(record)).font(.system(size: 14, weight: .semibold))
+                            Text(periodTitle(record)).font(.system(size: 15, weight: .semibold))
                             HStack {
                                 Text(record.isSettled ? "已结算" : "未结算")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.system(size: 13, weight: .semibold))
                                 Spacer()
                                 Text("电\(Int(record.electricAmount)) 水\(Int(record.waterAmount)) 余\(Int(record.balance))")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(.secondary)
                             }
                         }

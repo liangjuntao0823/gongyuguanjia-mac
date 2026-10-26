@@ -2,13 +2,46 @@ import Foundation
 import SwiftData
 
 // MARK: - 云端房源同步（与 iOS 版同机制：共享账本 h/_houses.json + 媒体 h/<roomKey>/）
+// v1.2 对齐 iOS：状态值域英文(available/rented)、房号带 1-/2- 前缀、404=空账本、云端删除跟随删除、同步差异确认
 
 enum CloudSyncResult {
-    case success(added: Int, updated: Int, removed: Int)
+    case success(added: Int, updated: Int, removed: Int, detail: String)
     case failure(String)
 }
 
 enum CloudHouseSync {
+
+    // MARK: 账本边界转换（纯函数，只抄功能不复制代码）
+
+    /// 本地状态 → 云端英文值域（iOS HouseStatus.rawValue）
+    static func statusToCloud(_ status: String) -> String {
+        status == "已租" ? "rented" : "available"
+    }
+
+    /// 云端值域 → 本地中文（兼容历史：云端已是中文则原样保留）
+    static func statusFromCloud(_ raw: String) -> String {
+        switch raw {
+        case "rented": return "已租"
+        case "available": return "待租"
+        case "已租", "待租": return raw
+        default: return "待租"
+        }
+    }
+
+    /// 本地房号本体 → 云端带前缀房号（1 座 1-xxx、2 座 2-xxx，与 iOS 一致）
+    static func roomNoToCloud(_ roomNo: String, tower: Int) -> String {
+        if tower == 2 && !roomNo.hasPrefix("2-") { return "2-\(roomNo)" }
+        if tower == 1 && !roomNo.hasPrefix("1-") { return "1-\(roomNo)" }
+        return roomNo
+    }
+
+    /// 云端房号 → 本地房号本体（剥离 1-/2- 前缀，防本地出现双前缀）
+    static func roomNoFromCloud(_ roomNo: String) -> String {
+        if roomNo.hasPrefix("2-") || roomNo.hasPrefix("1-") {
+            return String(roomNo.dropFirst(2))
+        }
+        return roomNo
+    }
 
     // MARK: 上传本机全部房源到账本
 
@@ -21,97 +54,128 @@ enum CloudHouseSync {
             for house in houses {
                 guard house.isDeleted != true else { continue }
                 let mediaNames = house.mediaItems.map { $0.fileName }
+                let effectiveUpdatedAt = house.lastUpdatedAt ?? house.updatedAt
                 records.append(CloudHouseRecord(
                     roomKey: house.mediaRoomKey,
-                    roomNo: house.roomNo,
+                    roomNo: roomNoToCloud(house.roomNo, tower: house.tower),
                     tower: house.tower,
                     landlord: house.landlord,
                     layout: house.layout,
                     price: Int(house.price),
                     password: house.password,
                     remark: house.remark,
-                    status: house.status,
-                    updatedAt: house.updatedAt,
+                    status: statusToCloud(house.status),
+                    updatedAt: effectiveUpdatedAt,
                     updatedBy: CloudUser.username,
                     mediaNames: mediaNames
                 ))
             }
             try await CloudHouseLedger.save(records, config: config)
-            return .success(added: records.count, updated: 0, removed: 0)
+            return .success(added: records.count, updated: 0, removed: 0, detail: "已上传 \(records.count) 套")
         } catch {
             return .failure(error.localizedDescription)
         }
     }
 
-    // MARK: 从云端拉取并合并到本地
+    // MARK: 从云端拉取合并（dryRun 模式返回差异明细，apply 模式执行写入）
 
     /// 拉取云端账本合并进本地：
-    /// - 云端有、本地无 → 新建本地房源（含媒体下载）
+    /// - 云端有、本地无 → 新建本地房源（含媒体关系）
     /// - 两边都有 → 以 updatedAt 新者为准
-    /// - 云端删除（不在账本但本地有 isDeleted=false）→ 本地标删除（仅当云端的 updatedAt 更新）
-    static func pullAndMerge(houseContext: ModelContext, progress: ((Double, String) -> Void)? = nil) async -> CloudSyncResult {
+    /// - 云端已删除（账本无记录、本地是双端/云端态）→ 本地跟随删除（防两端不收敛）
+    /// apply=false 时只算差异不写库，detail 返回确认文案
+    static func pullAndMerge(houseContext: ModelContext, apply: Bool = true,
+                             progress: ((Double, String) -> Void)? = nil) async -> CloudSyncResult {
         guard let config = CosConfig.load() else { return .failure("未配置云存储") }
-        guard let cloudRecords = await CloudHouseLedger.fetch(config: config) else {
-            return .failure("无法读取云端账本（未配置云函数地址或网络异常）")
+
+        let fetchResult = await CloudHouseLedger.fetch(config: config)
+        guard case .success(let cloudRecords) = fetchResult else {
+            if case .failure(let e) = fetchResult {
+                return .failure("无法读取云端账本：\(e.localizedDescription)")
+            }
+            return .failure("无法读取云端账本")
         }
 
         let localHouses = (try? houseContext.fetch(FetchDescriptor<House>())) ?? []
         var localByKey: [String: House] = [:]
-        for h in localHouses { localByKey[h.mediaRoomKey] = h }
+        for h in localHouses where h.isDeleted != true { localByKey[h.mediaRoomKey] = h }
 
-        var added = 0, updated = 0, removed = 0
-        let total = cloudRecords.count
+        var addedKeys: [String] = []
+        var updatedKeys: [String] = []
+        var removedKeys: [String] = []
+        var mediaMissing: [String] = []
+        let total = max(cloudRecords.count, 1)
         var done = 0
 
         for record in cloudRecords {
             done += 1
-            progress?(Double(done) / Double(max(total, 1)), "同步 \(record.roomKey)…")
+            progress?(Double(done) / Double(total), "同步 \(record.roomKey)…")
 
             if let local = localByKey[record.roomKey] {
                 // 已存在：以较新者为准
                 let cloudDate = record.updatedAt
-                if cloudDate > local.updatedAt {
-                    local.roomNo = record.roomNo
-                    local.tower = record.tower
-                    local.landlord = record.landlord
-                    local.layout = record.layout
-                    local.price = Double(record.price)
-                    local.password = record.password
-                    local.remark = record.remark
-                    local.status = record.status
-                    local.updatedAt = cloudDate
-                    local.updatedBy = record.updatedBy
-                    local.isDeleted = false
+                let localDate = local.lastUpdatedAt ?? local.updatedAt
+                if cloudDate > localDate {
+                    updatedKeys.append(record.roomKey)
+                    if apply {
+                        local.roomNo = roomNoFromCloud(record.roomNo)
+                        local.tower = record.tower
+                        local.landlord = record.landlord
+                        local.layout = record.layout
+                        local.price = Double(record.price)
+                        local.password = record.password
+                        local.remark = record.remark
+                        local.status = statusFromCloud(record.status)
+                        local.lastUpdatedAt = cloudDate
+                        local.updatedAt = cloudDate
+                        local.updatedBy = record.updatedBy
+                        local.isDeleted = false
+                        local.cloudStatus = .both
+                        syncMediaNames(record.mediaNames, house: local, houseContext: houseContext)
+                    }
+                } else if apply {
                     local.cloudStatus = .both
-                    syncMediaNames(record.mediaNames, house: local, houseContext: houseContext)
-                    updated += 1
-                } else {
-                    local.cloudStatus = .both
+                }
+                // 媒体缺失统计（无论是否应用）
+                for name in record.mediaNames {
+                    if !FileManager.default.fileExists(atPath: MediaStore.fileURL(fileName: name, roomKey: local.mediaRoomKey).path) {
+                        mediaMissing.append("\(record.roomKey)/\(name)")
+                    }
                 }
             } else {
                 // 本地没有 → 新建
-                let house = House(
-                    roomNo: record.roomNo, tower: record.tower, landlord: record.landlord,
-                    layout: record.layout, price: Double(record.price),
-                    password: record.password, remark: record.remark,
-                    status: record.status
-                )
-                house.updatedAt = record.updatedAt
-                house.updatedBy = record.updatedBy
-                house.cloudStatus = .cloud
-                houseContext.insert(house)
-                syncMediaNames(record.mediaNames, house: house, houseContext: houseContext)
-                added += 1
+                addedKeys.append(record.roomKey)
+                if apply {
+                    let house = House(
+                        roomNo: roomNoFromCloud(record.roomNo), tower: record.tower,
+                        landlord: record.landlord, layout: record.layout,
+                        price: Double(record.price), password: record.password,
+                        remark: record.remark, status: statusFromCloud(record.status)
+                    )
+                    house.lastUpdatedAt = record.updatedAt
+                    house.updatedAt = record.updatedAt
+                    house.updatedBy = record.updatedBy
+                    house.cloudStatus = .cloud
+                    houseContext.insert(house)
+                    syncMediaNames(record.mediaNames, house: house, houseContext: houseContext)
+                }
             }
-            try? houseContext.save()
+            if apply { try? houseContext.save() }
         }
 
-        // 本地有、云端没有 → 云端已删除（仅当本地 not deleted 且本地更新时间早于云端账本创建？）
-        // 与 iOS 一致：不自动删本地，只把「云端无记录」的本地房源标记为需要关注；这里不做删除。
-        // removed 返回 0（iOS 也是保守策略：删除走「彻底删除」显式操作）
+        // 云端已删除：本地是双端/云端态但账本无记录 → 跟随删除（与 iOS 一致；纯本地房源不删）
+        for house in localHouses where house.isDeleted != true && house.isInCloud {
+            if cloudRecords.contains(where: { $0.roomKey == house.mediaRoomKey }) { continue }
+            removedKeys.append(house.mediaRoomKey)
+            if apply {
+                MediaStore.removeRoom(roomKey: house.mediaRoomKey)
+                houseContext.delete(house)
+            }
+        }
 
         progress?(1.0, "完成")
-        return .success(added: added, updated: updated, removed: removed)
+        let detail = "新增 \(addedKeys.count) 套 · 更新 \(updatedKeys.count) 套 · 删除 \(removedKeys.count) 套 · 媒体补齐 \(mediaMissing.count) 个"
+        return .success(added: addedKeys.count, updated: updatedKeys.count, removed: removedKeys.count, detail: detail)
     }
 
     /// 同步媒体文件名关系（本地文件已存在的直接挂关系；不存在的留空，由媒体下载队列补）

@@ -269,7 +269,7 @@ struct DashboardView: View {
     // MARK: 工作台分区（拆分子视图，避免编译器类型检查超时）
 
     @ViewBuilder private var dashboardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             refreshTipRow
             quickActionsSection
             kpiSection
@@ -279,7 +279,7 @@ struct DashboardView: View {
             expiringSection
             refreshButtonRow
         }
-        .padding(18)
+        .padding(14)
     }
 
     @ViewBuilder private var refreshTipRow: some View {
@@ -287,7 +287,7 @@ struct DashboardView: View {
                         HStack {
                             Spacer()
                             Text("已刷新")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.themeAccent)
                                 .padding(.horizontal, 16).padding(.vertical, 6)
                                 .background(Color.themeAccentWeak)
@@ -301,7 +301,7 @@ struct DashboardView: View {
     @ViewBuilder private var quickActionsSection: some View {
                     // 快捷操作（8 个，全部打开编辑表单）
                     DashboardSectionCard(title: "快捷操作", subtitle: "", isCollapsed: $quickActionsCollapsed) {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
                             QuickActionItem(icon: "plus.circle.fill", label: "新增成交", color: .themeAccent) { showAddDeal = true }
                             QuickActionItem(icon: "dollarsign.circle.fill", label: "新增收入", color: Color(red: 0.80, green: 0.36, blue: 0.36)) { showAddIncome = true }
                             QuickActionItem(icon: "dollarsign.circle.fill", label: "新增支出", color: Color(red: 0.18, green: 0.55, blue: 0.34)) { showAddExpense = true }
@@ -318,37 +318,31 @@ struct DashboardView: View {
     @ViewBuilder private var kpiSection: some View {
                     // KPI 看板（6 卡，对齐 iOS）
                     DashboardSectionCard(title: "KPI 看板", subtitle: "", isCollapsed: $kpiCollapsed) {
-                        VStack(spacing: 10) {
-                            HStack(spacing: 10) {
-                                KpiCard(label: "收租房间", value: "\(stats.totalProperties)", unit: "套",
-                                        foot: "管理\(stats.activeProperties)套 · 托管包租\(stats.managedProperties)套", style: .normal) {
-                                    manager.selectedTab = .rents
-                                }
-                                KpiCard(label: "即将到期", value: "\(stats.expiringSoon.count)", unit: "套",
-                                        foot: "30天内到期",
-                                        style: (stats.expiringSoon.count > 0) ? .alert : .normal) {
-                                    manager.selectedTab = .rents
-                                }
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                            KpiCard(label: "收租房间", value: "\(stats.totalProperties)", unit: "套",
+                                    foot: "管理\(stats.activeProperties)套 · 托管包租\(stats.managedProperties)套", style: .normal) {
+                                manager.selectedTab = .rents
                             }
-                            HStack(spacing: 10) {
-                                KpiCard(label: "本月中介费", value: "\(Int(stats.monthlyDealFee))", unit: "元",
-                                        foot: "本月\(stats.monthlyDeals)单", style: .red) {
-                                    manager.selectedTab = .deals
-                                }
-                                KpiCard(label: "杂项收入", value: "\(Int(stats.monthlyMiscIncome))", unit: "元",
-                                        foot: "本月", style: .red) {
-                                    manager.selectedTab = .deals
-                                }
+                            KpiCard(label: "即将到期", value: "\(stats.expiringSoon.count)", unit: "套",
+                                    foot: "30天内到期",
+                                    style: (stats.expiringSoon.count > 0) ? .alert : .normal) {
+                                manager.selectedTab = .rents
                             }
-                            HStack(spacing: 10) {
-                                KpiCard(label: "本月收入", value: "\(Int(stats.monthlyNetIncome))", unit: "元",
-                                        foot: "中介费+收入-支出", style: .red) {
-                                    manager.selectedTab = .profit
-                                }
-                                KpiCard(label: "杂项支出", value: "\(Int(stats.monthlyMiscExpense))", unit: "元",
-                                        foot: "本月", style: .green) {
-                                    manager.selectedTab = .deals
-                                }
+                            KpiCard(label: "本月中介费", value: "\(Int(stats.monthlyDealFee))", unit: "元",
+                                    foot: "本月\(stats.monthlyDeals)单", style: .red) {
+                                manager.selectedTab = .deals
+                            }
+                            KpiCard(label: "杂项收入", value: "\(Int(stats.monthlyMiscIncome))", unit: "元",
+                                    foot: "本月", style: .red) {
+                                manager.selectedTab = .deals
+                            }
+                            KpiCard(label: "本月收入", value: "\(Int(stats.monthlyNetIncome))", unit: "元",
+                                    foot: "中介费+收入-支出", style: .red) {
+                                manager.selectedTab = .profit
+                            }
+                            KpiCard(label: "杂项支出", value: "\(Int(stats.monthlyMiscExpense))", unit: "元",
+                                    foot: "本月", style: .green) {
+                                manager.selectedTab = .deals
                             }
                         }
                     }
@@ -359,12 +353,12 @@ struct DashboardView: View {
                     // 待办事项
                     DashboardSectionCard(title: "待办事项", subtitle: "\(pendingTodos.count)项", isCollapsed: $todosCollapsed, trailing: {
                         Button("全部待办") { showAllTodos = true }
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.themeAccentDark)
                             .buttonStyle(.plain)
                     }) {
                         if pendingTodos.isEmpty {
-                            Text("暂无待办事项").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无待办事项").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(pendingTodos) { item in
@@ -373,21 +367,21 @@ struct DashboardView: View {
                                             completingTodo = item
                                         } label: {
                                             Image(systemName: "circle")
-                                                .font(.system(size: 16))
+                                                .font(.system(size: 17))
                                                 .foregroundColor(.gray)
                                         }
                                         .buttonStyle(.plain)
                                         Text(item.content)
-                                            .font(.system(size: 15))
+                                            .font(.system(size: 16))
                                             .lineLimit(2)
                                             .foregroundColor(.themeText)
                                         Spacer()
                                         if let reminder = item.reminderDate {
                                             Text("⏰ \(reminder.formatted(date: .abbreviated, time: .shortened))")
-                                                .font(.system(size: 12)).foregroundColor(.themeText3)
+                                                .font(.system(size: 13)).foregroundColor(.themeText3)
                                         }
                                         Button("编辑") { editingTodo = item }
-                                            .font(.system(size: 13))
+                                            .font(.system(size: 14))
                                             .foregroundColor(.themeAccent)
                                             .buttonStyle(.plain)
                                     }
@@ -406,35 +400,35 @@ struct DashboardView: View {
                     // 未收租提醒
                     DashboardSectionCard(title: "未收租提醒", subtitle: "\(rentReminders.count)套", isCollapsed: $rentReminderCollapsed) {
                         if rentReminders.isEmpty {
-                            Text("暂无未收租提醒").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无未收租提醒").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(rentReminders) { reminder in
                                     HStack(spacing: 10) {
                                         VStack(spacing: 2) {
-                                            Text("\(reminder.dueDay)").font(.system(size: 17, weight: .bold))
-                                            Text("号交租").font(.system(size: 10))
+                                            Text("\(reminder.dueDay)").font(.system(size: 18, weight: .bold))
+                                            Text("号交租").font(.system(size: 11))
                                         }
                                         .frame(width: 46)
                                         .padding(.vertical, 6)
                                         .background(reminder.isOverdue ? Color(red: 0.99, green: 0.94, blue: 0.94) : Color(red: 0.98, green: 0.95, blue: 0.87))
                                         .cornerRadius(8)
                                         VStack(alignment: .leading, spacing: 3) {
-                                            Text(reminder.roomNumber).font(.system(size: 15, weight: .bold))
-                                            Text("房东: \(reminder.landlord)").font(.system(size: 13, weight: .bold)).foregroundColor(.themeText2)
+                                            Text(reminder.roomNumber).font(.system(size: 16, weight: .bold))
+                                            Text("房东: \(reminder.landlord)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
                                         }
                                         Spacer()
                                         VStack(alignment: .trailing, spacing: 3) {
-                                            Text("¥\(Int(reminder.amount))").font(.system(size: 14, weight: .bold))
+                                            Text("¥\(Int(reminder.amount))").font(.system(size: 15, weight: .bold))
                                             if reminder.needUtility {
-                                                Text("需结算水电").font(.system(size: 11, weight: .semibold)).foregroundColor(.themeAmber)
+                                                Text("需结算水电").font(.system(size: 12, weight: .semibold)).foregroundColor(.themeAmber)
                                             }
                                         }
                                         Button("收") {
                                             quickCollectProperty = reminder.property
                                             quickCollectRent = String(Int(reminder.amount))
                                         }
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.white)
                                         .frame(width: 34, height: 34)
                                         .background(Circle().fill(Color.themeAccent))
@@ -455,26 +449,26 @@ struct DashboardView: View {
                     // 包租房付租提醒
                     DashboardSectionCard(title: "包租房付租提醒", subtitle: "\(payoutReminders.count)套", isCollapsed: $payoutReminderCollapsed) {
                         if payoutReminders.isEmpty {
-                            Text("暂无付租提醒").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无付租提醒").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(payoutReminders) { reminder in
                                     HStack(spacing: 10) {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("¥\(Int(reminder.amount))")
-                                                .font(.system(size: 17, weight: .bold))
+                                                .font(.system(size: 18, weight: .bold))
                                                 .foregroundColor(reminder.isOverdue ? .themeRed : .themeText)
                                             HStack(spacing: 6) {
-                                                Text(reminder.roomNumber).font(.system(size: 14, weight: .bold))
-                                                Text("· \(reminder.paymentMethod)").font(.system(size: 13)).foregroundColor(.themeText2)
+                                                Text(reminder.roomNumber).font(.system(size: 15, weight: .bold))
+                                                Text("· \(reminder.paymentMethod)").font(.system(size: 14)).foregroundColor(.themeText2)
                                             }
                                             Text("\(reminder.payMonth)月\(reminder.payDay)号付")
-                                                .font(.system(size: 12))
+                                                .font(.system(size: 13))
                                                 .foregroundColor(reminder.isOverdue ? .themeRed : .themeText3)
                                         }
                                         Spacer()
                                         Text(reminder.isOverdue ? "已逾期\(reminder.daysDiff)天" : "剩\(reminder.daysDiff)天")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.system(size: 13, weight: .semibold))
                                             .foregroundColor(reminder.isOverdue ? .themeRed : .themeAccentDark)
                                         Button("付") {
                                             quickPayPayout = reminder.payout
@@ -482,7 +476,7 @@ struct DashboardView: View {
                                             quickPayMonth = reminder.payMonth
                                             quickPayRecordMonth = reminder.recordMonth
                                         }
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.white)
                                         .frame(width: 34, height: 34)
                                         .background(Circle().fill(Color.themeAccentDark))
@@ -503,28 +497,28 @@ struct DashboardView: View {
                     // 即将到期（前 3 套）
                     DashboardSectionCard(title: "即将到期", subtitle: "\(stats.expiringSoon.count)套", isCollapsed: $expiryCollapsed) {
                         if stats.expiringSoon.isEmpty {
-                            Text("暂无即将到期房源").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无即将到期房源").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(Array(stats.expiringSoon.prefix(3))) { prop in
                                     HStack(spacing: 10) {
                                         VStack(alignment: .leading, spacing: 5) {
                                             HStack(spacing: 8) {
-                                                Text(prop.roomNumber).font(.system(size: 19, weight: .bold))
-                                                Text("到期:\(prop.leaseEnd)").font(.system(size: 14)).foregroundColor(.themeText2)
+                                                Text(prop.roomNumber).font(.system(size: 20, weight: .bold))
+                                                Text("到期:\(prop.leaseEnd)").font(.system(size: 15)).foregroundColor(.themeText2)
                                             }
                                             HStack(spacing: 6) {
                                                 Text("房东: \(prop.landlord)")
                                                 Text("租金: ¥\(Int(prop.rent))")
                                                 Text("押金: ¥\(Int(prop.deposit))")
                                             }
-                                            .font(.system(size: 13, weight: .medium))
+                                            .font(.system(size: 14, weight: .medium))
                                             .foregroundColor(.themeText3)
                                         }
                                         Spacer()
                                         if let days = daysUntilExpiry(prop) {
                                             Text(days >= 0 ? "还剩\(days)天" : "已超期\(-days)天")
-                                                .font(.system(size: 14, weight: .bold))
+                                                .font(.system(size: 15, weight: .bold))
                                                 .foregroundColor(days >= 0 ? .themeAccentDark : .red)
                                         }
                                     }
@@ -688,9 +682,9 @@ struct DashboardSectionHeader<Trailing: View>: View {
     var body: some View {
         HStack(spacing: 8) {
             HStack {
-                Text(title).font(.system(size: 15, weight: .semibold)).foregroundColor(.themeText)
+                Text(title).font(.system(size: 16, weight: .semibold)).foregroundColor(.themeText)
                 if !subtitle.isEmpty {
-                    Text(subtitle).font(.system(size: 13)).foregroundColor(.themeText3)
+                    Text(subtitle).font(.system(size: 14)).foregroundColor(.themeText3)
                 }
                 Spacer(minLength: 8)
             }
@@ -750,7 +744,7 @@ struct QuickActionItem: View {
                     .font(.system(size: 24))
                     .foregroundColor(color)
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(.themeText)
             }
             .frame(maxWidth: .infinity)
@@ -784,12 +778,12 @@ struct KpiCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 7) {
-                Text(label).font(.system(size: 14)).foregroundColor(.themeText2)
+                Text(label).font(.system(size: 15)).foregroundColor(.themeText2)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(value).font(.system(size: 24, weight: .bold)).foregroundColor(valueColor)
-                    Text(unit).font(.system(size: 13)).foregroundColor(.themeText3)
+                    Text(unit).font(.system(size: 14)).foregroundColor(.themeText3)
                 }
-                Text(foot).font(.system(size: 12)).foregroundColor(.themeText3).lineLimit(1)
+                Text(foot).font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -812,7 +806,7 @@ struct QuickCollectSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("快捷收租").font(.system(size: 16, weight: .bold))
+                Text("快捷收租").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("取消") { dismiss() }.macSecondaryButton()
                 Button("保存") {
@@ -853,7 +847,7 @@ struct QuickPaySheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("快捷付租").font(.system(size: 16, weight: .bold))
+                Text("快捷付租").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("取消") { dismiss() }.macSecondaryButton()
                 Button("保存") {
@@ -904,7 +898,7 @@ struct TodoFormView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(item == nil ? "新增待办" : "编辑待办").font(.system(size: 16, weight: .bold))
+                Text(item == nil ? "新增待办" : "编辑待办").font(.system(size: 17, weight: .bold))
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()
                 Button("保存") { save() }
@@ -954,11 +948,11 @@ struct MonthCountdownView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Text("\(month)月还剩").font(.system(size: 14)).foregroundColor(.themeText2)
-            Text("\(days)").font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
-            Text("天").font(.system(size: 14)).foregroundColor(.themeText2)
-            Text("\(hours)").font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
-            Text("小时，加油").font(.system(size: 14)).foregroundColor(.themeText2)
+            Text("\(month)月还剩").font(.system(size: 15)).foregroundColor(.themeText2)
+            Text("\(days)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeAccentDark)
+            Text("天").font(.system(size: 15)).foregroundColor(.themeText2)
+            Text("\(hours)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeAccentDark)
+            Text("小时，加油").font(.system(size: 15)).foregroundColor(.themeText2)
         }
     }
 }
@@ -974,16 +968,34 @@ struct UserHeaderView: View {
     let dateStringShort: String
     let onEditTitle: () -> Void
 
+    @AppStorage("dashboard.avatarFile") private var avatarFile = ""
+    @State private var avatarImage: NSImage?
+
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(red: 0.91, green: 0.91, blue: 0.91))
-                .frame(width: 46, height: 46)
-                .overlay(Image(systemName: "person.fill").font(.system(size: 20)).foregroundColor(.white))
+            // 头像：点击更换（自定义图片，Mac 标准文件选择器）
+            Button(action: pickAvatar) {
+                Group {
+                    if let img = avatarImage {
+                        Image(nsImage: img)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 46, height: 46)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.91, green: 0.91, blue: 0.91))
+                            .frame(width: 46, height: 46)
+                            .overlay(Image(systemName: "person.fill").font(.system(size: 21)).foregroundColor(.white))
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .help("点击更换头像")
             VStack(alignment: .leading, spacing: 5) {
                 Button(action: onEditTitle) {
                     Text(userTitle)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.themeText)
                         .lineLimit(1)
                 }
@@ -992,12 +1004,34 @@ struct UserHeaderView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(timeString).font(.system(size: 20, weight: .bold)).foregroundColor(.themeText)
-                Text(dateStringShort).font(.system(size: 14)).foregroundColor(.themeText2)
+                Text(timeString).font(.system(size: 21, weight: .bold)).foregroundColor(.themeText)
+                Text(dateStringShort).font(.system(size: 15)).foregroundColor(.themeText2)
             }
         }
         .padding(.horizontal, 18)
         .padding(.top, 14)
         .padding(.bottom, 12)
+        .onAppear { loadAvatar() }
+    }
+
+    private func loadAvatar() {
+        guard !avatarFile.isEmpty else { avatarImage = nil; return }
+        let url = DataRoot.avatarDirectory.appendingPathComponent(avatarFile)
+        avatarImage = NSImage(contentsOf: url)
+    }
+
+    private func pickAvatar() {
+        MacBridge.openFile(allowedTypes: [.image]) { url in
+            guard let url, let img = NSImage(contentsOf: url) else {
+                MacToastCenter.show("未选择有效图片")
+                return
+            }
+            let name = "avatar_\(UUID().uuidString.prefix(8)).\(url.pathExtension.isEmpty ? "png" : url.pathExtension)"
+            let dest = DataRoot.avatarDirectory.appendingPathComponent(name)
+            try? FileManager.default.copyItem(at: url, to: dest)
+            avatarFile = name
+            avatarImage = img
+            MacToastCenter.show("头像已更新")
+        }
     }
 }
