@@ -33,17 +33,17 @@ struct ManualSyncView: View {
                             Text(hasSynced ? "已建立同步基线（后续可继续增量同步）" : "尚未进行过手动同步（或基线已清空）")
                                 .foregroundColor(.themeText3)
                         }
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                     }
                     infoCard("说明") {
                         Text("Mac 版已内置同步协议层（SyncCore / SyncDTO / SwiftDataSyncSnapshot），与 iOS 版同一套数据结构。由于 Mac 无摄像头扫码，局域网扫码同步改为云端同步通道：在「设置 → 云端同步」中配置同一用户名，即可与 iOS 双向同步房源与经营数据。")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText3)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     infoCard("数据迁移（对应 iOS MigrationView）") {
                         Text("iOS 版的 zfgj 迁移文件在 Mac 端以备份文件形态实现：在「设置 → 备份与恢复 → 打开备份中心」中，用「恢复」选择备份文件即可完整迁移经营数据+房源字段；全量备份还含实拍照片/视频。")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText3)
                             .fixedSize(horizontal: false, vertical: true)
                         HStack(spacing: 10) {

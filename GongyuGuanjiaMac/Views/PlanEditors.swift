@@ -37,12 +37,12 @@ struct BudgetPlanEditor: View {
             }
 
             Text("为每个月设定包租支出预算，汇总页按预算对比实际支出。")
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundColor(.themeText3)
 
             if plans.isEmpty {
                 Text("暂无计划，点下方「添加」创建")
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(.themeText3)
                     .padding(.vertical, 12)
             } else {
@@ -50,12 +50,12 @@ struct BudgetPlanEditor: View {
                     ForEach(plans) { plan in
                         HStack {
                             Text(plan.month)
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .frame(width: 80, alignment: .leading)
                             Text("¥\(FormatKit.money(plan.budget))")
                                 .font(.system(size: 13, weight: .semibold))
                             Text(plan.note)
-                                .font(.system(size: 11))
+                                .font(.system(size: 12))
                                 .foregroundColor(.themeText3)
                             Spacer()
                             Button("删除") {

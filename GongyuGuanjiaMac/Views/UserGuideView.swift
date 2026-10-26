@@ -69,7 +69,7 @@ struct UserGuideView: View {
                         · 分享：单房源脱敏/完整 H5 页，公开选房 H5（自动列出未出租房源+户型筛选+名片沉底）
                         · 与 iOS 版共用同一腾讯云 COS + 云函数后台，数据实时互通
                         """)
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText2)
                             .lineSpacing(4)
                     }
@@ -97,7 +97,7 @@ struct UserGuideView: View {
                 .background(Color.themeAccent)
                 .cornerRadius(5)
             Text(text)
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundColor(.themeText2)
                 .lineSpacing(3)
         }

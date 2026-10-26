@@ -58,13 +58,50 @@ enum CloudBackupService {
         set { UserDefaults.standard.set(newValue, forKey: "backup.autoEnabled") }
     }
 
+    /// 自动备份频率（daily/weekly/monthly，设置页可调，与 iOS 同 key）
+    static var autoBackupFrequency: String {
+        get { UserDefaults.standard.string(forKey: "autoBackupFrequency") ?? "daily" }
+        set { UserDefaults.standard.set(newValue, forKey: "autoBackupFrequency") }
+    }
+
+    /// 自动备份保留天数（默认 7，设置页可调）
+    static var autoBackupRetentionDays: Int {
+        get {
+            let v = UserDefaults.standard.integer(forKey: "autoBackupRetentionDays")
+            return v <= 0 ? 7 : v
+        }
+        set { UserDefaults.standard.set(newValue, forKey: "autoBackupRetentionDays") }
+    }
+
+    /// 按频率判断距上次备份是否到期
+    private static func backupInterval() -> TimeInterval {
+        switch autoBackupFrequency {
+        case "weekly": return 7 * 24 * 3600
+        case "monthly": return 30 * 24 * 3600
+        default: return 24 * 3600
+        }
+    }
+
+    /// 清理超过保留天数的自动备份（本地），手动备份不删除
+    static func cleanupExpiredAutoBackups() {
+        let days = autoBackupRetentionDays
+        let fm = FileManager.default
+        guard let files = try? fm.contentsOfDirectory(at: DataRoot.backupsDirectory, includingPropertiesForKeys: [.creationDateKey], options: []) else { return }
+        for url in files where url.lastPathComponent.hasPrefix("快速备份_") {
+            guard let date = (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate else { continue }
+            if Date().timeIntervalSince(date) > TimeInterval(days * 24 * 3600) {
+                try? fm.removeItem(at: url)
+            }
+        }
+    }
+
     /// 执行自动备份（快速备份 + 上传云端，失败静默）
     static func runAutoBackupIfNeeded(mainContext: ModelContext, houseContext: ModelContext?) {
         guard autoBackupEnabled else { return }
-        // 距上次自动备份 < 6 小时则跳过
+        // 按频率判断：距上次自动备份不足一个周期则跳过
         let lastKey = "backup.autoLast"
         let last = UserDefaults.standard.double(forKey: lastKey)
-        if Date().timeIntervalSince1970 - last < 6 * 3600 { return }
+        if Date().timeIntervalSince1970 - last < backupInterval() { return }
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastKey)
 
         Task {
@@ -75,6 +112,7 @@ enum CloudBackupService {
             let result = await DataBackupManager.createQuickBackup(mainContext: mainContext, to: local)
             if case .success = result {
                 _ = await uploadBackup(localURL: local, config: config)
+                cleanupExpiredAutoBackups()
             }
             _ = houseContext
         }

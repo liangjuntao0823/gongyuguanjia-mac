@@ -24,7 +24,7 @@ struct TodoViews: View {
                 Text("待办事项")
                     .font(.system(size: 17, weight: .bold))
                 Text("共 \(items.count) 条")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText3)
                 Spacer()
                 Button("关闭") { onClose() }
@@ -51,7 +51,7 @@ struct TodoViews: View {
                             .font(.system(size: 36))
                             .foregroundColor(.gray)
                         Text("暂无待办")
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundColor(.themeText3)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -67,7 +67,7 @@ struct TodoViews: View {
                                 }
                                 .buttonStyle(.plain)
                                 Text(item.content)
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 14))
                                     .strikethrough(item.isCompleted)
                                     .foregroundColor(item.isCompleted ? .themeText3 : .themeText)
                                 Spacer()

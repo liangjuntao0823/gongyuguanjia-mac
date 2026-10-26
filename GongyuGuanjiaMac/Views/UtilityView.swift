@@ -117,7 +117,7 @@ struct UtilityView: View {
                     }
                     section("结算单") {
                         Text(statement)
-                            .font(.system(size: 14))
+                            .font(.system(size: 15))
                             .textSelection(.enabled)
                             .padding(.vertical, 6)
                         HStack(spacing: 10) {
@@ -174,18 +174,18 @@ struct UtilityView: View {
 
     private func amountRow(_ title: String, _ text: Binding<String>, unit: String = "") -> some View {
         HStack {
-            Text(title).font(.system(size: 13))
+            Text(title).font(.system(size: 14))
             Spacer()
             TextField("请输入", text: text)
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 120)
-            if !unit.isEmpty { Text(unit).font(.system(size: 12)).foregroundColor(.themeText3) }
+            if !unit.isEmpty { Text(unit).font(.system(size: 13)).foregroundColor(.themeText3) }
         }
     }
     private func infoRow(_ title: String, _ value: String) -> some View {
         HStack {
-            Text(title).font(.system(size: 13))
+            Text(title).font(.system(size: 14))
             Spacer()
             Text(value).font(.system(size: 13, weight: .semibold))
         }
@@ -259,8 +259,8 @@ struct UtilityHistoryView: View {
                 }) { item in
                     VStack(alignment: .leading, spacing: 5) {
                         Text(item.roomNumber + "房").font(.system(size: 14, weight: .semibold))
-                        Text(item.settledAt.formatted(date: .numeric, time: .shortened)).font(.system(size: 11)).foregroundColor(.themeText3)
-                        Text(item.statement).font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
+                        Text(item.settledAt.formatted(date: .numeric, time: .shortened)).font(.system(size: 12)).foregroundColor(.themeText3)
+                        Text(item.statement).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { selected = item }
@@ -326,7 +326,7 @@ struct UtilityHistoryEditView: View {
             .padding(14)
             Divider()
             TextEditor(text: $text)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .padding(10)
         }
         .frame(width: 520, height: 380)

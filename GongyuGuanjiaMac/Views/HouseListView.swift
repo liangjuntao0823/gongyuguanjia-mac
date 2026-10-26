@@ -135,19 +135,19 @@ struct HouseListView: View {
             // 统计行
             HStack(spacing: 12) {
                 Text("共 \(stats.total) 套")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText2)
                 Text("1座 \(stats.tower1) 套")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText2)
                 Text("2座 \(stats.tower2) 套")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText2)
                 Text("待租 \(stats.available) · 已租 \(stats.rented)")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText2)
                 Text("有实拍图 \(stats.withPhoto) · 无实拍图 \(stats.withoutPhoto)")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText2)
                 Spacer()
             }
@@ -196,7 +196,7 @@ struct HouseListView: View {
                         .font(.system(size: 40))
                         .foregroundColor(.gray)
                     Text("没有符合条件的房源")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(.themeText3)
                     Button("新增房源") { showNew = true }
                         .macSecondaryButton()
@@ -275,7 +275,7 @@ struct HouseCard: View {
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.themeText)
                         Text(house.towerLabel)
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                             .foregroundColor(.themeText3)
                         Spacer()
                         Text("¥\(Int(house.price))")
@@ -284,10 +284,10 @@ struct HouseCard: View {
                     }
                     HStack {
                         Text(house.layout)
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText2)
                         Text("房东 \(house.landlord)")
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                             .foregroundColor(.themeText3)
                             .lineLimit(1)
                         Spacer()
@@ -320,12 +320,12 @@ struct HouseRow: View {
                     StatusBadge(status: house.status)
                 }
                 Text("\(house.layout) · 房东 \(house.landlord) · ¥\(Int(house.price))/月")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText2)
             }
             Spacer()
             Text(house.photoSummary)
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundColor(.themeText3)
         }
         .padding(.vertical, 4)

@@ -122,7 +122,7 @@ struct DealsView: View {
             if deals.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "doc.text").font(.system(size: 40)).foregroundColor(.gray)
-                    Text("暂无成交记录").font(.system(size: 14)).foregroundColor(.themeText3)
+                    Text("暂无成交记录").font(.system(size: 15)).foregroundColor(.themeText3)
                     Button("新增成交") { showingAddDeal = true }.macSecondaryButton()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -174,7 +174,7 @@ struct DealsView: View {
             Image(systemName: isIncome ? "arrow.down.circle" : "arrow.up.circle")
                 .font(.system(size: 40)).foregroundColor(.gray)
             Text(isIncome ? "暂无杂项收入" : "暂无杂项支出")
-                .font(.system(size: 14)).foregroundColor(.themeText3)
+                .font(.system(size: 15)).foregroundColor(.themeText3)
             Button(isIncome ? "新增收入" : "新增支出") {
                 if isIncome { editingIncome = MiscIncome() } else { editingExpense = MiscExpense() }
             }.macSecondaryButton()
@@ -203,7 +203,7 @@ struct DealsView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.item).font(.system(size: 13, weight: .medium))
-                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 11)).foregroundColor(.themeText3) }
+                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 12)).foregroundColor(.themeText3) }
                 Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
             }
             Spacer()
@@ -221,7 +221,7 @@ struct DealsView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.item).font(.system(size: 13, weight: .medium))
-                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 11)).foregroundColor(.themeText3) }
+                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 12)).foregroundColor(.themeText3) }
                 Text(FormatKit.dateStr(row.date)).font(.system(size: 10)).foregroundColor(.themeText3)
             }
             Spacer()
@@ -393,7 +393,7 @@ struct DealEditor: View {
                 }
             }
 
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 12)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 13)).foregroundColor(.themeDanger) }
 
             HStack {
                 Spacer()
@@ -487,8 +487,8 @@ struct DealDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(rows, id: \.0) { row in
                         HStack(alignment: .top) {
-                            Text(row.0).font(.system(size: 12)).foregroundColor(.themeText3).frame(width: 80, alignment: .leading)
-                            Text(row.1).font(.system(size: 13)).textSelection(.enabled)
+                            Text(row.0).font(.system(size: 13)).foregroundColor(.themeText3).frame(width: 80, alignment: .leading)
+                            Text(row.1).font(.system(size: 14)).textSelection(.enabled)
                             Spacer()
                         }
                         Divider().opacity(0.4)
@@ -535,7 +535,7 @@ struct MiscEditor: View {
             TextField("项目", text: $item)
             TextField("金额", text: $amount)
             TextField("备注", text: $notes)
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 12)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 13)).foregroundColor(.themeDanger) }
             HStack {
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()

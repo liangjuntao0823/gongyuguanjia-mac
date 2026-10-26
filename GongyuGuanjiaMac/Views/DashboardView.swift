@@ -284,19 +284,19 @@ struct DashboardView: View {
                     .buttonStyle(.plain)
                     HStack(spacing: 0) {
                         Text("\(currentMonth)月还剩")
-                            .font(.system(size: 13)).foregroundColor(.themeText2)
+                            .font(.system(size: 14)).foregroundColor(.themeText2)
                         Text("\(timeRemainingInMonth.days)")
                             .font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
-                        Text("天").font(.system(size: 13)).foregroundColor(.themeText2)
+                        Text("天").font(.system(size: 14)).foregroundColor(.themeText2)
                         Text("\(timeRemainingInMonth.hours)")
                             .font(.system(size: 13, weight: .bold)).foregroundColor(.themeAccentDark)
-                        Text("小时，加油").font(.system(size: 13)).foregroundColor(.themeText2)
+                        Text("小时，加油").font(.system(size: 14)).foregroundColor(.themeText2)
                     }
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(timeString).font(.system(size: 20, weight: .bold)).foregroundColor(.themeText)
-                    Text(dateStringShort).font(.system(size: 13)).foregroundColor(.themeText2)
+                    Text(dateStringShort).font(.system(size: 14)).foregroundColor(.themeText2)
                 }
             }
             .padding(.horizontal, 18)
@@ -378,7 +378,7 @@ struct DashboardView: View {
                             .buttonStyle(.plain)
                     }) {
                         if pendingTodos.isEmpty {
-                            Text("暂无待办事项").font(.system(size: 13)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无待办事项").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(pendingTodos) { item in
@@ -387,21 +387,21 @@ struct DashboardView: View {
                                             completingTodo = item
                                         } label: {
                                             Image(systemName: "circle")
-                                                .font(.system(size: 15))
+                                                .font(.system(size: 16))
                                                 .foregroundColor(.gray)
                                         }
                                         .buttonStyle(.plain)
                                         Text(item.content)
-                                            .font(.system(size: 14))
+                                            .font(.system(size: 15))
                                             .lineLimit(2)
                                             .foregroundColor(.themeText)
                                         Spacer()
                                         if let reminder = item.reminderDate {
                                             Text("⏰ \(reminder.formatted(date: .abbreviated, time: .shortened))")
-                                                .font(.system(size: 11)).foregroundColor(.themeText3)
+                                                .font(.system(size: 12)).foregroundColor(.themeText3)
                                         }
                                         Button("编辑") { editingTodo = item }
-                                            .font(.system(size: 12))
+                                            .font(.system(size: 13))
                                             .foregroundColor(.themeAccent)
                                             .buttonStyle(.plain)
                                     }
@@ -417,7 +417,7 @@ struct DashboardView: View {
                     // 未收租提醒
                     DashboardSectionCard(title: "未收租提醒", subtitle: "\(rentReminders.count)套", isCollapsed: $rentReminderCollapsed) {
                         if rentReminders.isEmpty {
-                            Text("暂无未收租提醒").font(.system(size: 13)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无未收租提醒").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(rentReminders) { reminder in
@@ -463,7 +463,7 @@ struct DashboardView: View {
                     // 包租房付租提醒
                     DashboardSectionCard(title: "包租房付租提醒", subtitle: "\(payoutReminders.count)套", isCollapsed: $payoutReminderCollapsed) {
                         if payoutReminders.isEmpty {
-                            Text("暂无付租提醒").font(.system(size: 13)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无付租提醒").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(payoutReminders) { reminder in
@@ -474,10 +474,10 @@ struct DashboardView: View {
                                                 .foregroundColor(reminder.isOverdue ? .themeRed : .themeText)
                                             HStack(spacing: 6) {
                                                 Text(reminder.roomNumber).font(.system(size: 14, weight: .bold))
-                                                Text("· \(reminder.paymentMethod)").font(.system(size: 12)).foregroundColor(.themeText2)
+                                                Text("· \(reminder.paymentMethod)").font(.system(size: 13)).foregroundColor(.themeText2)
                                             }
                                             Text("\(reminder.payMonth)月\(reminder.payDay)号付")
-                                                .font(.system(size: 11))
+                                                .font(.system(size: 12))
                                                 .foregroundColor(reminder.isOverdue ? .themeRed : .themeText3)
                                         }
                                         Spacer()
@@ -508,7 +508,7 @@ struct DashboardView: View {
                     // 即将到期（前 3 套）
                     DashboardSectionCard(title: "即将到期", subtitle: "\(stats.expiringSoon.count)套", isCollapsed: $expiryCollapsed) {
                         if stats.expiringSoon.isEmpty {
-                            Text("暂无即将到期房源").font(.system(size: 13)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无即将到期房源").font(.system(size: 14)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(Array(stats.expiringSoon.prefix(3))) { prop in
@@ -516,7 +516,7 @@ struct DashboardView: View {
                                         VStack(alignment: .leading, spacing: 5) {
                                             HStack(spacing: 8) {
                                                 Text(prop.roomNumber).font(.system(size: 19, weight: .bold))
-                                                Text("到期:\(prop.leaseEnd)").font(.system(size: 13)).foregroundColor(.themeText2)
+                                                Text("到期:\(prop.leaseEnd)").font(.system(size: 14)).foregroundColor(.themeText2)
                                             }
                                             HStack(spacing: 6) {
                                                 Text("房东: \(prop.landlord)")
@@ -678,7 +678,7 @@ struct DashboardSectionHeader<Trailing: View>: View {
             HStack {
                 Text(title).font(.system(size: 15, weight: .semibold)).foregroundColor(.themeText)
                 if !subtitle.isEmpty {
-                    Text(subtitle).font(.system(size: 12)).foregroundColor(.themeText3)
+                    Text(subtitle).font(.system(size: 13)).foregroundColor(.themeText3)
                 }
                 Spacer(minLength: 8)
             }
@@ -726,7 +726,7 @@ struct QuickActionItem: View {
                     .font(.system(size: 24))
                     .foregroundColor(color)
                 Text(label)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText)
             }
             .frame(maxWidth: .infinity)
@@ -760,12 +760,12 @@ struct KpiCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 7) {
-                Text(label).font(.system(size: 13)).foregroundColor(.themeText2)
+                Text(label).font(.system(size: 14)).foregroundColor(.themeText2)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(value).font(.system(size: 24, weight: .bold)).foregroundColor(valueColor)
-                    Text(unit).font(.system(size: 12)).foregroundColor(.themeText3)
+                    Text(unit).font(.system(size: 13)).foregroundColor(.themeText3)
                 }
-                Text(foot).font(.system(size: 11)).foregroundColor(.themeText3).lineLimit(1)
+                Text(foot).font(.system(size: 12)).foregroundColor(.themeText3).lineLimit(1)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)

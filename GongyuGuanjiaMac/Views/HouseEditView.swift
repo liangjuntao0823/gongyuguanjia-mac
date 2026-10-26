@@ -84,7 +84,7 @@ struct HouseEditView: View {
                     .macSecondaryButton()
                     if !addedFiles.isEmpty {
                         Text("已选 \(addedFiles.count) 个")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText2)
                     }
                 }
@@ -92,7 +92,7 @@ struct HouseEditView: View {
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeDanger)
             }
 

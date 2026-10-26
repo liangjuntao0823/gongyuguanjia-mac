@@ -118,7 +118,7 @@ struct TrashView: View {
             HStack {
                 Text("回收站").font(.system(size: 17, weight: .bold))
                 Text("共 \(totalCount) 条")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeText3)
                 Spacer()
                 Button("清空回收站") { showClearAllConfirm = true }
@@ -158,7 +158,7 @@ struct TrashView: View {
                         .font(.system(size: 40))
                         .foregroundColor(.gray)
                     Text("回收站为空")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(.themeText3)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -170,11 +170,11 @@ struct TrashView: View {
                             .frame(width: 22)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(item.title).font(.system(size: 13, weight: .semibold))
-                            Text(item.subtitle).font(.system(size: 11)).foregroundColor(.themeText3)
+                            Text(item.subtitle).font(.system(size: 12)).foregroundColor(.themeText3)
                         }
                         Spacer()
                         Text(item.deletedAt.map { FormatKit.dateStr($0) } ?? "")
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                             .foregroundColor(.themeText3)
                         Button("还原") { item.restore() }.macSecondaryButton()
                         Button {

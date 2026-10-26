@@ -40,6 +40,13 @@ enum DataRoot {
         return dir
     }
 
+    /// 账单模板目录（收款码等）
+    static var billDirectory: URL {
+        let dir = DataRoot.directory.appendingPathComponent("BillTemplate", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
     /// COS 配置备份目录
     static var cosConfigDirectory: URL {
         let dir = DataRoot.directory.appendingPathComponent("CosConfig", isDirectory: true)

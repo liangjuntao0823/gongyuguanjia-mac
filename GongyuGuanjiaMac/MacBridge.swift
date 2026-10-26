@@ -67,6 +67,13 @@ enum MacBridge {
         }
     }
 
+    /// 单选文件（便捷）
+    static func openFile(allowedTypes: [UTType], completion: @escaping (URL?) -> Void) {
+        openFiles(allowedTypes: allowedTypes, allowsMultiple: false) { urls in
+            completion(urls.first)
+        }
+    }
+
     // MARK: 分享面板（NSSharingServicePicker）
 
     /// 分享链接/文本
@@ -196,7 +203,7 @@ struct MacPrimaryButtonStyle: ButtonStyle {
 struct MacSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13))
+            .font(.system(size: 14))
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
             .foregroundColor(.themeText)

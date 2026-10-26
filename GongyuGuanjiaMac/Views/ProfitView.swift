@@ -115,7 +115,7 @@ struct ProfitView: View {
                             .font(.system(size: 14, weight: .semibold))
                         if monthlySummaries.isEmpty {
                             Text("暂无统计数据")
-                                .font(.system(size: 12))
+                                .font(.system(size: 13))
                                 .foregroundColor(.themeText3)
                                 .padding(.vertical, 12)
                         } else {
@@ -160,7 +160,7 @@ struct SummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 12)).foregroundColor(.themeText3)
+            Text(title).font(.system(size: 13)).foregroundColor(.themeText3)
             Text(value).font(.system(size: 18, weight: .bold)).foregroundColor(color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

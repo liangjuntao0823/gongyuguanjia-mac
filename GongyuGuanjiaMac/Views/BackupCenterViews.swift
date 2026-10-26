@@ -52,12 +52,12 @@ struct BackupCenterViews: View {
                 if working {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text("处理中…").font(.system(size: 12))
+                        Text("处理中…").font(.system(size: 13))
                     }
                 }
                 if !message.isEmpty {
                     Text(message)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(message.contains("失败") ? .themeDanger : .themeAccent)
                 }
 
@@ -66,15 +66,15 @@ struct BackupCenterViews: View {
                     Text("本地备份（\(localItems.count)）")
                         .font(.system(size: 13, weight: .semibold))
                     if localItems.isEmpty {
-                        Text("暂无本地备份").font(.system(size: 12)).foregroundColor(.themeText3)
+                        Text("暂无本地备份").font(.system(size: 13)).foregroundColor(.themeText3)
                     } else {
                         List(localItems, id: \.url) { item in
                             HStack {
                                 Text(item.url.lastPathComponent)
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .lineLimit(1)
                                 Text(FormatKit.dateTimeStr(item.date))
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 12))
                                     .foregroundColor(.themeText3)
                                 Text(item.isFull ? "全量" : "快速")
                                     .font(.system(size: 10))
@@ -83,7 +83,7 @@ struct BackupCenterViews: View {
                                     .background(item.isFull ? Color.purple.opacity(0.15) : Color.blue.opacity(0.15))
                                     .cornerRadius(4)
                                 Text("\(ByteCountFormatter.string(fromByteCount: item.size, countStyle: .file))")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 12))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button("恢复") {
@@ -108,18 +108,18 @@ struct BackupCenterViews: View {
                     Text("云端备份（\(cloudItems.count)）")
                         .font(.system(size: 13, weight: .semibold))
                     if cloudItems.isEmpty {
-                        Text("暂无云端备份（配置云端后自动上传）").font(.system(size: 12)).foregroundColor(.themeText3)
+                        Text("暂无云端备份（配置云端后自动上传）").font(.system(size: 13)).foregroundColor(.themeText3)
                     } else {
                         List(cloudItems, id: \.name) { item in
                             HStack {
                                 Text(item.name)
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .lineLimit(1)
                                 Text(FormatKit.dateTimeStr(item.date))
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 12))
                                     .foregroundColor(.themeText3)
                                 Text("\(ByteCountFormatter.string(fromByteCount: item.size, countStyle: .file))")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 12))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button("下载并恢复") {

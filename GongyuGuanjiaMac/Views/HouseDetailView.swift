@@ -47,27 +47,27 @@ struct HouseDetailView: View {
                                     .font(.system(size: 22, weight: .bold))
                                 StatusBadge(status: house.status)
                                 Text(house.towerLabel)
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 13))
                                     .foregroundColor(.themeText3)
                             }
                             Text("户型：\(house.layout)")
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                             Text("租金：¥\(Int(house.price)) / 月")
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                                 .foregroundColor(.themeDanger)
                             Text("房东：\(house.landlord)")
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                             if !house.password.isEmpty {
                                 Text("门锁密码：\(house.password)")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 15))
                             }
                             if !house.remark.isEmpty {
                                 Text("备注：\(house.remark)")
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 14))
                                     .foregroundColor(.themeText2)
                             }
                             Text(house.photoSummary)
-                                .font(.system(size: 12))
+                                .font(.system(size: 13))
                                 .foregroundColor(.themeText3)
                         }
                         Spacer()
@@ -117,7 +117,7 @@ struct HouseDetailView: View {
 
                         if house.mediaItems.isEmpty {
                             Text("暂无媒体，点击右上「添加图片/视频」上传实拍图")
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundColor(.themeText3)
                                 .padding(.vertical, 20)
                         } else {
@@ -141,7 +141,7 @@ struct HouseDetailView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text("正在生成分享链接…")
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                         }
                         .padding(.vertical, 6)
                     }
@@ -150,7 +150,7 @@ struct HouseDetailView: View {
                             Image(systemName: shareMessage.contains("失败") ? "xmark.circle.fill" : "checkmark.circle.fill")
                                 .foregroundColor(shareMessage.contains("失败") ? .themeDanger : .themeAccent)
                             Text(shareMessage)
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                             Spacer()
                             if shareMessage.contains("链接") && !shareMessage.contains("失败") {
                                 Button("复制链接") {
@@ -356,21 +356,21 @@ struct ShareMenuView: View {
             .pickerStyle(.radioGroup)
 
             Text("脱敏版适合发给租客初步挑选；完整版适合已确定意向的租客。")
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundColor(.themeText3)
 
             if working {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text("正在生成 H5 页面并上传云端…")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                 }
             }
 
             if !resultMessage.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(resultMessage)
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundColor(resultMessage.contains("失败") ? .themeDanger : .themeAccent)
                     if !resultLink.isEmpty {
                         HStack(spacing: 8) {

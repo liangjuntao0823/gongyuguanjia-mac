@@ -46,7 +46,7 @@ struct HouseBatchImportView: View {
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(.themeDanger)
                     .padding(.horizontal, 14).padding(.top, 8)
             }
@@ -55,12 +55,12 @@ struct HouseBatchImportView: View {
                 VStack(spacing: 10) {
                     Image(systemName: "square.and.arrow.down").font(.system(size: 40)).foregroundColor(.gray)
                     Text("选择一个 CSV/Excel 文件，列依次为：房号、房东、户型、租金（元）、密码、备注、状态")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.themeText3)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 30)
                     Text("房号带「2-」前缀 → 2座；首行含“房号/房间”等表头会自动跳过")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundColor(.themeText3)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -70,14 +70,14 @@ struct HouseBatchImportView: View {
                         Text("\(item.tower == 2 ? "2-" : "")\(item.roomNo)")
                             .font(.system(size: 13, weight: .semibold))
                             .frame(width: 90, alignment: .leading)
-                        Text(item.landlord).font(.system(size: 12)).frame(width: 70, alignment: .leading)
-                        Text(item.layout).font(.system(size: 12)).frame(width: 60, alignment: .leading)
-                        Text("¥\(Int(item.price))").font(.system(size: 12)).frame(width: 60, alignment: .leading)
-                        Text(item.status).font(.system(size: 12)).frame(width: 40, alignment: .leading)
+                        Text(item.landlord).font(.system(size: 13)).frame(width: 70, alignment: .leading)
+                        Text(item.layout).font(.system(size: 13)).frame(width: 60, alignment: .leading)
+                        Text("¥\(Int(item.price))").font(.system(size: 13)).frame(width: 60, alignment: .leading)
+                        Text(item.status).font(.system(size: 13)).frame(width: 40, alignment: .leading)
                         Spacer()
                         if item.duplicate {
                             Text("重复跳过")
-                                .font(.system(size: 11))
+                                .font(.system(size: 12))
                                 .foregroundColor(.themeWarning)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
                                 .background(Color(hex: "FFF3E0"))
@@ -88,13 +88,13 @@ struct HouseBatchImportView: View {
                 }
                 if !importMessage.isEmpty {
                     Text(importMessage)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.themeAccent)
                         .padding(.horizontal, 14).padding(.bottom, 6)
                 }
                 HStack {
                     Text("共解析 \(items.count) 间，其中重复 \(items.filter(\.duplicate).count) 间将跳过")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundColor(.themeText3)
                     Spacer()
                     Button("重新选择文件") { items = []; imported = false }.macSecondaryButton()

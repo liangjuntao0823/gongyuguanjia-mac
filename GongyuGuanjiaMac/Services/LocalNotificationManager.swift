@@ -26,12 +26,18 @@ enum LocalNotificationManager {
 
     // MARK: 定时提醒（一次性）
 
-    static func schedule(title: String, body: String, at date: Date, id: String, tab: Int? = nil) {
+    static func schedule(title: String, body: String, at date: Date, id: String, tab: Int? = nil, soundKind: String? = nil) {
         guard isEnabled else { return }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.sound = .default
+        // 提醒声音：按类型读取设置（system/custom 一致使用系统默认音，Mac 通知栏等价效果）
+        if let soundKind {
+            _ = soundKey(for: soundKind)
+            content.sound = .default
+        } else {
+            content.sound = .default
+        }
         if let tab = tab { content.userInfo["tab"] = tab }
 
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)

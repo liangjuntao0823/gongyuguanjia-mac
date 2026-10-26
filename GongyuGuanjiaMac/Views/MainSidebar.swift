@@ -27,7 +27,7 @@ struct MainSidebar: View {
                         .padding(.leading, 14)
                         .padding(.top, 16)
                     Text("Mac 版 · v\(MacBridge.appVersion)")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundColor(.themeText3)
                         .padding(.leading, 14)
                         .padding(.top, 1)
@@ -41,7 +41,7 @@ struct MainSidebar: View {
                     } label: {
                         HStack(spacing: 9) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                                 .frame(width: 20)
                             Text(tab.rawValue)
                                 .font(.system(size: 13, weight: manager.selectedTab == tab ? .semibold : .regular))
@@ -62,9 +62,9 @@ struct MainSidebar: View {
                 // 底部用户信息
                 VStack(alignment: .leading, spacing: 4) {
                     Text("当前用户：\(CloudUser.displayName)")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                     Text("云配置：\(CosConfig.load() != nil ? "已配置" : "未配置")")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(CosConfig.load() != nil ? .themeAccent : .themeDanger)
                 }
                 .padding(12)
@@ -156,7 +156,7 @@ struct InitWizardView: View {
             }
 
             Text("填写与 iOS 版相同的腾讯云 COS 配置和云函数地址，房源数据即可与 iOS 版互通。")
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .foregroundColor(.themeText2)
 
             Group {
@@ -172,7 +172,7 @@ struct InitWizardView: View {
 
             if !message.isEmpty {
                 Text(message)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(success ? .themeAccent : .themeDanger)
             }
 

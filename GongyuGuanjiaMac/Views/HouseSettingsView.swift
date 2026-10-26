@@ -72,7 +72,7 @@ struct HouseSettingsView: View {
 
                         if !verifyMessage.isEmpty {
                             Text(verifyMessage)
-                                .font(.system(size: 12))
+                                .font(.system(size: 13))
                                 .foregroundColor(verifyMessage.contains("✓") ? .themeAccent : .themeDanger)
                         }
                         HStack {
@@ -134,15 +134,33 @@ struct HouseSettingsView: View {
                                 MediaSettingsStore.compressUpload = newValue
                             }
                         Text("关闭后视频/图片原样上传，画质无损但较慢。")
-                            .font(.system(size: 11))
+                            .font(.system(size: 12))
                             .foregroundColor(.themeText3)
                     }
 
                     // 选房链接
                     sectionCard("公开选房链接") {
                         Text("生成一个「米兰公馆 · 在租房源」H5，自动列出所有未出租房源，支持按户型筛选。")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(.themeText2)
+                        HStack(spacing: 10) {
+                            Text("链接有效期").font(.system(size: 14)).foregroundColor(.themeText2)
+                            Picker("", selection: $roomsLinkExpiry) {
+                                Text("1 天").tag(1)
+                                Text("2 天").tag(2)
+                                Text("3 天").tag(3)
+                                Text("7 天").tag(7)
+                                Text("15 天").tag(15)
+                                Text("30 天").tag(30)
+                            }
+                            .pickerStyle(.menu)
+                            .frame(width: 100)
+                            .onChange(of: roomsLinkExpiry) { _, newValue in
+                                UserDefaults.standard.set(newValue, forKey: "roomsLinkExpiryDays")
+                                roomsMessage = "已设为 \(newValue) 天：下次「生成/刷新」按新有效期生效"
+                            }
+                            Spacer()
+                        }
                         HStack {
                             Button(generatingRooms ? "生成中…" : "生成 / 刷新选房链接") { generateRoomsLink() }
                                 .macPrimaryButton()
@@ -163,7 +181,7 @@ struct HouseSettingsView: View {
                         }
                         if !roomsMessage.isEmpty {
                             Text(roomsMessage)
-                                .font(.system(size: 12))
+                                .font(.system(size: 13))
                                 .foregroundColor(roomsMessage.contains("失败") ? .themeDanger : .themeAccent)
                         }
                         if !roomsLink.isEmpty {
@@ -218,6 +236,8 @@ struct HouseSettingsView: View {
         wmEnabled = wm.enabled
         wmText = wm.text
         compressUpload = MediaSettingsStore.compressUpload
+        let exp = UserDefaults.standard.integer(forKey: "roomsLinkExpiryDays")
+        roomsLinkExpiry = (1...30).contains(exp) ? exp : 2
         hasQR = QrcodeStore.exists()
         if hasQR, let data = QrcodeStore.loadData() {
             qrPreview = NSImage(data: data)
@@ -307,13 +327,15 @@ struct HouseSettingsView: View {
                     qrUploaded = true
                 }
                 _ = qrUploaded
-                // 生成壳页面并上传
+                // 生成壳页面并上传：先删除旧壳（旧链接立即失效，iOS v1.55 同逻辑），再按有效期生成新链接
                 let shellPath = CloudUser.roomsIndexPath
-                let shellURL = (try CosUploader.presignedGetURL(for: shellPath, expires: CosUploader.shareLinkExpires, config: config)).absoluteString
+                try? await CosUploader.deleteObject(path: shellPath, config: config)
+                let expirySeconds = roomsLinkExpiry * 86400
+                let shellURL = (try CosUploader.presignedGetURL(for: shellPath, expires: expirySeconds, config: config)).absoluteString
                 let html = CosUploader.buildRoomsShellHTML(config: config, shellURL: shellURL)
                 try await CosUploader.upload(data: Data(html.utf8), to: shellPath, contentType: "text/html", config: config)
                 roomsLink = shellURL
-                roomsMessage = "✓ 选房链接已生成，微信打开即网页（非下载文件），改完刷新即最新"
+                roomsMessage = "✓ 选房链接已生成（有效期 \(roomsLinkExpiry) 天），微信打开即网页（非下载文件），改完刷新即最新"
                 BackupLogStore.log("生成选房链接", detail: "\(roomsLink)", kind: "local")
             } catch {
                 roomsMessage = "失败：\(error.localizedDescription)"
