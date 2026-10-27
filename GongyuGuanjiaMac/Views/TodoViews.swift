@@ -10,7 +10,7 @@ struct TodoViews: View {
     @State private var searchText = ""
     @State private var selectedStatus = 0          // 0 未办 / 1 已办
     @State private var newTitle = ""
-    @State private var editMode: EditMode = .inactive
+    @State private var isSorting = false
     @State private var editingItem: TodoItem?
     @State private var previewItem: TodoItem?
     @State private var completingItem: TodoItem?
@@ -70,8 +70,8 @@ struct TodoViews: View {
                 .pickerStyle(.segmented)
                 .frame(width: 170)
                 if selectedStatus == 0 && searchText.isEmpty {
-                    Button { withAnimation { editMode = (editMode == .active ? .inactive : .active) } } label: {
-                        Label(editMode == .active ? "完成排序" : "拖拽排序", systemImage: "arrow.up.arrow.down")
+                    Button { withAnimation { isSorting.toggle() } } label: {
+                        Label(isSorting ? "完成排序" : "排序", systemImage: "arrow.up.arrow.down")
                     }
                     .macSecondaryButton()
                 }
@@ -107,31 +107,29 @@ struct TodoViews: View {
             } else {
                 List {
                     ForEach(visibleItems) { item in
-                        TodoRow(item: item, showComplete: !item.isCompleted, onComplete: { completingItem = item },
+                        TodoRow(item: item, showComplete: !item.isCompleted, isSorting: isSorting && selectedStatus == 0,
+                                onMoveUp: { move(item, up: true) }, onMoveDown: { move(item, up: false) },
+                                onComplete: { completingItem = item },
                                 onEdit: { editingItem = item }, onDelete: { deletingItem = item })
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 if item.isCompleted { previewItem = item } else { editingItem = item }
                             }
                     }
-                    .onMove { source, destination in
-                        if selectedStatus == 0 && searchText.isEmpty { movePending(from: source, to: destination) }
-                    }
                 }
-                .environment(\.editMode, $editMode)
                 .listStyle(.inset)
             }
         }
         .background(Color.themeBg)
         .frame(minWidth: 720, minHeight: 520)
         .sheet(isPresented: $showNewForm) {
-            TodoFormView(manager: manager, item: nil, onClose: { showNewForm = false })
+            TodoItemFormView(manager: manager, item: nil, onClose: { showNewForm = false })
         }
         .sheet(item: $editingItem) { item in
-            TodoFormView(manager: manager, item: item, onClose: { editingItem = nil })
+            TodoItemFormView(manager: manager, item: item, onClose: { editingItem = nil })
         }
         .sheet(item: $previewItem) { item in
-            TodoFormView(manager: manager, item: item, readOnly: true, onClose: { previewItem = nil })
+            TodoItemFormView(manager: manager, item: item, readOnly: true, onClose: { previewItem = nil })
         }
         // 完成确认
         .alert("确认已办？", isPresented: Binding(get: { completingItem != nil }, set: { if !$0 { completingItem = nil } })) {
@@ -159,10 +157,14 @@ struct TodoViews: View {
         newTitle = ""
     }
 
-    private func movePending(from source: IndexSet, to destination: Int) {
+    /// 未办列表上移/下移（按 sortOrder 重排）
+    private func move(_ item: TodoItem, up: Bool) {
         var ordered = visibleItems
-        ordered.move(fromOffsets: source, toOffset: destination)
-        for (index, item) in ordered.enumerated() { item.sortOrder = index }
+        guard let idx = ordered.firstIndex(where: { $0.id == item.id }) else { return }
+        let target = up ? idx - 1 : idx + 1
+        guard target >= 0 && target < ordered.count else { return }
+        ordered.swapAt(idx, target)
+        for (index, it) in ordered.enumerated() { it.sortOrder = index }
         try? manager.mainContext.save()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
@@ -173,6 +175,9 @@ struct TodoViews: View {
 struct TodoRow: View {
     let item: TodoItem
     let showComplete: Bool
+    let isSorting: Bool
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
     let onComplete: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -213,6 +218,14 @@ struct TodoRow: View {
                 }
             }
             Spacer()
+            if isSorting {
+                HStack(spacing: 4) {
+                    Button(action: onMoveUp) { Image(systemName: "chevron.up") }
+                        .buttonStyle(.plain).foregroundColor(.themeText2).help("上移")
+                    Button(action: onMoveDown) { Image(systemName: "chevron.down") }
+                        .buttonStyle(.plain).foregroundColor(.themeText2).help("下移")
+                }
+            }
             if showComplete {
                 Button("已办", action: onComplete)
                     .font(.system(size: 12, weight: .semibold))
@@ -250,7 +263,7 @@ struct TodoRow: View {
 
 // MARK: - 待办表单（新增 / 编辑 / 预览）
 
-struct TodoFormView: View {
+struct TodoItemFormView: View {
     @ObservedObject var manager: DataManager
     let item: TodoItem?
     var readOnly: Bool = false

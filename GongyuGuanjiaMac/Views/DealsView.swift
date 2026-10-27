@@ -131,11 +131,13 @@ struct DealsView: View {
         }
         .background(Color.themeBg)
         .sheet(isPresented: $showingAddDeal) {
-            DealEditor(manager: manager, deal: nil, onSaved: { record in
+            DealEditor(manager: manager, deal: nil,
+                      onClose: { showingAddDeal = false },
+                      onSaved: { record in
                 selection = record.id
                 highlightedID = record.id
                 scheduleHighlightClear()
-            }) { showingAddDeal = false }
+            })
         }
         .sheet(item: $viewingDeal) { deal in DealDetailView(manager: manager, deal: deal) { viewingDeal = nil } }
         .sheet(item: $editingDeal) { deal in DealEditor(manager: manager, deal: deal) { editingDeal = nil } }
@@ -560,12 +562,12 @@ struct DealEditor: View {
             try? manager.mainContext.save()
             NotificationCenter.default.post(name: .macDataChanged, object: nil)
         } else {
-            if let record = manager.addDeal(date: date, roomNumber: roomNumber, landlord: landlord, unitType: unitType,
+            let record = manager.addDeal(date: date, roomNumber: roomNumber, landlord: landlord, unitType: unitType,
                                  leaseStart: leaseStart, leaseEnd: leaseEnd, leaseDuration: leaseDuration,
                                  rent: r, deposit: d, prepayment: p, rentDueDay: due,
                                  agentFeeLandlord: aL, agentFeeTenant: aT, totalFee: total,
-                                 manager: managerName, source: source, notes: notes) {
-                onSaved?(record)
+                                 manager: managerName, source: source, notes: notes)
+            onSaved?(record)
             }
         }
         MacToastCenter.show("已保存")

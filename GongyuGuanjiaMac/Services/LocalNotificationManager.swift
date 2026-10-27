@@ -70,9 +70,11 @@ enum LocalNotificationManager {
             let todoIDs = requests.filter { $0.identifier.hasPrefix("todo.") }.map { $0.identifier }
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: todoIDs)
         }
-        for item in todos where item.isDeleted != true && !item.isCompleted, let reminder = item.reminderDate {
-            let body = item.content
-            schedule(title: "待办提醒", body: body, at: reminder, id: "todo.\(item.id.uuidString)", tab: 9, soundKind: "todo")
+        for item in todos where item.isDeleted != true && !item.isCompleted {
+            if let reminder = item.reminderDate {
+                let body = item.content
+                schedule(title: "待办提醒", body: body, at: reminder, id: "todo.\(item.id.uuidString)", tab: 9, soundKind: "todo")
+            }
         }
     }
 
