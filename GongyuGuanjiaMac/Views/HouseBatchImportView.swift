@@ -11,7 +11,7 @@ struct BatchImportItem: Identifiable {
     var tower: Int
     var landlord: String
     var layout: String
-    var price: Double
+    var price: Int
     var password: String
     var remark: String
     var status: String
@@ -109,7 +109,7 @@ struct HouseBatchImportView: View {
                             .frame(width: 100, alignment: .leading)
                         Text(item.landlord).font(.system(size: 14)).frame(width: 70, alignment: .leading)
                         Text(item.layout).font(.system(size: 14)).frame(width: 60, alignment: .leading)
-                        Text(item.price > 0 ? "¥\(Int(item.price))" : "-").font(.system(size: 14)).frame(width: 60, alignment: .leading)
+                        Text(item.price > 0 ? "¥\(item.price)" : "-").font(.system(size: 14)).frame(width: 60, alignment: .leading)
                         Text(item.status).font(.system(size: 14)).frame(width: 40, alignment: .leading)
                         Spacer()
                         if item.invalid {
@@ -192,7 +192,7 @@ struct HouseBatchImportView: View {
             let (roomNo, tower) = Self.parseRoom(rawRoom, explicitTower: 0)
             let landlord = cols.count > 0 ? cols.removeFirst() : ""
             let layout = cols.count > 0 ? cols.removeFirst() : ""
-            let price = cols.count > 0 ? Double(cols.removeFirst().replacingOccurrences(of: ",", with: "")) ?? 0 : 0
+            let price = cols.count > 0 ? Int((Double(cols.removeFirst().replacingOccurrences(of: ",", with: "")) ?? 0).rounded()) : 0
             let password = cols.count > 0 ? cols.removeFirst() : ""
             let remark = cols.count > 0 ? cols.removeFirst() : ""
             let status = cols.count > 0 ? cols.removeFirst() : "待租"

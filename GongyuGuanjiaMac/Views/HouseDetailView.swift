@@ -52,7 +52,7 @@ struct HouseDetailView: View {
                             }
                             Text("户型：\(house.layout)")
                                 .font(.system(size: 16))
-                            Text("租金：¥\(Int(house.price)) / 月")
+                            Text("租金：¥\(house.price) / 月")
                                 .font(.system(size: 16))
                                 .foregroundColor(.themeDanger)
                             Text("房东：\(house.landlord)")

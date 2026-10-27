@@ -10,7 +10,7 @@ final class House {
     var tower: Int              // 座号 1/2
     var landlord: String
     var layout: String          // 户型
-    var price: Double
+    var price: Int
     var password: String
     var remark: String
     var statusRaw: String       // "待租" / "已租"
@@ -25,7 +25,7 @@ final class House {
     @Relationship(deleteRule: .cascade, inverse: \MediaItem.house)
     var mediaItems: [MediaItem]
 
-    init(roomNo: String, tower: Int, landlord: String, layout: String, price: Double,
+    init(roomNo: String, tower: Int, landlord: String, layout: String, price: Int,
          password: String = "", remark: String = "", status: String = "待租") {
         self.id = UUID()
         self.roomNo = roomNo
@@ -134,7 +134,7 @@ struct HouseExportDTO: Codable {
     var tower: Int
     var landlord: String
     var layout: String
-    var price: Double
+    var price: Int
     var password: String
     var remark: String
     var statusRaw: String

@@ -114,7 +114,7 @@ final class DataManager: ObservableObject {
 
     /// 新增房源：插入 + 自动上传媒体 + 自动生成脱敏 H5（新增即生成）
     func addHouse(roomNo: String, tower: Int, landlord: String, layout: String,
-                  price: Double, password: String, remark: String, status: String,
+                  price: Int, password: String, remark: String, status: String,
                   mediaFiles: [(url: URL, kind: String)] = []) -> House {
         let house = House(roomNo: roomNo, tower: tower, landlord: landlord, layout: layout,
                           price: price, password: password, remark: remark, status: status)
@@ -148,7 +148,7 @@ final class DataManager: ObservableObject {
 
     /// 更新房源：改字段 + 媒体增删 + 重生成 H5（删旧生成新）
     func updateHouse(_ house: House, roomNo: String, tower: Int, landlord: String, layout: String,
-                     price: Double, password: String, remark: String, status: String) {
+                     price: Int, password: String, remark: String, status: String) {
         house.roomNo = roomNo
         house.tower = tower
         house.landlord = landlord
@@ -281,7 +281,7 @@ final class DataManager: ObservableObject {
             towerLabel: house.towerLabel,
             layout: house.layout,
             statusLabel: house.status,
-            priceText: "\(Int(house.price))元",
+            priceText: "\(house.price)元",
             landlord: house.landlord,
             password: house.password,
             remark: house.remark,

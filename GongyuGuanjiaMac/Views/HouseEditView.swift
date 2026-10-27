@@ -191,7 +191,7 @@ struct HouseEditView: View {
                 tower = house.tower
                 landlord = house.landlord
                 layout = house.layout
-                price = "\(Int(house.price))"
+                price = "\(house.price)"
                 password = house.password
                 remark = house.remark
                 status = house.status
@@ -210,7 +210,7 @@ struct HouseEditView: View {
         }
         guard !landlord.trimmingCharacters(in: .whitespaces).isEmpty else { errorMessage = "请填写房东"; return }
         guard !layout.trimmingCharacters(in: .whitespaces).isEmpty else { errorMessage = "请填写户型"; return }
-        guard let priceValue = Double(price), priceValue > 0 else { errorMessage = "请填写正确的租金"; return }
+        guard let priceValue = Int(price), priceValue > 0 else { errorMessage = "请填写正确的租金"; return }
 
         // 从前缀解析座号与本体（前缀为准）
         let finalTower = roomNoTrim.hasPrefix("2-") ? 2 : 1

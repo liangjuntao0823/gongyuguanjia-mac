@@ -59,7 +59,7 @@ enum CloudHouseSync {
             tower: house.tower,
             landlord: house.landlord,
             layout: house.layout,
-            price: Int(house.price),
+            price: house.price,
             password: house.password,
             remark: house.remark,
             status: statusToCloud(house.status),
@@ -80,7 +80,7 @@ enum CloudHouseSync {
         if rec.tower != house.tower { return true }
         if rec.landlord != house.landlord { return true }
         if rec.layout != house.layout { return true }
-        if rec.price != Int(house.price) { return true }
+        if rec.price != house.price { return true }
         if rec.password != house.password { return true }
         if rec.remark != house.remark { return true }
         if rec.status != statusToCloud(house.status) { return true }
@@ -189,7 +189,7 @@ enum CloudHouseSync {
                         local.tower = record.tower
                         local.landlord = record.landlord
                         local.layout = record.layout
-                        local.price = Double(record.price)
+                        local.price = record.price
                         local.password = record.password
                         local.remark = record.remark
                         local.status = statusFromCloud(record.status)
@@ -214,7 +214,7 @@ enum CloudHouseSync {
                     let house = House(
                         roomNo: roomNoFromCloud(record.roomNo), tower: record.tower,
                         landlord: record.landlord, layout: record.layout,
-                        price: Double(record.price), password: record.password,
+                        price: record.price, password: record.password,
                         remark: record.remark, status: statusFromCloud(record.status)
                     )
                     house.lastUpdatedAt = record.updatedAt
@@ -419,13 +419,13 @@ enum LocalHouseLedger {
             let house: House
             if let h = localByKey[rec.roomKey] {
                 h.roomNo = rec.roomNo; h.tower = rec.tower; h.landlord = rec.landlord
-                h.layout = rec.layout; h.price = Double(rec.price); h.password = rec.password
+                h.layout = rec.layout; h.price = rec.price; h.password = rec.password
                 h.remark = rec.remark; h.statusRaw = CloudHouseSync.statusFromCloud(rec.status)
                 h.lastUpdatedAt = rec.updatedAt
                 house = h
             } else {
                 let h = House(roomNo: rec.roomNo, tower: rec.tower, landlord: rec.landlord,
-                              layout: rec.layout, price: Double(rec.price), password: rec.password,
+                              layout: rec.layout, price: rec.price, password: rec.password,
                               remark: rec.remark, status: CloudHouseSync.statusFromCloud(rec.status))
                 h.lastUpdatedAt = rec.updatedAt
                 h.cloudStatusRaw = "local"

@@ -524,7 +524,7 @@ struct HouseListView: View {
                 towerLabel: house.towerLabel,
                 layout: house.layout,
                 statusLabel: house.status,
-                priceText: "\(Int(house.price))元",
+                priceText: "\(house.price)元",
                 landlord: house.landlord,
                 password: house.password,
                 remark: house.remark,
@@ -597,7 +597,7 @@ struct HouseCard: View {
                             .font(.system(size: 13))
                             .foregroundColor(.themeText3)
                         Spacer()
-                        Text("¥\(Int(house.price))")
+                        Text("¥\(house.price)")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.themeDanger)
                     }
@@ -645,7 +645,7 @@ struct HouseRow: View {
                         .font(.system(size: 15, weight: .semibold))
                     StatusBadge(status: house.status)
                 }
-                Text("\(house.layout) · 房东 \(house.landlord) · ¥\(Int(house.price))/月")
+                Text("\(house.layout) · 房东 \(house.landlord) · ¥\(house.price)/月")
                     .font(.system(size: 14))
                     .foregroundColor(.themeText2)
             }

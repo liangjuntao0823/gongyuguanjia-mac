@@ -578,6 +578,9 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.8", "2026-10-27", [
+            "租金字段类型统一为整数（iOS 同为 Int）：房源编辑/导入/同步/备份全链路对齐，Mac 录入非整数租金会四舍五入，两端同步不再丢小数",
+        ]),
         ("v1.2.7", "2026-10-27", [
             "远程配置中心：云端 config.json 三级兜底（云端→本地缓存→内置默认），启动/同步后自动拉取；设置-远程配置管理可编辑公告/最低版本/功能开关/数值参数/提示文案/云端更新日志并发布（云函数 configGet/configSave）",
             "全局同步任务中心：同步/补传进度全局登记，房源页顶部可最小化收起，待补传媒体页顶部显示进行中任务卡片",
