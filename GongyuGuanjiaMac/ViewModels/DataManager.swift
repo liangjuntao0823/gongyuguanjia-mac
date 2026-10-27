@@ -132,9 +132,17 @@ final class DataManager: ObservableObject {
         house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        pushHouseLedgerIfConfigured(house)
         autoRegenerateMaskedShare(for: house)
         CloudOps.log(category: "房源", action: "新增", result: "成功", detail: "\(house.displayRoomNo) · 媒体 \(mediaFiles.count) 个", room: house.mediaRoomKey)
         return house
+    }
+
+    /// 保存后推送单套账本到云端（对齐 iOS uploadOne：字段/媒体变化即时同步）
+    private func pushHouseLedgerIfConfigured(_ house: House) {
+        guard let config = CosConfig.load(), config.isValid else { return }
+        let record = CloudHouseSync.record(from: house)
+        Task { try? await CloudHouseSync.saveRecord(record, config: config) }
     }
 
     /// 更新房源：改字段 + 媒体增删 + 重生成 H5（删旧生成新）
@@ -152,6 +160,7 @@ final class DataManager: ObservableObject {
         house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        pushHouseLedgerIfConfigured(house)
         autoRegenerateMaskedShare(for: house)
         CloudOps.log(category: "房源", action: "更新", result: "成功", detail: "\(house.displayRoomNo)", room: house.mediaRoomKey)
     }
@@ -168,11 +177,13 @@ final class DataManager: ObservableObject {
         house.lastUpdatedAt = Date()
         try? houseContext.save()
         Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
+        pushHouseLedgerIfConfigured(house)
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
     }
 
     func removeMedia(_ item: MediaItem, from house: House) {
         MediaStore.removeMedia(fileName: item.fileName, roomKey: house.mediaRoomKey)
+        pushHouseLedgerIfConfigured(house)
         houseContext.delete(item)
         house.updatedAt = Date()
         try? houseContext.save()
@@ -194,6 +205,12 @@ final class DataManager: ObservableObject {
         house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        // 云端账本同步删除（媒体目录与 H5 保留，还原不丢图；iOS 端下次同步即消失）
+        if let config = CosConfig.load(), config.isValid {
+            Task {
+                _ = try? await CosUploader.deleteObject(path: CloudHouseSync.recordPath(roomKey: house.mediaRoomKey), config: config)
+            }
+        }
         CloudOps.log(category: "房源", action: "删除", result: "成功", detail: "\(house.displayRoomNo) · 媒体 \(house.mediaItems.count) 个", room: house.mediaRoomKey)
     }
 
@@ -209,11 +226,25 @@ final class DataManager: ObservableObject {
     func permanentDeleteHouse(_ house: House) {
         let roomKey = house.mediaRoomKey
         MediaStore.removeRoom(roomKey: roomKey)
-        if let config = CosConfig.load() {
+        // 云端完整删除（对齐 iOS v1.69：删桶目录全部对象 + 账本 + 分享页；失败不阻塞本地，写日志提示）
+        if let config = CosConfig.load(), config.isValid {
             Task {
-                try? await CosUploader.deleteObject(path: "h/\(roomKey)", config: config)
-                try? await CosUploader.deleteObject(path: "\(CloudUser.sharePagePrefix)\(roomKey)", config: config)
+                do {
+                    let objects = try await CosUploader.listObjects(prefix: "h/\(roomKey)/", config: config)
+                    for obj in objects {
+                        try? await CosUploader.deleteObject(path: obj.name, config: config)
+                    }
+                    try? await CosUploader.deleteObject(path: CloudHouseSync.recordPath(roomKey: roomKey), config: config)
+                    try? await CosUploader.deleteObject(path: "\(CloudUser.sharePagePrefix)\(roomKey)", config: config)
+                    CloudOps.log(category: "房源", action: "彻底删除（本地+云端）", result: "成功",
+                                 detail: "\(house.displayRoomNo) · 云端桶 \(objects.count) 个对象 + 账本", room: roomKey)
+                } catch {
+                    CloudOps.log(category: "房源", action: "彻底删除（本地+云端）", result: "失败",
+                                 detail: "\(house.displayRoomNo) \(error.localizedDescription)。可手动清理 h/\(roomKey)/", room: roomKey)
+                }
             }
+        } else {
+            CloudOps.log(category: "房源", action: "彻底删除", result: "成功", detail: "\(house.displayRoomNo)（未配置云存储，仅本地）", room: roomKey)
         }
         houseContext.delete(house)
         try? houseContext.save()

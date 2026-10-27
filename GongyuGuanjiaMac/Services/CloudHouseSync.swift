@@ -51,6 +51,44 @@ enum CloudHouseSync {
         "h/\(roomKey)/info.json"
     }
 
+    /// 由本地房源构造账本记录（与 iOS record(from:username:) 同构：roomNo 无前缀、状态英文、媒体名清单）
+    static func record(from house: House) -> CloudHouseRecord {
+        CloudHouseRecord(
+            roomKey: house.mediaRoomKey,
+            roomNo: house.roomNo,
+            tower: house.tower,
+            landlord: house.landlord,
+            layout: house.layout,
+            price: Int(house.price),
+            password: house.password,
+            remark: house.remark,
+            status: statusToCloud(house.status),
+            updatedAt: house.lastUpdatedAt ?? house.updatedAt,
+            updatedBy: CloudUser.username,
+            mediaNames: house.mediaItems.map { $0.fileName }
+        )
+    }
+
+    /// 媒体名归一化 key（与 iOS mediaNormKey 一致）：去扩展名 + 小写，.mov/.mp4 视为同一文件
+    static func mediaNormKey(_ name: String) -> String {
+        (name as NSString).deletingPathExtension.lowercased()
+    }
+
+    /// 字段级对比（与 iOS cloudRecordDiffers 一致）：逐字段比较，不依赖时间戳
+    static func cloudRecordDiffers(_ rec: CloudHouseRecord, from house: House) -> Bool {
+        if rec.roomNo != house.roomNo { return true }
+        if rec.tower != house.tower { return true }
+        if rec.landlord != house.landlord { return true }
+        if rec.layout != house.layout { return true }
+        if rec.price != Int(house.price) { return true }
+        if rec.password != house.password { return true }
+        if rec.remark != house.remark { return true }
+        if rec.status != statusToCloud(house.status) { return true }
+        let localMedia = Set(house.mediaItems.map { mediaNormKey($0.fileName) })
+        if localMedia != Set(rec.mediaNames.map { mediaNormKey($0) }) { return true }
+        return false
+    }
+
     /// 把本地房源逐套写入云端账本（修改一套只写一套，最后写入优先，与 iOS v1.71 一致）
     static func pushAll(houseContext: ModelContext) async -> CloudSyncResult {
         guard let config = CosConfig.load() else { return .failure("未配置云存储") }
@@ -65,23 +103,7 @@ enum CloudHouseSync {
                     removed += 1
                     continue
                 }
-                let mediaNames = house.mediaItems.map { $0.fileName }
-                let effectiveUpdatedAt = house.lastUpdatedAt ?? house.updatedAt
-                let record = CloudHouseRecord(
-                    roomKey: house.mediaRoomKey,
-                    roomNo: house.roomNo,        // 无前缀本体，与 iOS record.roomNo 一致（前缀只进 mediaRoomKey）
-                    tower: house.tower,
-                    landlord: house.landlord,
-                    layout: house.layout,
-                    price: Int(house.price),
-                    password: house.password,
-                    remark: house.remark,
-                    status: statusToCloud(house.status),
-                    updatedAt: effectiveUpdatedAt,
-                    updatedBy: CloudUser.username,
-                    mediaNames: mediaNames
-                )
-                try await saveRecord(record, config: config)
+                try await saveRecord(record(from: house), config: config)
                 pushed += 1
             }
             let detail = "已上传 \(pushed) 套" + (removed > 0 ? "，云端删除 \(removed) 套" : "")
@@ -158,10 +180,8 @@ enum CloudHouseSync {
             progress?(Double(done) / Double(total), "同步 \(record.roomKey)…")
 
             if let local = localByKey[record.roomKey] {
-                // 已存在：以较新者为准
-                let cloudDate = record.updatedAt
-                let localDate = local.lastUpdatedAt ?? local.updatedAt
-                if cloudDate > localDate {
+                // 已存在：字段级对比（v1.41 语义，不再依赖时间戳精度）
+                if cloudRecordDiffers(record, from: local) {
                     updatedKeys.append(record.roomKey)
                     if apply {
                         local.roomNo = roomNoFromCloud(record.roomNo)
@@ -172,21 +192,19 @@ enum CloudHouseSync {
                         local.password = record.password
                         local.remark = record.remark
                         local.status = statusFromCloud(record.status)
-                        local.lastUpdatedAt = cloudDate
-                        local.updatedAt = cloudDate
+                        local.lastUpdatedAt = record.updatedAt
+                        local.updatedAt = record.updatedAt
                         local.updatedBy = record.updatedBy
                         local.isDeleted = false
                         local.cloudStatus = .both
-                        syncMediaNames(record.mediaNames, house: local, houseContext: houseContext)
                     }
                 } else if apply {
                     local.cloudStatus = .both
                 }
-                // 媒体缺失统计（无论是否应用）
-                for name in record.mediaNames {
-                    if !FileManager.default.fileExists(atPath: MediaStore.fileURL(fileName: name, roomKey: local.mediaRoomKey).path) {
-                        mediaMissing.append("\(record.roomKey)/\(name)")
-                    }
+                // 媒体双向对账（v1.43 语义）：① 云端有本地缺 → 下载；② 本地有云端无 → 删记录+文件；③ 磁盘孤儿 → 删文件
+                if apply {
+                    reconcileMedia(record: record, house: local, houseContext: houseContext,
+                                   mediaMissing: &mediaMissing)
                 }
             } else {
                 // 本地没有 → 新建
@@ -203,7 +221,8 @@ enum CloudHouseSync {
                     house.updatedBy = record.updatedBy
                     house.cloudStatus = .cloud
                     houseContext.insert(house)
-                    syncMediaNames(record.mediaNames, house: house, houseContext: houseContext)
+                    reconcileMedia(record: record, house: house, houseContext: houseContext,
+                                   mediaMissing: &mediaMissing)
                 }
             }
             if apply { try? houseContext.save() }
@@ -224,19 +243,33 @@ enum CloudHouseSync {
         return .success(added: addedKeys.count, updated: updatedKeys.count, removed: removedKeys.count, detail: detail)
     }
 
-    /// 同步媒体文件名关系（本地文件已存在的直接挂关系；不存在的留空，由媒体下载队列补）
-    private static func syncMediaNames(_ names: [String], house: House, houseContext: ModelContext) {
-        let existing = Set(house.mediaItems.map { $0.fileName })
-        let want = Set(names)
-        // 移除本地多余的关系
-        for item in house.mediaItems where !want.contains(item.fileName) {
+    /// 媒体双向对账（与 iOS v1.43 reconcile 语义一致）：
+    /// ① 云端账本有、本地记录/磁盘缺 → 挂记录并标记待下载；
+    /// ② 本地记录有、云端账本无 → 删记录 + 删本地文件（跟随云端删除）；
+    /// ③ 磁盘上有、账本/记录均无的孤儿文件 → 只删文件（旧首帧图/分享页等残留）
+    private static func reconcileMedia(record: CloudHouseRecord, house: House, houseContext: ModelContext,
+                                       mediaMissing: inout [String]) {
+        let cloudNorm = Set(record.mediaNames.map { mediaNormKey($0) })
+        let localItems = Array(house.mediaItems)
+        let localNorm = Set(localItems.map { mediaNormKey($0.fileName) })
+        let diskFiles = (try? FileManager.default.contentsOfDirectory(atPath: MediaStore.roomDirectory(roomKey: house.mediaRoomKey).path)) ?? []
+        let diskNorm = Set(diskFiles.map { mediaNormKey($0) })
+
+        // ② 本地记录有、云端无 → 删除（记录 + 文件）
+        for item in localItems where !cloudNorm.contains(mediaNormKey(item.fileName)) {
+            MediaStore.removeMedia(fileName: item.fileName, roomKey: house.mediaRoomKey)
             houseContext.delete(item)
         }
-        // 补缺失的关系
-        for name in names where !existing.contains(name) {
+        // ③ 磁盘孤儿（既不在账本也不在记录）→ 只删文件
+        for name in diskFiles where !cloudNorm.contains(mediaNormKey(name)) && !localNorm.contains(mediaNormKey(name)) {
+            try? FileManager.default.removeItem(at: MediaStore.fileURL(fileName: name, roomKey: house.mediaRoomKey))
+        }
+        // ① 云端有、本地缺 → 挂关系 + 标记待下载
+        for name in record.mediaNames where !localNorm.contains(mediaNormKey(name)) {
             let kind = name.lowercased().hasSuffix(".mp4") || name.lowercased().hasSuffix(".mov")
                 || name.lowercased().hasSuffix(".m4v") ? "video" : "image"
             house.mediaItems.append(MediaItem(fileName: name, kind: kind))
+            mediaMissing.append("\(record.roomKey)/\(name)")
         }
     }
 

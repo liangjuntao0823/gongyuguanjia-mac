@@ -192,6 +192,11 @@ struct PayoutRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
 
+    private static func shortDate(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy.M.d"
+        return f.string(from: d)
+    }
     private var periodCount: Int {
         switch payout.paymentMethod {
         case "季付": return 4
@@ -224,7 +229,7 @@ struct PayoutRow: View {
                 // 头部行
                 HStack(spacing: 12) {
                     VStack(spacing: 3) {
-                        Text("\(payout.rentDueDay)号")
+                        Text("\(max(1, payout.rentDueDay))号")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 42, height: 42)
@@ -243,26 +248,35 @@ struct PayoutRow: View {
                     actionColumn
                 }
                 Divider()
-                // 信息行
-                HStack(spacing: 14) {
+                // v1.2.4 信息区：四栏（户别/付款方式 | 年租/月打租 | 押金/免租 | 租期），桌面大屏不空
+                HStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(payout.unitType).font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
                         Text(payout.paymentMethod).font(.system(size: 12)).foregroundColor(.themeAccentDark)
                     }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 3) {
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 3) {
                         Text("年租 ¥\(Int(payout.annualRent))")
-                            .font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
+                            .font(.system(size: 15, weight: .bold)).foregroundColor(.themeDanger)
                         if payout.monthlyRent != nil {
                             Text("月打租 ¥\(Int(payout.monthlyRent ?? 0))").font(.system(size: 12)).foregroundColor(.themeText3)
                         }
                     }
-                    VStack(alignment: .trailing, spacing: 3) {
-                        Text("免租 \(payout.rentFreeDays)天")
-                            .font(.system(size: 13)).foregroundColor(.themeText2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("押¥\(Int(payout.deposit)) · 免租\(payout.rentFreeDays)天")
+                            .font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText2)
                         Text("水电结算 ¥\(Int(paidUtility))")
                             .font(.system(size: 12)).foregroundColor(.themeText3)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("租期").font(.system(size: 11)).foregroundColor(.themeText3)
+                        Text("\(Self.shortDate(payout.leaseStartDate)) 至 \(Self.shortDate(payout.leaseEndDate))")
+                            .font(.system(size: 12)).foregroundColor(.themeText2)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 // 进度/下一期
                 HStack(spacing: 10) {

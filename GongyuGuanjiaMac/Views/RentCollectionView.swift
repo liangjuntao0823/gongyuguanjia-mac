@@ -200,8 +200,9 @@ struct PropertyRentCard: View {
     private var paid: Bool {
         prop.monthlyRentRecords.contains { $0.year == currentYear && $0.month == currentMonth && $0.isPaid }
     }
-    private var dueCircleColor: Color { paid ? Color(hex: "E8F5E9").opacity(0.2) : Color.red.opacity(0.85) }
-    private var isOverdue: Bool { prop.rentDueDay < Calendar.current.component(.day, from: Date()) && !paid }
+    // v1.2.4：徽标可见性修复——已收月份用深绿底白字（此前浅绿底+白字在白卡片上看不见）；未收用红底
+    private var dueCircleColor: Color { paid ? Color(hex: "2E7D32") : Color.red.opacity(0.85) }
+    private var isOverdue: Bool { max(1, prop.rentDueDay) < Calendar.current.component(.day, from: Date()) && !paid }
 
     /// 桌面端卡片：头部（交租日徽标+房号+操作）→ 户型/状态行 → 信息行 → 状态行
     var body: some View {
@@ -210,7 +211,7 @@ struct PropertyRentCard: View {
                 // 头部行
                 HStack(spacing: 12) {
                     VStack(spacing: 3) {
-                        Text("\(prop.rentDueDay)号")
+                        Text("\(max(1, prop.rentDueDay))号")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 42, height: 42)
@@ -241,6 +242,13 @@ struct PropertyRentCard: View {
                         .font(.system(size: 13))
                         .foregroundColor(prop.typeColor)
                     Text(prop.unitType).font(.system(size: 13)).foregroundColor(.themeText2)
+                    // v1.2.4：经营类型徽标（管理/包租/托管），对齐 iOS 截图的「管理」chip
+                    Text(prop.propertyType)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.themeAccent)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Color(hex: "E3F2FD"))
+                        .clipShape(Capsule())
                     Spacer()
                     Text("已收\(paidMonthsCount)个月")
                         .font(.system(size: 12, weight: .semibold))
@@ -257,31 +265,42 @@ struct PropertyRentCard: View {
                             .clipShape(Capsule())
                     }
                 }
-                // 信息行
-                HStack(spacing: 14) {
+                // v1.2.4 信息区：三栏网格（租金/押预 | 租期 | 本月水电），桌面大屏更充实
+                HStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("¥\(Int(prop.rent))/月")
-                            .font(.system(size: 15, weight: .bold)).foregroundColor(.themeText)
+                            .font(.system(size: 17, weight: .bold)).foregroundColor(.themeDanger)
                         Text("押\(Int(prop.deposit))" + (prop.prepayment > 0 ? " · 预存\(Int(prop.prepayment))" : ""))
                             .font(.system(size: 12)).foregroundColor(.themeText3)
                     }
-                    Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     if !prop.leaseStart.isEmpty {
-                        VStack(alignment: .trailing, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text("租期").font(.system(size: 11)).foregroundColor(.themeText3)
                             Text("\(prop.leaseStart) 至 \(prop.leaseEnd)")
                                 .font(.system(size: 12)).foregroundColor(.themeText2)
+                                .lineLimit(1)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("本月水电").font(.system(size: 11)).foregroundColor(.themeText3)
+                        Text("¥\(Int(totalUtility))")
+                            .font(.system(size: 14, weight: .semibold)).foregroundColor(paid ? .themeText : .themeRed)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 // 状态行
                 HStack(spacing: 10) {
                     Text(paid ? "本月已收" : "本月待收")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(paid ? .themeAccentDark : .themeRed)
-                    Text("水电 ¥\(Int(totalUtility))")
-                        .font(.system(size: 12))
-                        .foregroundColor(.themeText3)
+                    if !prop.notes.isEmpty {
+                        Text(prop.notes)
+                            .font(.system(size: 12))
+                            .foregroundColor(.themeText3)
+                            .lineLimit(1)
+                    }
                     Spacer()
                 }
             }
