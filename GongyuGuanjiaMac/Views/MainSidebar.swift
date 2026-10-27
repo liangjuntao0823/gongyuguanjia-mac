@@ -73,7 +73,7 @@ struct MainSidebar: View {
                 .background(Color.gray.opacity(0.07))
             }
             .frame(width: sidebarWidth)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
 
             // 可拖拽分隔条：左右缩窄导航栏（150-280）
             Rectangle()
@@ -88,30 +88,17 @@ struct MainSidebar: View {
                 )
                 .help("拖动调整导航栏宽度")
 
-            // 主内容区（v1.2.11：各 tab 常驻 ZStack + opacity 切换，避免每次重建视图树导致的切换卡顿）
-            ZStack {
-                let t = manager.selectedTab
-                DashboardView(manager: manager)
-                    .opacity(t == .dashboard ? 1 : 0)
-                    .allowsHitTesting(t == .dashboard)
-                HouseListView(manager: manager)
-                    .opacity(t == .houses ? 1 : 0)
-                    .allowsHitTesting(t == .houses)
-                DealsView(manager: manager)
-                    .opacity(t == .deals ? 1 : 0)
-                    .allowsHitTesting(t == .deals)
-                RentCollectionView(manager: manager)
-                    .opacity(t == .rents ? 1 : 0)
-                    .allowsHitTesting(t == .rents)
-                PayoutView(manager: manager)
-                    .opacity(t == .payouts ? 1 : 0)
-                    .allowsHitTesting(t == .payouts)
-                ProfitView(manager: manager)
-                    .opacity(t == .profit ? 1 : 0)
-                    .allowsHitTesting(t == .profit)
-                SettingsView(manager: manager)
-                    .opacity(t == .settings ? 1 : 0)
-                    .allowsHitTesting(t == .settings)
+            // 主内容区（v1.2.12：恢复懒加载 switch——常驻 ZStack 会让全部板块同时渲染导致更卡）
+            Group {
+                switch manager.selectedTab {
+                case .dashboard: DashboardView(manager: manager)
+                case .houses: HouseListView(manager: manager)
+                case .deals: DealsView(manager: manager)
+                case .rents: RentCollectionView(manager: manager)
+                case .payouts: PayoutView(manager: manager)
+                case .profit: ProfitView(manager: manager)
+                case .settings: SettingsView(manager: manager)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

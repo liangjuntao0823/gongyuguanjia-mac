@@ -74,7 +74,7 @@ struct UtilityView: View {
                 Button("关闭") { onClose() }.macSecondaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
 
             ScrollView {
@@ -240,7 +240,7 @@ struct UtilityHistoryView: View {
                 Button("关闭") { dismiss() }.macPrimaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundColor(.themeText3)
@@ -372,7 +372,7 @@ struct UtilityStatementCard: View {
             Text("预存结余 \(Int(history.balance))元").font(.headline)
         }
         .padding(20)
-        .background(Color.white)
+        .background(Color.themeCard)
         .foregroundColor(.black)
         .cornerRadius(14)
     }

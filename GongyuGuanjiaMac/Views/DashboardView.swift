@@ -402,7 +402,7 @@ struct DashboardView: View {
                         if rentReminders.isEmpty {
                             Text("暂无未收租提醒").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
-                            VStack(spacing: 0) {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                                 ForEach(rentReminders) { reminder in
                                     HStack(spacing: 10) {
                                         VStack(spacing: 2) {
@@ -787,7 +787,7 @@ struct KpiCard: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
+            .background(Color.themeCard)
             .cornerRadius(10)
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.themeBorder))
         }

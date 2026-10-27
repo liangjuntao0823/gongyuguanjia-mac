@@ -73,10 +73,13 @@ final class DataManager: ObservableObject {
     }
 
     func refreshHouses() {
+        // v1.2.12：先提交挂起变更再 fetch，避免同 context 软删后 fetch 返回过期快照（删除/回收站失效根因）
+        houseContext.processPendingChanges()
         houses = (try? houseContext.fetch(FetchDescriptor<House>())) ?? []
     }
 
     func refreshData() {
+        mainContext.processPendingChanges()
         deals = (try? mainContext.fetch(FetchDescriptor<DealRecord>())) ?? []
         payouts = (try? mainContext.fetch(FetchDescriptor<PayoutRecord>())) ?? []
         properties = (try? mainContext.fetch(FetchDescriptor<Property>())) ?? []
@@ -208,6 +211,7 @@ final class DataManager: ObservableObject {
         house.updatedAt = Date()
         house.lastUpdatedAt = Date()
         try? houseContext.save()
+        houseContext.processPendingChanges()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         LocalHouseLedger.delete(roomKey: house.mediaRoomKey)   // 本地账本镜像随软删清理
         // 云端账本同步删除（媒体目录与 H5 保留，还原不丢图；iOS 端下次同步即消失）
@@ -224,6 +228,7 @@ final class DataManager: ObservableObject {
         house.deletedAt = nil
         house.updatedAt = Date()
         try? houseContext.save()
+        houseContext.processPendingChanges()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         autoRegenerateMaskedShare(for: house)
     }
@@ -312,6 +317,7 @@ final class DataManager: ObservableObject {
         record.isDeleted = true
         record.deletedAt = Date()
         try? mainContext.save()
+        mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -351,6 +357,7 @@ final class DataManager: ObservableObject {
         record.isDeleted = true
         record.deletedAt = Date()
         try? mainContext.save()
+        mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -389,6 +396,7 @@ final class DataManager: ObservableObject {
         prop.isDeleted = true
         prop.deletedAt = Date()
         try? mainContext.save()
+        mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -455,6 +463,7 @@ final class DataManager: ObservableObject {
         rec.isDeleted = true
         rec.deletedAt = Date()
         try? mainContext.save()
+        mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -462,6 +471,7 @@ final class DataManager: ObservableObject {
         rec.isDeleted = true
         rec.deletedAt = Date()
         try? mainContext.save()
+        mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -542,6 +552,7 @@ final class DataManager: ObservableObject {
         item.isDeleted = true
         item.deletedAt = Date()
         try? mainContext.save()
+        mainContext.processPendingChanges()
         LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }

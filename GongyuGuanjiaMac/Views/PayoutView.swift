@@ -88,6 +88,7 @@ struct PayoutView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // v1.2.12：顶栏两行式（标题+搜索 / 操作按钮），解决挤压
             HStack(spacing: 10) {
                 Text("包租管理").font(.system(size: 20, weight: .bold))
                 Text("共 \(payouts.count) 份合同")
@@ -96,7 +97,11 @@ struct PayoutView: View {
                 Spacer()
                 TextField("搜索房号/包租人/户型…", text: $searchText)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 200)
+                    .frame(width: 220)
+            }
+            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 6)
+            HStack(spacing: 8) {
+                Spacer()
                 Button { exportToImage() } label: { Label("导出图片", systemImage: "photo") }
                     .macSecondaryButton()
                 Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "tablecells") }
@@ -108,7 +113,7 @@ struct PayoutView: View {
                 Button { showingAddPayout = true } label: { Label("新增包租合同", systemImage: "plus") }
                     .macPrimaryButton()
             }
-            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
+            .padding(.horizontal, 16).padding(.bottom, 10)
             Divider()
 
             if filteredPayouts.isEmpty {
@@ -119,18 +124,17 @@ struct PayoutView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 380, maximum: 600), spacing: 12)], spacing: 12) {
-                        ForEach(filteredPayouts) { payout in
-                            PayoutRow(payout: payout,
-                                      nextInfo: nextPayoutInfo(for: payout),
-                                      onTap: { selectedPayout = payout },
-                                      onEdit: { editingPayout = payout },
-                                      onDelete: { payoutToDelete = payout })
-                        }
+                // v1.2.12：与成交一致的列表式
+                List {
+                    ForEach(filteredPayouts) { payout in
+                        PayoutCompactRow(payout: payout,
+                                         nextInfo: nextPayoutInfo(for: payout),
+                                         onTap: { selectedPayout = payout },
+                                         onEdit: { editingPayout = payout },
+                                         onDelete: { payoutToDelete = payout })
                     }
-                    .padding(12)
                 }
+                .listStyle(.inset)
             }
         }
         .background(Color.themeBg)
@@ -327,7 +331,7 @@ struct PayoutRow: View {
                 }
             }
             .padding(12)
-            .background(Color.white)
+            .background(Color.themeCard)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "EEEEEE"), lineWidth: 1))
             .overlay(
@@ -532,46 +536,15 @@ struct PayoutDetailView: View {
                 Button("关闭") { onClose() }.macPrimaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    // v1.2.10 概览头卡
-                    HStack(spacing: 14) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 10) {
-                                Text(payout.roomNumber).font(.system(size: 22, weight: .bold)).foregroundColor(.themeText)
-                                Text(payout.paymentMethod)
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(Color.themeAccent)
-                                    .clipShape(Capsule())
-                            }
-                            Text("\(payout.unitType) · 包租人 \(payout.manager)")
-                                .font(.system(size: 13)).foregroundColor(.themeText2)
-                            Text("\(FormatKit.dateStr(payout.leaseStartDate)) 至 \(FormatKit.dateStr(payout.leaseEndDate))（\(payout.leaseDuration)）")
-                                .font(.system(size: 12)).foregroundColor(.themeText3)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("¥\(Int(payout.monthlyRent ?? 0))/月")
-                                .font(.system(size: 22, weight: .bold)).foregroundColor(.themeDanger)
-                            Text("年付 ¥\(Int(payout.annualRent)) · 押¥\(Int(payout.deposit))")
-                                .font(.system(size: 13)).foregroundColor(.themeText2)
-                            Text("免租\(payout.rentFreeDays)天 · 水表\(payout.waterMeterBase) · 电表\(payout.electricMeterBase)")
-                                .font(.system(size: 12)).foregroundColor(.themeText3)
-                        }
-                    }
-                    .padding(14)
-                    .background(Color(red: 0.975, green: 0.978, blue: 0.98))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "E8E8E8"), lineWidth: 1))
-
+                    // v1.2.12：取消概览头卡（与「合同信息」重复），直接分区展示
                     VStack(alignment: .leading, spacing: 8) {
                         Text("合同信息").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
-                        VStack(spacing: 4) {
+                        VStack(spacing: 0) {
                         row("包租人", payout.manager)
                         row("户型", payout.unitType)
                         row("租期", "\(FormatKit.dateStr(payout.leaseStartDate)) 至 \(FormatKit.dateStr(payout.leaseEndDate))（\(payout.leaseDuration)）")
@@ -585,16 +558,15 @@ struct PayoutDetailView: View {
                         row("电表底数", "\(payout.electricMeterBase)")
                         if !payout.notes.isEmpty { row("备注", payout.notes) }
                         }
-                        .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
+                        .background(Color.themePanel)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.themeBorder, lineWidth: 1))
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("打租记录（勾选即已付）").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
-                        VStack(spacing: 4) {
+                        VStack(spacing: 0) {
                         if sortedPayouts.isEmpty {
                             Text("暂无打租记录").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
@@ -624,14 +596,14 @@ struct PayoutDetailView: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
+                        .background(Color.themeCard)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("水电结算记录").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
-                        VStack(spacing: 4) {
+                        VStack(spacing: 0) {
                         if payout.monthlyUtilityRecords.isEmpty {
                             Text("暂无结算记录").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
@@ -651,7 +623,7 @@ struct PayoutDetailView: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
+                        .background(Color.themeCard)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
                     }
@@ -666,11 +638,120 @@ struct PayoutDetailView: View {
     }
 
     private func row(_ key: String, _ value: String) -> some View {
-        HStack(alignment: .top) {
-            Text(key).font(.system(size: 13)).foregroundColor(.themeText3).frame(width: 92, alignment: .leading)
-            Text(value).font(.system(size: 14)).foregroundColor(.themeText).textSelection(.enabled)
-            Spacer()
+        VStack(spacing: 0) {
+            HStack(alignment: .top) {
+                Text(key).font(.system(size: 13)).foregroundColor(.themeText3).frame(width: 92, alignment: .leading)
+                Text(value).font(.system(size: 14)).foregroundColor(.themeText).textSelection(.enabled)
+                Spacer()
+            }
+            .padding(.vertical, 9)
+            Divider()
         }
-        .padding(.vertical, 2)
+    }
+}
+
+// MARK: - 包租紧凑行（v1.2.12 列表式，对齐成交行）
+
+struct PayoutCompactRow: View {
+    let payout: PayoutRecord
+    let nextInfo: (month: Int, day: Int, amount: Double, isOverdue: Bool, daysDiff: Int)
+    let onTap: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    private static func shortDate(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy.M.d"
+        return f.string(from: d)
+    }
+    private var periodCount: Int {
+        switch payout.paymentMethod {
+        case "季付": return 4
+        case "半年付": return 2
+        case "年付": return 1
+        default: return 12
+        }
+    }
+    private func periodMonth(for index: Int) -> Int {
+        switch payout.paymentMethod {
+        case "季付": return (index + 1) * 3
+        case "半年付": return (index + 1) * 6
+        case "年付": return 12
+        default: return (index + 1) * 1
+        }
+    }
+    private var validMonths: Set<Int> { Set((0..<periodCount).map { periodMonth(for: $0) }) }
+    private var paidCount: Int { payout.monthlyPayouts.filter { $0.isPaid && validMonths.contains($0.month) }.count }
+    private var paidAmount: Double { payout.monthlyPayouts.filter { $0.isPaid && validMonths.contains($0.month) }.reduce(0) { $0 + $1.amount } }
+    private var paidUtility: Double { payout.monthlyUtilityRecords.filter(\.isSettled).reduce(0) { $0 + $1.waterAmount + $1.electricAmount } }
+    private var nextText: String {
+        guard nextInfo.month > 0 else { return "" }
+        return "\(nextInfo.month)月\(nextInfo.day)日 ¥\(Int(nextInfo.amount))\(nextInfo.isOverdue ? " 逾期" : "")"
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("\(max(1, payout.rentDueDay))号")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 30, height: 30)
+                .background(nextInfo.isOverdue ? Color.red.opacity(0.85) : Color(hex: "7B61FF").opacity(0.85))
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(payout.roomNumber)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.themeText)
+                Text("\(payout.unitType) · \(payout.manager) · \(payout.paymentMethod)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.themeText2)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("¥\(Int(payout.monthlyRent ?? 0))/月")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.themeDanger)
+                Text("年付 ¥\(Int(payout.annualRent))")
+                    .font(.system(size: 11))
+                    .foregroundColor(.themeText3)
+            }
+            VStack(alignment: .trailing, spacing: 3) {
+                Text("已打 \(paidCount)/\(periodCount) 期 · ¥\(Int(paidAmount))")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(paidCount == periodCount ? .themeAccentDark : .themeText2)
+                ProgressView(value: Double(paidCount), total: Double(max(periodCount, 1)))
+                    .progressViewStyle(.linear)
+                    .tint(Color(hex: "7B61FF"))
+                    .frame(width: 80)
+            }
+            .frame(width: 130, alignment: .trailing)
+            Text("水电 ¥\(Int(paidUtility))")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.themeText2)
+                .frame(width: 84, alignment: .trailing)
+            if !nextText.isEmpty {
+                Text(nextText)
+                    .font(.system(size: 12))
+                    .foregroundColor(nextInfo.isOverdue ? .themeRed : .themeText3)
+                    .frame(width: 120, alignment: .trailing)
+            }
+            HStack(spacing: 6) {
+                Button("编辑") { onEdit() }.macSecondaryButton().controlSize(.small)
+                Button {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.themeText3)
+                .help("删除")
+            }
+        }
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+        .contextMenu {
+            Button("编辑") { onEdit() }
+            Button("删除", role: .destructive) { onDelete() }
+        }
     }
 }

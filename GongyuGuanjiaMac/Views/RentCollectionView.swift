@@ -105,25 +105,26 @@ struct RentCollectionView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 380, maximum: 600), spacing: 12)], spacing: 12) {
-                        ForEach(filteredProperties) { prop in
-                            if prop.isTerminated {
-                                TerminatedPropertyRow(prop: prop,
-                                                      onTap: { selectedProperty = prop },
-                                                      onRestore: { propertyToRestore = prop },
-                                                      onDelete: { propertyToDelete = prop })
-                            } else {
-                                PropertyRentCard(prop: prop,
-                                                 onTap: { selectedProperty = prop },
-                                                 onEdit: { editingProperty = prop },
-                                                 onTerminate: { terminatingProperty = prop },
-                                                 onDelete: { propertyToDelete = prop })
-                            }
+                // v1.2.12：与成交一致的列表式，点行进详情
+                List {
+                    ForEach(filteredProperties) { prop in
+                        if prop.isTerminated {
+                            RentCompactRow(prop: prop,
+                                           onTap: { selectedProperty = prop },
+                                           onEdit: { editingProperty = prop },
+                                           onRestore: { propertyToRestore = prop },
+                                           onDelete: { propertyToDelete = prop })
+                        } else {
+                            RentCompactRow(prop: prop,
+                                           onTap: { selectedProperty = prop },
+                                           onEdit: { editingProperty = prop },
+                                           onRestore: nil,
+                                           onDelete: { propertyToDelete = prop },
+                                           onTerminate: { terminatingProperty = prop })
                         }
                     }
-                    .padding(12)
                 }
+                .listStyle(.inset)
             }
         }
         .background(Color.themeBg)
@@ -319,7 +320,7 @@ struct PropertyRentCard: View {
                 }
             }
             .padding(12)
-            .background(Color.white)
+            .background(Color.themeCard)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -513,48 +514,12 @@ struct PropertyDetailView: View {
                 Button("关闭") { onClose() }.macPrimaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    // v1.2.10 概览头卡：房号/状态/租金/押预 一眼可见
-                    HStack(spacing: 14) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 10) {
-                                Text(property.roomNumber)
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundColor(.themeText)
-                                Text(property.isTerminated ? "已退租" : "在租")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(property.isTerminated ? Color.gray : Color.themeAccent)
-                                    .clipShape(Capsule())
-                            }
-                            Text("\(property.typeDisplayName) · \(property.unitType) · 房东 \(property.landlord)")
-                                .font(.system(size: 13)).foregroundColor(.themeText2)
-                            Text("交租日：每月\(property.rentDueDay)号 · \(property.propertyType)")
-                                .font(.system(size: 12)).foregroundColor(.themeText3)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("¥\(Int(property.rent))/月")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.themeDanger)
-                            Text("押¥\(Int(property.deposit))\(property.prepayment > 0 ? " · 预存¥\(Int(property.prepayment))" : "")")
-                                .font(.system(size: 13)).foregroundColor(.themeText2)
-                            if !property.notes.isEmpty {
-                                Text(property.notes)
-                                    .font(.system(size: 12)).foregroundColor(.themeText3).lineLimit(1)
-                            }
-                        }
-                    }
-                    .padding(14)
-                    .background(Color(red: 0.975, green: 0.978, blue: 0.98))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "E8E8E8"), lineWidth: 1))
-
+                    // v1.2.12：取消概览头卡（与下方「房源信息」重复），直接分区展示
                     if property.isTerminated {
                         section("退租信息") {
                             row("退租时间", property.terminationDate.map { FormatKit.dateStr($0) } ?? "未填写")
@@ -642,15 +607,15 @@ struct PropertyDetailView: View {
     }
 
     // v1.2.10：分区卡片化（白色卡片 + 圆角 + 描边），替代单一文字连排
+    // v1.2.12：iOS 分组表格风格——行内 label 左 / 值 右，行间分割线，分区卡片紧凑
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
-            VStack(spacing: 4) { content() }
-                .padding(12)
+            VStack(spacing: 0) { content() }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
+                .background(Color.themePanel)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.themeBorder, lineWidth: 1))
         }
     }
     private func sectionWithAction(_ title: String, actionTitle: String, action: @escaping () -> Void, @ViewBuilder content: () -> some View) -> some View {
@@ -660,22 +625,24 @@ struct PropertyDetailView: View {
                 Spacer()
                 Button(actionTitle) { action() }.macSecondaryButton()
             }
-            VStack(spacing: 4) { content() }
-                .padding(12)
+            VStack(spacing: 0) { content() }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
+                .background(Color.themePanel)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.themeBorder, lineWidth: 1))
         }
     }
     private func row(_ key: String, _ value: String) -> some View {
-        HStack(alignment: .top) {
-            Text(key).font(.system(size: 13)).foregroundColor(.themeText3)
-                .frame(width: 92, alignment: .leading)
-            Text(value).font(.system(size: 14)).foregroundColor(.themeText).textSelection(.enabled)
-            Spacer()
+        VStack(spacing: 0) {
+            HStack(alignment: .top) {
+                Text(key).font(.system(size: 13)).foregroundColor(.themeText3)
+                    .frame(width: 92, alignment: .leading)
+                Text(value).font(.system(size: 14)).foregroundColor(.themeText).textSelection(.enabled)
+                Spacer()
+            }
+            .padding(.vertical, 9)
+            Divider()
         }
-        .padding(.vertical, 2)
     }
 }
 
@@ -1085,5 +1052,100 @@ struct UtilityPlanDraft: Identifiable {
         self.id = id; self.date = date; self.frequency = frequency
         self.electricAmount = electricAmount; self.waterAmount = waterAmount; self.balance = balance
         self.isSettled = isSettled; self.statement = statement
+    }
+}
+
+// MARK: - 收租紧凑行（v1.2.12 列表式，对齐成交行）
+
+struct RentCompactRow: View {
+    let prop: Property
+    let onTap: () -> Void
+    let onEdit: () -> Void
+    let onRestore: (() -> Void)?
+    let onDelete: () -> Void
+    var onTerminate: (() -> Void)? = nil
+
+    private var paidCount: Int { prop.monthlyRentRecords.filter { $0.isPaid }.count }
+    private var planCount: Int { max(prop.monthlyRentRecords.count, 1) }
+    private var totalUtility: Double {
+        prop.utilitySettlementRecords.reduce(0) { $0 + $1.waterAmount + $1.electricAmount }
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(prop.typeChar)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(prop.typeColor)
+                .frame(width: 24, height: 24)
+                .background(prop.typeBgColor)
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(prop.roomNumber)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.themeText)
+                Text("\(prop.unitType) · \(prop.landlord) · \(prop.typeDisplayName)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.themeText2)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("¥\(Int(prop.rent))/月")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.themeDanger)
+                Text("押¥\(Int(prop.deposit))\(prop.prepayment > 0 ? " 预存¥\(Int(prop.prepayment))" : "")")
+                    .font(.system(size: 11))
+                    .foregroundColor(.themeText3)
+            }
+            VStack(alignment: .trailing, spacing: 3) {
+                if prop.isTerminated {
+                    Text("已退租")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Color.gray)
+                        .clipShape(Capsule())
+                } else {
+                    Text("已收 \(paidCount)/\(planCount) 期")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(paidCount == planCount ? .themeAccentDark : .themeText2)
+                    ProgressView(value: Double(paidCount), total: Double(planCount))
+                        .progressViewStyle(.linear)
+                        .frame(width: 70)
+                }
+            }
+            .frame(width: 84, alignment: .trailing)
+            Text("水电 ¥\(Int(totalUtility))")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.themeText2)
+                .frame(width: 90, alignment: .trailing)
+            HStack(spacing: 6) {
+                if prop.isTerminated {
+                    Button("还原") { onRestore?() }.macSecondaryButton().controlSize(.small)
+                } else {
+                    Button("编辑") { onEdit() }.macSecondaryButton().controlSize(.small)
+                    Button("退租") { onTerminate?() }.macSecondaryButton().controlSize(.small)
+                }
+                Button {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.themeText3)
+                .help("删除")
+            }
+        }
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+        .contextMenu {
+            if prop.isTerminated {
+                Button("还原在租") { onRestore?() }
+            } else {
+                Button("编辑") { onEdit() }
+                Button("退租") { onTerminate?() }
+            }
+            Button("删除", role: .destructive) { onDelete() }
+        }
     }
 }

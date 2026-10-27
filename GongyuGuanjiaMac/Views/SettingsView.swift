@@ -38,6 +38,7 @@ struct SettingsView: View {
     @State private var showBackupConfig = false
 
     // MARK: 水电默认值（与 iOS 同 key，UtilityView 实时读取）
+    @AppStorage("themeMode") private var themeMode = "system"
     @AppStorage("defaultElectricPrice") private var defaultElectricPrice = "0.8"
     @AppStorage("defaultWaterPrice") private var defaultWaterPrice = "5.5"
     @AppStorage("defaultUtilityPrepayment") private var defaultUtilityPrepayment = "0"
@@ -67,6 +68,23 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
+                    // 外观（v1.2.12 黑夜模式）
+                    section("外观") {
+                        HStack(spacing: 10) {
+                            Picker("", selection: $themeMode) {
+                                Text("白天").tag("day")
+                                Text("黑夜").tag("night")
+                                Text("跟随系统").tag("system")
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 280)
+                            Spacer()
+                            Text("切换后立即生效")
+                                .font(.system(size: 12))
+                                .foregroundColor(.themeText3)
+                        }
+                    }
+
                     // 云端同步
                     section("云端同步") {
                         HStack(spacing: 10) {
@@ -591,6 +609,23 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.12", "2026-10-28", [
+            "修复软件更卡：恢复按需加载的 Tab 切换（上一版常驻全部板块导致内存与渲染占用升高）",
+            "重点修复删除：所有板块（房源/成交/收租/包租/待办）软删与刷新链路强制提交 SwiftData 变更，删除后立即消失并正确进入回收站可还原",
+            "房源卡片重新排版：第一行 房号+户型+房东名（不再带「房东」二字）左 / 价格右；第二行 备注（无备注显示-）左 / 双端标识右",
+            "「下架/删除」文案统一改为「删除」，删除提示同步调整",
+            "房源详情页视频播放按钮加大（30pt），一眼区分视频与照片",
+            "房源详情页新增「保存全部」：一键保存全部媒体（照片+视频）到指定目录",
+            "房源户型筛选升级为多选（下拉勾选，支持全选/清空）",
+            "房源板块进入默认显示「待租」房源",
+            "收租/包租卡片改为与成交一致的列表式，点行进详情，行内含进度条与操作按钮",
+            "收租/包租详情页：取消与下方重复的概览头卡，各分区改为 iOS 分组表格风格（标签左/值右 + 行间分割线）",
+            "汇总板块月度明细字体整体加大",
+            "包租板块顶栏改为两行式（标题+搜索 / 操作按钮），解决按钮挤压",
+            "工作台「未收租提醒」改为两列布局",
+            "新增黑夜模式：设置页-外观 白天/黑夜/跟随系统 三档切换，全局主题实时生效",
+            "待办事项「排序」按钮移到顶部「关闭」按钮左侧",
+        ]),
         ("v1.2.11", "2026-10-28", [
             "修复水电结算「关闭」按钮无效（收租板块入口未绑定关闭回调）",
             "修复已收录房源文件夹大小统计：改为递归统计整个数据目录（含 media 与备份子目录）",

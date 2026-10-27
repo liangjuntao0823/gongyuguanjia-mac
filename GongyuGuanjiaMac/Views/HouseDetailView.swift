@@ -31,7 +31,7 @@ struct HouseDetailView: View {
                     .macSecondaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
 
             Divider()
 
@@ -91,7 +91,7 @@ struct HouseDetailView: View {
                             Button {
                                 softDelete()
                             } label: {
-                                Label("下架/删除", systemImage: "trash")
+                                Label("删除", systemImage: "trash")
                             }
                             .macSecondaryButton()
                         }
@@ -103,7 +103,7 @@ struct HouseDetailView: View {
                     .contextMenu {
                         Button("编辑") { showEdit = true }
                         Button("分享") { showShareMenu = true }
-                        Button("下架/删除", role: .destructive) { softDelete() }
+                        Button("删除", role: .destructive) { softDelete() }
                     }
 
                     // 媒体区
@@ -112,6 +112,12 @@ struct HouseDetailView: View {
                             Text("实拍媒体（\(house.mediaItems.count)）")
                                 .font(.system(size: 16, weight: .semibold))
                             Spacer()
+                            Button {
+                                saveAllMedia()
+                            } label: {
+                                Label("保存全部", systemImage: "square.and.arrow.down")
+                            }
+                            .macSecondaryButton()
                             Button {
                                 addMedia()
                             } label: {
@@ -215,12 +221,38 @@ struct HouseDetailView: View {
         }
     }
 
+    /// v1.2.12：一键保存全部媒体（照片+视频）到用户选择的目录
+    private func saveAllMedia() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "选择保存目录（将保存 \(house.mediaItems.count) 个媒体文件）"
+        panel.prompt = "保存"
+        guard panel.runModal() == .OK, let dir = panel.url else { return }
+        let fm = FileManager.default
+        var saved = 0, failed = 0
+        for item in house.mediaItems {
+            let src = MediaStore.fileURL(fileName: item.fileName, roomKey: house.mediaRoomKey)
+            guard fm.fileExists(atPath: src.path) else { failed += 1; continue }
+            do {
+                let dest = dir.appendingPathComponent(item.fileName)
+                if fm.fileExists(atPath: dest.path) { try? fm.removeItem(at: dest) }
+                try fm.copyItem(at: src, to: dest)
+                saved += 1
+            } catch {
+                failed += 1
+            }
+        }
+        MacToastCenter.show("已保存 \(saved) 个媒体\(failed > 0 ? "，\(failed) 个失败" : "")")
+    }
+
     private func softDelete() {
         manager.softDeleteHouse(house)
         try? manager.houseContext.save()
         manager.houseContext.processPendingChanges()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
-        MacToastCenter.show("房源已下架，可在回收站恢复")
+        MacToastCenter.show("已删除，可在回收站还原")
         onClose()
     }
 }
@@ -266,7 +298,7 @@ struct MediaItemCell: View {
                             Color.black.opacity(0.85)
                         }
                         Image(systemName: "play.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.system(size: 30))
                             .foregroundColor(.white)
                             .shadow(radius: 2)
                     }
@@ -296,7 +328,7 @@ struct MediaItemCell: View {
                 .lineLimit(1)
                 .padding(4)
         }
-        .background(Color.white)
+        .background(Color.themeCard)
         .cornerRadius(8)
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.themeBorder))
         .sheet(isPresented: $showImage) {

@@ -25,7 +25,7 @@ struct ManualSyncView: View {
                 Button("关闭") { onClose() }.macPrimaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
 
             ScrollView {
@@ -40,7 +40,7 @@ struct ManualSyncView: View {
                                         .interpolation(.none)
                                         .frame(width: 150, height: 150)
                                         .padding(8)
-                                        .background(Color.white)
+                                        .background(Color.themeCard)
                                         .cornerRadius(8)
                                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.themeBorder))
                                     VStack(alignment: .leading, spacing: 8) {

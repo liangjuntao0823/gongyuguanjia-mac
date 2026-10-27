@@ -116,8 +116,8 @@ struct HouseListView: View {
 
     @State private var searchText = ""
     @State private var towerFilter = "全部"
-    @State private var statusFilter = "全部"
-    @State private var layoutFilter = "全部户型"
+    @State private var statusFilter = "待租"   // v1.2.12：进入板块默认显示待租房源
+    @State private var selectedLayouts: Set<String> = []
     @State private var viewMode = "网格"
     @State private var selectedHouse: House?
     @State private var editingHouse: House?
@@ -156,7 +156,7 @@ struct HouseListView: View {
             }
             if towerFilter != "全部" && "\(h.tower)座" != towerFilter { return false }
             if statusFilter != "全部" && h.status != statusFilter { return false }
-            if layoutFilter != "全部户型" && h.layout != layoutFilter { return false }
+            if !selectedLayouts.isEmpty && !selectedLayouts.contains(h.layout) { return false }
             return true
         }
         .sorted {
@@ -275,11 +275,31 @@ struct HouseListView: View {
                 .pickerStyle(.segmented)
                 .frame(width: 180)
 
-                Picker("", selection: $layoutFilter) {
-                    ForEach(layoutOptions, id: \.self) { Text($0).tag($0) }
+                Menu {
+                    ForEach(layoutOptions.filter { $0 != "全部户型" }, id: \.self) { opt in
+                        Button {
+                            if selectedLayouts.contains(opt) { selectedLayouts.remove(opt) }
+                            else { selectedLayouts.insert(opt) }
+                        } label: {
+                            Label(opt, systemImage: selectedLayouts.contains(opt) ? "checkmark.square.fill" : "square")
+                        }
+                    }
+                    Divider()
+                    Button("全部户型") { selectedLayouts.removeAll() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.on.square")
+                        Text(selectedLayouts.isEmpty ? "全部户型" : "户型(\(selectedLayouts.count))")
+                    }
+                    .font(.system(size: 13))
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Color.themePanel)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.themeBorder))
                 }
-                .frame(width: 150)
-                .help("按户型筛选")
+                .menuStyle(.borderlessButton)
+                .frame(width: 130)
+                .help("按户型多选筛选")
 
                 Spacer()
 
@@ -388,12 +408,12 @@ struct HouseListView: View {
                 sharingHouse = nil
             }
         }
-        .confirmationDialog("确定下架/删除 \(pendingDelete?.displayRoomNo ?? "") 吗？删除后可在回收站恢复。",
+        .confirmationDialog("确定删除 \(pendingDelete?.displayRoomNo ?? "") 吗？删除后可到回收站还原。",
                             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
-            Button("下架/删除", role: .destructive) {
+            Button("删除", role: .destructive) {
                 if let h = pendingDelete {
                     manager.softDeleteHouse(h)
-                    MacToastCenter.show("房源已下架，可在回收站恢复")
+                    MacToastCenter.show("已删除，可在回收站还原")
                 }
                 pendingDelete = nil
             }
@@ -650,30 +670,31 @@ struct HouseCard: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    // 第一行：房号+户型（左） | 房东（中） | 租金（右）
+                    // 第一行：房号+户型+房东名（左） | 价格（右）
                     HStack(alignment: .firstTextBaseline) {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(house.displayRoomNo)
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.themeText)
-                            Text(house.layout)
-                                .font(.system(size: 12))
-                                .foregroundColor(.themeText3)
-                                .lineLimit(1)
+                            HStack(spacing: 5) {
+                                Text(house.layout)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.themeText3)
+                                    .lineLimit(1)
+                                Text(house.landlord)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.themeText2)
+                                    .lineLimit(1)
+                            }
                         }
-                        Spacer()
-                        Text("房东 \(house.landlord)")
-                            .font(.system(size: 14))
-                            .foregroundColor(.themeText2)
-                            .lineLimit(1)
                         Spacer()
                         Text("¥\(house.price)")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.themeDanger)
                     }
-                    // 第二行：备注（左） | 双端标识（右）
+                    // 第二行：备注（左，无备注显示-） | 双端标识（右）
                     HStack {
-                        Text(house.remark.isEmpty ? "无备注" : house.remark)
+                        Text(house.remark.isEmpty ? "-" : house.remark)
                             .font(.system(size: 12))
                             .foregroundColor(.themeText3)
                             .lineLimit(1)
@@ -683,7 +704,7 @@ struct HouseCard: View {
                 }
                 .padding(10)
             }
-            .background(Color.white)
+            .background(Color.themeCard)
             .cornerRadius(12)
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder))
             .shadow(color: .black.opacity(0.04), radius: 3, y: 1)
@@ -692,7 +713,7 @@ struct HouseCard: View {
         .contextMenu {
             Button("编辑") { onEdit() }
             Button("分享") { onShare() }
-            Button("下架/删除", role: .destructive) { onDelete() }
+            Button("删除", role: .destructive) { onDelete() }
         }
     }
 }
@@ -723,7 +744,7 @@ struct HouseRow: View {
                     StatusBadge(status: house.status)
                     CloudStatusBadge(raw: house.cloudStatusRaw)
                 }
-                Text("\(house.layout) · 房东 \(house.landlord) · ¥\(house.price)/月")
+                Text("\(house.layout) · \(house.landlord) · ¥\(house.price)/月")
                     .font(.system(size: 14))
                     .foregroundColor(.themeText2)
             }
@@ -737,7 +758,7 @@ struct HouseRow: View {
         .contextMenu {
             Button("编辑") { onEdit() }
             Button("分享") { onShare() }
-            Button("下架/删除", role: .destructive) { onDelete() }
+            Button("删除", role: .destructive) { onDelete() }
         }
     }
 }

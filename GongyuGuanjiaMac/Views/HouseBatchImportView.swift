@@ -44,7 +44,7 @@ struct HouseBatchImportView: View {
                 Button("关闭") { onClose() }.macPrimaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
 
             // 模式选择（对齐 iOS BatchImportMode）

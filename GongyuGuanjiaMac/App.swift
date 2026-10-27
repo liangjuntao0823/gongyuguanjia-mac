@@ -194,6 +194,7 @@ struct GongyuGuanjiaMacApp: App {
             MainSidebar()
                 .environment(\.modelContext, mainContainer.mainContext)
                 .environment(\.houseModelContext, houseContainer.mainContext)
+                .preferredColorScheme(ThemeManager.isDark ? .dark : .light)
                 .frame(minWidth: 980, minHeight: 640)
                 .task {
                     // 启动自动迁移无前缀媒体目录（对齐 iOS v1.69），幂等

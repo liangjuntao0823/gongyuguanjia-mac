@@ -88,7 +88,7 @@ struct BillTemplateSettingsView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
-                        .background(Color.white)
+                        .background(Color.themeCard)
                         .cornerRadius(8)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.themeBorder))
                     }

@@ -47,11 +47,17 @@ struct TodoViews: View {
                     .font(.system(size: 13))
                     .foregroundColor(.themeText3)
                 Spacer()
+                if selectedStatus == 0 && searchText.isEmpty {
+                    Button { withAnimation { isSorting.toggle() } } label: {
+                        Label(isSorting ? "完成排序" : "排序", systemImage: "arrow.up.arrow.down")
+                    }
+                    .macSecondaryButton()
+                }
                 Button("关闭") { onClose() }
                     .macSecondaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
 
             // 快速添加 + 搜索 + 筛选
             HStack(spacing: 10) {
@@ -69,12 +75,6 @@ struct TodoViews: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 170)
-                if selectedStatus == 0 && searchText.isEmpty {
-                    Button { withAnimation { isSorting.toggle() } } label: {
-                        Label(isSorting ? "完成排序" : "排序", systemImage: "arrow.up.arrow.down")
-                    }
-                    .macSecondaryButton()
-                }
             }
             .padding(.horizontal, 14)
             .padding(.top, 12)

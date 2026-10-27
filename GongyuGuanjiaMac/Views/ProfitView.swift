@@ -146,7 +146,7 @@ struct ProfitView: View {
                     // 月度列表
                     VStack(alignment: .leading, spacing: 8) {
                         Text("月度明细（最近在前）")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
                         if monthlySummaries.isEmpty {
                             Text("暂无统计数据")
                                 .font(.system(size: 14))
@@ -156,18 +156,19 @@ struct ProfitView: View {
                             Table(monthlySummaries) {
                                 TableColumn("月份") { s in
                                     Text(s.year == Calendar.current.component(.year, from: Date()) ? "\(s.month)月" : "\(s.year)年\(s.month)月")
+                                        .font(.system(size: 14))
                                 }
-                                .width(90)
-                                TableColumn("成交") { s in Text("\(s.dealCount)单") }.width(60)
-                                TableColumn("中介费") { s in Text("¥\(Int(s.agentFee))") }.width(90)
-                                TableColumn("杂项收入") { s in Text("¥\(Int(s.miscIncome))") }.width(90)
-                                TableColumn("杂项支出") { s in Text("¥\(Int(s.miscExpense))") }.width(90)
+                                .width(100)
+                                TableColumn("成交") { s in Text("\(s.dealCount)单").font(.system(size: 14)) }.width(70)
+                                TableColumn("中介费") { s in Text("¥\(Int(s.agentFee))").font(.system(size: 14)) }.width(100)
+                                TableColumn("杂项收入") { s in Text("¥\(Int(s.miscIncome))").font(.system(size: 14)) }.width(100)
+                                TableColumn("杂项支出") { s in Text("¥\(Int(s.miscExpense))").font(.system(size: 14)) }.width(100)
                                 TableColumn("净收入") { s in
                                     Text("¥\(Int(s.netIncome))")
                                         .foregroundColor(s.netIncome >= 0 ? .themeAccentDark : .themeRed)
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                 }
-                                .width(100)
+                                .width(110)
                             }
                             .frame(minHeight: 220)
                         }

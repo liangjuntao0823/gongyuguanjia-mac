@@ -127,7 +127,7 @@ struct TrashView: View {
                     .macPrimaryButton()
             }
             .padding(14)
-            .background(Color(red: 0.965, green: 0.968, blue: 0.97))
+            .background(Color.themeHeader)
             Divider()
 
             // 分类筛选标签
