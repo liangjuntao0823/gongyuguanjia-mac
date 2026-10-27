@@ -69,7 +69,7 @@ enum CloudHouseSync {
                 let effectiveUpdatedAt = house.lastUpdatedAt ?? house.updatedAt
                 let record = CloudHouseRecord(
                     roomKey: house.mediaRoomKey,
-                    roomNo: roomNoToCloud(house.roomNo, tower: house.tower),
+                    roomNo: house.roomNo,        // 无前缀本体，与 iOS record.roomNo 一致（前缀只进 mediaRoomKey）
                     tower: house.tower,
                     landlord: house.landlord,
                     layout: house.layout,
@@ -91,11 +91,9 @@ enum CloudHouseSync {
         }
     }
 
-    /// 写单套账本（覆盖写，JSON ISO8601 日期，与 iOS saveRecord 同构）
+    /// 写单套账本（覆盖写，日期用默认编码，与 iOS upload(record:) 完全一致——iOS 读不了 ISO8601 字符串时间戳）
     static func saveRecord(_ record: CloudHouseRecord, config: CosConfig) async throws {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(record)
+        let data = try JSONEncoder().encode(record)
         try await CosUploader.upload(data: data, to: recordPath(roomKey: record.roomKey),
                                      contentType: "application/json", config: config)
     }
@@ -110,7 +108,7 @@ enum CloudHouseSync {
             let name = obj.name
             guard name.hasSuffix("/info.json"), !name.contains("_houses.json") else { continue }
             let parts = name.split(separator: "/").map(String.init)
-            if parts.count == 3 && parts[0] == "h" { keys.insert(parts[1]) }
+            if parts.count == 3 && parts[0] == "h" && !parts[1].hasPrefix("_") { keys.insert(parts[1]) }
         }
         var records: [CloudHouseRecord] = []
         for key in keys.sorted() {

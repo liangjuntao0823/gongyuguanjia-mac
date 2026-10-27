@@ -116,7 +116,7 @@ struct PayoutView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 430, maximum: 640), spacing: 14)], spacing: 14) {
                         ForEach(filteredPayouts) { payout in
                             PayoutRow(payout: payout,
                                       nextInfo: nextPayoutInfo(for: payout),
@@ -217,70 +217,75 @@ struct PayoutRow: View {
         return "下一期：\(nextInfo.month)月\(nextInfo.day)日 应付 ¥\(Int(nextInfo.amount)) \(nextInfo.isOverdue ? "（已逾期）" : "")"
     }
 
+    /// 桌面端卡片：头部（房号徽标+信息+操作）→ 金额行 → 进度/下一期行
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
-                dueDayColumn
-                infoColumn
-                Spacer()
-                paidColumn
-                actionColumn
+            VStack(alignment: .leading, spacing: 10) {
+                // 头部行
+                HStack(spacing: 12) {
+                    VStack(spacing: 3) {
+                        Text("\(payout.rentDueDay)号")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 42, height: 42)
+                            .background(nextInfo.isOverdue ? Color.red.opacity(0.85) : Color(hex: "7B61FF").opacity(0.85))
+                            .clipShape(Circle())
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(payout.roomNumber)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.themeText)
+                        Text(payout.manager)
+                            .font(.system(size: 13))
+                            .foregroundColor(.themeText2)
+                    }
+                    Spacer()
+                    actionColumn
+                }
+                Divider()
+                // 信息行
+                HStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(payout.unitType).font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
+                        Text(payout.paymentMethod).font(.system(size: 12)).foregroundColor(.themeAccentDark)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("年租 ¥\(Int(payout.annualRent))")
+                            .font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
+                        if payout.monthlyRent != nil {
+                            Text("月打租 ¥\(Int(payout.monthlyRent ?? 0))").font(.system(size: 12)).foregroundColor(.themeText3)
+                        }
+                    }
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("免租 \(payout.rentFreeDays)天")
+                            .font(.system(size: 13)).foregroundColor(.themeText2)
+                        Text("水电结算 ¥\(Int(paidUtility))")
+                            .font(.system(size: 12)).foregroundColor(.themeText3)
+                    }
+                }
+                // 进度/下一期
+                HStack(spacing: 10) {
+                    Text("已打 \(paidCount)/\(periodCount) 期")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(paidCount == periodCount ? .themeAccentDark : .themeText2)
+                    Text("¥\(Int(paidAmount))")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.themeText)
+                    Spacer()
+                    if !nextText.isEmpty {
+                        Text(nextText)
+                            .font(.system(size: 13))
+                            .foregroundColor(nextInfo.isOverdue ? .themeRed : .themeText3)
+                    }
+                }
             }
-            .padding(12)
+            .padding(14)
             .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EEEEEE"), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "EEEEEE"), lineWidth: 1))
         }
         .buttonStyle(.plain)
-    }
-
-    private var dueDayColumn: some View {
-        VStack(spacing: 4) {
-            Text("\(payout.rentDueDay)号")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: 44, height: 44)
-                .background(nextInfo.isOverdue ? Color.red.opacity(0.85) : Color(hex: "7B61FF").opacity(0.85))
-                .clipShape(Circle())
-            Text(payout.roomNumber)
-                .font(.system(size: 17, weight: .bold))
-                .foregroundColor(.themeText)
-        }
-        .frame(width: 70)
-    }
-
-    private var infoColumn: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 8) {
-                Text(payout.manager).font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
-                Text(payout.unitType).font(.system(size: 14)).foregroundColor(.themeText2)
-                Text(payout.paymentMethod).font(.system(size: 13)).foregroundColor(.themeAccentDark)
-            }
-            HStack(spacing: 8) {
-                Text("年租 ¥\(Int(payout.annualRent))").font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
-                if payout.monthlyRent != nil { Text("月打租 ¥\(Int(payout.monthlyRent ?? 0))").font(.system(size: 13)).foregroundColor(.themeText3) }
-                Text("免租 \(payout.rentFreeDays)天").font(.system(size: 13)).foregroundColor(.themeText3)
-            }
-            if !nextText.isEmpty {
-                Text(nextText)
-                    .font(.system(size: 13))
-                    .foregroundColor(nextInfo.isOverdue ? .themeRed : .themeText3)
-            }
-        }
-    }
-
-    private var paidColumn: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text("已打 \(paidCount)/\(periodCount) 期")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(paidCount == periodCount ? .themeAccentDark : .themeText2)
-            Text("¥\(Int(paidAmount))")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.themeText)
-            Text("水电结算 ¥\(Int(paidUtility))")
-                .font(.system(size: 11))
-                .foregroundColor(.themeText3)
-        }
     }
 
     private var actionColumn: some View {
@@ -289,7 +294,6 @@ struct PayoutRow: View {
             Button("编辑") { onEdit() }.macSecondaryButton()
             Button { onDelete() } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
-        .frame(width: 200)
     }
 }
 
