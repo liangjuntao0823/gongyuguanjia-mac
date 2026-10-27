@@ -613,7 +613,7 @@ final class DataManager: ObservableObject {
             if h.isAvailable { s.available += 1 } else { s.rented += 1 }
             if h.tower == 1 { s.tower1 += 1 } else { s.tower2 += 1 }
             if h.hasRealPhoto { s.withPhoto += 1 } else { s.withoutPhoto += 1 }
-            if h.isAvailable { s.totalMonthlyRent += h.price }
+            if h.isAvailable { s.totalMonthlyRent += Double(h.price) }
         }
         return s
     }
