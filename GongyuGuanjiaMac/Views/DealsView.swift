@@ -67,13 +67,14 @@ struct DealsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // 第一行：标题 + 搜索 + 年/月筛选
             HStack(spacing: 10) {
                 Text("成交管理")
                     .font(.system(size: 20, weight: .bold))
                 Spacer()
                 TextField("搜索…", text: $searchText)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 160)
+                    .frame(width: 180)
                 // 年/月筛选（对齐 iOS WheelYearMonthPicker）
                 Picker("年", selection: $selectedYear) {
                     Text("全部年份").tag(nil as Int?)
@@ -91,6 +92,11 @@ struct DealsView: View {
                     } label: { Image(systemName: "xmark.circle.fill").foregroundColor(.themeText3) }
                         .buttonStyle(.plain).help("清除筛选")
                 }
+            }
+            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 6)
+
+            // 第二行：操作按钮组（v1.2.10 独立成行，避免挤压错乱）
+            HStack(spacing: 10) {
                 Button { exportToImage() } label: { Label("导出图片", systemImage: "photo") }
                     .macSecondaryButton()
                 Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "tablecells") }
@@ -99,6 +105,7 @@ struct DealsView: View {
                     .macSecondaryButton()
                 Button { importFromFile() } label: { Label("导入", systemImage: "square.and.arrow.down") }
                     .macSecondaryButton()
+                Spacer()
                 Button {
                     if selectedTab == 0 { showingAddDeal = true }
                     else if selectedTab == 1 { editingIncome = MiscIncome() }
@@ -108,7 +115,7 @@ struct DealsView: View {
                 }
                 .macPrimaryButton()
             }
-            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
+            .padding(.horizontal, 16).padding(.bottom, 10)
 
             Picker("", selection: $selectedTab) {
                 Text("成交 \(deals.count)").tag(0)

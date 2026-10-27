@@ -531,8 +531,41 @@ struct PayoutDetailView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
+                    // v1.2.10 概览头卡
+                    HStack(spacing: 14) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 10) {
+                                Text(payout.roomNumber).font(.system(size: 22, weight: .bold)).foregroundColor(.themeText)
+                                Text(payout.paymentMethod)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8).padding(.vertical, 3)
+                                    .background(Color.themeAccent)
+                                    .clipShape(Capsule())
+                            }
+                            Text("\(payout.unitType) · 包租人 \(payout.manager)")
+                                .font(.system(size: 13)).foregroundColor(.themeText2)
+                            Text("\(FormatKit.dateStr(payout.leaseStartDate)) 至 \(FormatKit.dateStr(payout.leaseEndDate))（\(payout.leaseDuration)）")
+                                .font(.system(size: 12)).foregroundColor(.themeText3)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("¥\(Int(payout.monthlyRent ?? 0))/月")
+                                .font(.system(size: 22, weight: .bold)).foregroundColor(.themeDanger)
+                            Text("年付 ¥\(Int(payout.annualRent)) · 押¥\(Int(payout.deposit))")
+                                .font(.system(size: 13)).foregroundColor(.themeText2)
+                            Text("免租\(payout.rentFreeDays)天 · 水表\(payout.waterMeterBase) · 电表\(payout.electricMeterBase)")
+                                .font(.system(size: 12)).foregroundColor(.themeText3)
+                        }
+                    }
+                    .padding(14)
+                    .background(Color(red: 0.975, green: 0.978, blue: 0.98))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "E8E8E8"), lineWidth: 1))
+
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("合同信息").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
+                        VStack(spacing: 4) {
                         row("包租人", payout.manager)
                         row("户型", payout.unitType)
                         row("租期", "\(FormatKit.dateStr(payout.leaseStartDate)) 至 \(FormatKit.dateStr(payout.leaseEndDate))（\(payout.leaseDuration)）")
@@ -545,10 +578,17 @@ struct PayoutDetailView: View {
                         row("水表底数", "\(payout.waterMeterBase)")
                         row("电表底数", "\(payout.electricMeterBase)")
                         if !payout.notes.isEmpty { row("备注", payout.notes) }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("打租记录（勾选即已付）").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
+                        VStack(spacing: 4) {
                         if sortedPayouts.isEmpty {
                             Text("暂无打租记录").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
@@ -575,10 +615,17 @@ struct PayoutDetailView: View {
                                 .padding(.vertical, 3)
                             }
                         }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("水电结算记录").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
+                        VStack(spacing: 4) {
                         if payout.monthlyUtilityRecords.isEmpty {
                             Text("暂无结算记录").font(.system(size: 14)).foregroundColor(.themeText3)
                         } else {
@@ -595,6 +642,12 @@ struct PayoutDetailView: View {
                                 .padding(.vertical, 2)
                             }
                         }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "EDEDED"), lineWidth: 1))
                     }
 
                     Spacer(minLength: 12)
@@ -608,10 +661,10 @@ struct PayoutDetailView: View {
 
     private func row(_ key: String, _ value: String) -> some View {
         HStack(alignment: .top) {
-            Text(key).font(.system(size: 14)).foregroundColor(.themeText3).frame(width: 90, alignment: .leading)
-            Text(value).font(.system(size: 15)).textSelection(.enabled)
+            Text(key).font(.system(size: 13)).foregroundColor(.themeText3).frame(width: 92, alignment: .leading)
+            Text(value).font(.system(size: 14)).foregroundColor(.themeText).textSelection(.enabled)
             Spacer()
         }
-        .padding(.vertical, 1)
+        .padding(.vertical, 2)
     }
 }

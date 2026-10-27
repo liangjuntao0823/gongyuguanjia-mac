@@ -10,6 +10,7 @@ struct MainSidebar: View {
     @StateObject private var manager: DataManager
     @State private var showInitWizard = false
     @State private var toastMessage: String?
+    @State private var sidebarWidth: CGFloat = 210
 
     init() {
         let mc = ModelContext(GlobalContainers.main)
@@ -71,10 +72,21 @@ struct MainSidebar: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.gray.opacity(0.07))
             }
-            .frame(width: 210)
+            .frame(width: sidebarWidth)
             .background(Color(red: 0.965, green: 0.968, blue: 0.97))
 
-            Divider()
+            // 可拖拽分隔条：左右缩窄导航栏（150-280）
+            Rectangle()
+                .fill(Color.clear)
+                .frame(width: 6)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture()
+                        .onChanged { v in
+                            sidebarWidth = min(max(150, sidebarWidth + v.translation.width), 280)
+                        }
+                )
+                .help("拖动调整导航栏宽度")
 
             // 主内容区
             Group {

@@ -47,6 +47,7 @@ struct SettingsView: View {
     @State private var showMediaPending = false
     @State private var migrating = false
     @State private var migratedTip = "旧版 1 座媒体目录无前缀，需迁移为 1- 前缀与 iOS 对齐"
+    @State private var showMigrateTip = false
 
 
     var body: some View {
@@ -80,9 +81,28 @@ struct SettingsView: View {
                         }
                         Text("与 iOS 版共用同一云端：房源/媒体/分享页互通。用户名决定私有数据隔离。")
                             .font(.system(size: 13)).foregroundColor(.themeText3)
+                        // 远程配置中心（对齐 iOS v1.80-1.82，随云端同步走）
+                        HStack(spacing: 10) {
+                            Button("远程配置管理（公告/开关/参数/更新日志）") { showRemoteConfig = true }.macSecondaryButton()
+                            Spacer()
+                            Text(RemoteConfig.summary)
+                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                        }
+                        if let ann = RemoteConfig.announcement, ann.enabled, !ann.text.isEmpty {
+                            HStack(spacing: 8) {
+                                Image(systemName: "megaphone").foregroundColor(.orange)
+                                Text("公告：\(ann.text)").font(.system(size: 13)).foregroundColor(.themeText2)
+                                if let link = ann.link, let url = URL(string: link) {
+                                    Link("查看", destination: url).font(.system(size: 13))
+                                }
+                                Spacer()
+                            }
+                        }
+                        Text("远程配置：云端 config.json 优先；断网读本地缓存；均无则用内置默认值。")
+                            .font(.system(size: 13)).foregroundColor(.themeText3)
                     }
 
-                    // 备份与恢复
+                    // 备份与恢复（含自动备份设置，对齐 iOS 备份中心）
                     section("备份与恢复") {
                         HStack(spacing: 10) {
                             Button("打开备份中心") { showBackupCenter = true }.macPrimaryButton()
@@ -90,51 +110,7 @@ struct SettingsView: View {
                             Button("立即全量备份") { fullBackup() }.macSecondaryButton()
                             Spacer()
                         }
-                        Text("快速备份含经营数据+房源字段；全量备份另含实拍媒体。可自动上传云端。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
-                    }
-
-                    // 数据管理
-                    section("数据管理") {
-                        HStack(spacing: 10) {
-                            Button("回收站") { showTrash = true }.macSecondaryButton()
-                            Button("水电结算") { showUtility = true }.macSecondaryButton()
-                            Button("清空数据") { showClearSheet = true }.macSecondaryButton()
-                            Spacer()
-                        }
-                        HStack(spacing: 10) {
-                            Button("离线重建房源") { rebuildFromLocalLedger() }.macSecondaryButton()
-                            Text("从本地账本镜像（media/<房号>/info.json）重建/补齐房源，无需联网")
-                                .font(.system(size: 13)).foregroundColor(.themeText3)
-                            Spacer()
-                        }
-                        HStack(spacing: 10) {
-                            Text("数据文件夹：\(DataRoot.directory.path)")
-                                .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
-                            Spacer()
-                            Button("打开") { openDataFolder() }.macSecondaryButton()
-                        }
-                        // P0-2 一次性迁移：1 座媒体目录补前缀（media/2334上 → media/1-2334上）
-                        HStack(spacing: 10) {
-                            Text(migratedTip)
-                                .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
-                            Spacer()
-                            Button(migrating ? "迁移中…" : "迁移 1 座媒体目录") { migrateTower1Media() }
-                                .macSecondaryButton()
-                                .disabled(migrating)
-                        }
-                        HStack(spacing: 10) {
-                            Text("已收录房源：\(manager.houses.count) 套 · 文件夹大小：\(folderSizeText)")
-                                .font(.system(size: 13)).foregroundColor(.themeText3)
-                            Spacer()
-                        }
-                        if !clearMessage.isEmpty {
-                            Text(clearMessage).font(.system(size: 14)).foregroundColor(.themeText3)
-                        }
-                    }
-
-                    // 自动备份
-                    section("自动备份") {
+                        Divider().opacity(0.5)
                         Toggle("启用自动备份（备份成功后自动上传云端）", isOn: $autoBackupEnabled)
                             .onChange(of: autoBackupEnabled) { _, v in CloudBackupService.autoBackupEnabled = v }
                         HStack(spacing: 10) {
@@ -151,13 +127,49 @@ struct SettingsView: View {
                             Stepper("\(autoBackupRetentionDays) 天", value: $autoBackupRetentionDays, in: 1...30)
                             Spacer()
                         }
+                        Text("快速备份含经营数据+房源字段；全量备份另含实拍媒体。自动备份 = 快速备份，超过保留天数的自动清理，手动备份不删除。")
+                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                    }
+
+                    // 数据管理
+                    section("数据管理") {
                         HStack(spacing: 10) {
-                            Button("立即快速备份") { quickBackup() }.macSecondaryButton()
-                            Button("打开备份中心") { showBackupCenter = true }.macSecondaryButton()
+                            Button("回收站") { showTrash = true }.macSecondaryButton()
+                            Button("清空数据") { showClearSheet = true }.macSecondaryButton()
                             Spacer()
                         }
-                        Text("自动备份 = 快速备份（账本 + 房源 + 清单），超过保留天数的自动备份会自动清理，手动备份不会被删除。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                        HStack(spacing: 10) {
+                            Button("离线重建房源") { rebuildFromLocalLedger() }.macSecondaryButton()
+                            Text("从本地账本镜像（media/<房号>/info.json）重建/补齐房源，无需联网")
+                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                            Spacer()
+                        }
+                        HStack(spacing: 10) {
+                            Text("数据文件夹：\(DataRoot.directory.path)")
+                                .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
+                            Spacer()
+                            Button("打开") { openDataFolder() }.macSecondaryButton()
+                        }
+                        // P0-2 一次性迁移：1 座媒体目录补前缀（media/2334上 → media/1-2334上）
+                        // 仅当 media 根目录仍存在无前缀目录时才显示（迁移完成/启动自动迁移后自动隐藏）
+                        if showMigrateTip {
+                            HStack(spacing: 10) {
+                                Text(migratedTip)
+                                    .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
+                                Spacer()
+                                Button(migrating ? "迁移中…" : "迁移 1 座媒体目录") { migrateTower1Media() }
+                                    .macSecondaryButton()
+                                    .disabled(migrating)
+                            }
+                        }
+                        HStack(spacing: 10) {
+                            Text("已收录房源：\(manager.houses.filter { $0.isDeleted != true }.count) 套 · 文件夹大小：\(folderSizeText)")
+                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                            Spacer()
+                        }
+                        if !clearMessage.isEmpty {
+                            Text(clearMessage).font(.system(size: 14)).foregroundColor(.themeText3)
+                        }
                     }
 
                     // 水电默认值
@@ -226,28 +238,6 @@ struct SettingsView: View {
                             .font(.system(size: 13)).foregroundColor(.themeText3)
                     }
 
-                    // 远程配置中心（对齐 iOS v1.80-1.82）
-                    section("远程配置") {
-                        HStack(spacing: 10) {
-                            Button("远程配置管理（公告/开关/参数/更新日志）") { showRemoteConfig = true }.macSecondaryButton()
-                            Spacer()
-                            Text(RemoteConfig.summary)
-                                .font(.system(size: 13)).foregroundColor(.themeText3)
-                        }
-                        if let ann = RemoteConfig.announcement, ann.enabled, !ann.text.isEmpty {
-                            HStack(spacing: 8) {
-                                Image(systemName: "megaphone").foregroundColor(.orange)
-                                Text("公告：\(ann.text)").font(.system(size: 13)).foregroundColor(.themeText2)
-                                if let link = ann.link, let url = URL(string: link) {
-                                    Link("查看", destination: url).font(.system(size: 13))
-                                }
-                                Spacer()
-                            }
-                        }
-                        Text("云端 config.json 优先；断网读本地缓存；均无则用内置默认值。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
-                    }
-
                     // 日志与历史
                     section("日志与历史") {
                         HStack(spacing: 10) {
@@ -311,6 +301,7 @@ struct SettingsView: View {
             }
         }
         .background(Color.themeBg)
+        .onAppear { updateMigrateTipVisibility() }
         .sheet(isPresented: $showShareSettings) { HouseSettingsView(manager: manager) { showShareSettings = false } }
         .sheet(isPresented: $showBackupCenter) { BackupCenterViews(manager: manager) { showBackupCenter = false } }
         .sheet(isPresented: $showTrash) { TrashView(manager: manager) { showTrash = false } }
@@ -410,6 +401,25 @@ struct SettingsView: View {
         MacToastCenter.show("已在访达中打开数据文件夹")
     }
 
+    /// 检测 media 根目录是否仍存在无前缀目录，决定是否显示迁移提示行（v1.2.10：迁移完成/启动自动迁移后自动隐藏）
+    private func updateMigrateTipVisibility() {
+        let mediaDir = DataRoot.mediaDirectory
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: mediaDir.path) else {
+            showMigrateTip = false
+            return
+        }
+        var hasUnprefixed = false
+        for name in names {
+            if name.hasPrefix("1-") || name.hasPrefix("2-") { continue }
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: mediaDir.appendingPathComponent(name).path, isDirectory: &isDir), isDir.boolValue {
+                hasUnprefixed = true
+                break
+            }
+        }
+        showMigrateTip = hasUnprefixed
+    }
+
     /// P0-2 一次性迁移：media 下无前缀目录 → 1- 前缀（2- 已带前缀不动），文件重命名合并
     private func migrateTower1Media() {
         migrating = true
@@ -444,6 +454,7 @@ struct SettingsView: View {
         }
         migratedTip = moved > 0 ? "✓ 已迁移 \(moved) 个目录（media/xxx → media/1-xxx），迁移后请在云端同步里重新推送一次账本" : "无需迁移（所有目录均已带前缀）"
         migrating = false
+        updateMigrateTipVisibility()
         MacToastCenter.show(moved > 0 ? "已迁移 \(moved) 个 1 座媒体目录" : "无需迁移")
     }
 
@@ -578,6 +589,18 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.10", "2026-10-28", [
+            "房源卡片：视频显示首帧缩略图（AVAsset 首帧生成并缓存 .thumb.jpg）+ 播放角标；卡片与列表新增双端状态徽标（本地/云端/双端）",
+            "左侧导航栏宽度可拖拽调整（150-280），不再固定",
+            "修复「迁移 1 座媒体目录」提示常驻：自动检测 media 目录，全部带前缀后自动隐藏",
+            "水电结算入口从设置-数据管理移至收租板块顶栏",
+            "已收录房源统计修正：过滤已删除房源，与房源页口径一致",
+            "自动备份设置并入备份与恢复板块，删除重复的「打开备份中心」/「立即快速备份」按钮",
+            "远程配置管理移入云端同步板块",
+            "房源/成交顶栏重新布局：房源标题+统计合一、成交操作按钮独立成行，图标不再错乱挤压",
+            "收租卡片重设计：经营类型左侧色条、收租进度条（已收/总期数）、逾期红边、租期空值兜底",
+            "收租/包租详情表单卡片化：概览头卡 + 白色分组卡片，替代单一文字连排",
+        ]),
         ("v1.2.9", "2026-10-28", [
             "同步性能：fetchAll 改为 delimiter 目录式列出（只列房号目录，不列媒体文件，省流量/加快列表）+ withThrowingTaskGroup 并发拉取各套账本（对齐 iOS）",
             "删除死代码 CloudHouseLedger（旧 h/_houses.json 单文件账本 + ISO8601 编码，零调用点），杜绝未来误写出旧格式",

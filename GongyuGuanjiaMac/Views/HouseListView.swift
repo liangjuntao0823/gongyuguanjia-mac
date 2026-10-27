@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AppKit
+import AVFoundation
 
 // MARK: - 共享房源组件（缩略图 / 状态徽标）
 
@@ -24,6 +25,8 @@ struct MediaThumbView: View {
         self.size = size
     }
 
+    @State private var videoThumb: NSImage?
+
     var body: some View {
         Group {
             if let item {
@@ -32,10 +35,10 @@ struct MediaThumbView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } else {
-                    // 视频：显示首帧或播放图标
+                    // 视频：异步加载首帧缩略图（未加载完显示播放图标占位）
                     ZStack {
-                        if let nsImage = loadImage(item.fileName) {
-                            Image(nsImage: nsImage)
+                        if let thumb = videoThumb {
+                            Image(nsImage: thumb)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                         } else {
@@ -44,6 +47,13 @@ struct MediaThumbView: View {
                                 .font(.system(size: size * 0.25))
                                 .foregroundColor(.white)
                         }
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: size * 0.28))
+                            .foregroundColor(.white.opacity(0.9))
+                            .shadow(radius: 2)
+                    }
+                    .onAppear {
+                        loadVideoThumb()
                     }
                 }
             } else {
@@ -58,6 +68,14 @@ struct MediaThumbView: View {
         }
         .frame(width: size, height: size)
         .clipped()
+    }
+
+    private func loadVideoThumb() {
+        guard let item, item.kind != "image" else { return }
+        let cache = VideoThumbCache.load(roomKey: roomKey, fileName: item.fileName)
+        DispatchQueue.main.async {
+            if let cache { videoThumb = cache }
+        }
     }
 
     private func loadImage(_ fileName: String) -> NSImage? {
@@ -133,8 +151,11 @@ struct HouseListView: View {
         VStack(spacing: 0) {
             // 顶部
             HStack(spacing: 10) {
-                Text("房源管理")
-                    .font(.system(size: 20, weight: .bold))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("房源管理").font(.system(size: 20, weight: .bold))
+                    Text("共 \(stats.total) 套 · 1座 \(stats.tower1) · 2座 \(stats.tower2) · 待租 \(stats.available) · 已租 \(stats.rented) · 实拍图 \(stats.withPhoto)/无 \(stats.withoutPhoto)")
+                        .font(.system(size: 12)).foregroundColor(.themeText3)
+                }
                 Spacer()
                 Button {
                     showBatchImport = true
@@ -205,28 +226,6 @@ struct HouseListView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
             }
-
-            // 统计行
-            HStack(spacing: 12) {
-                Text("共 \(stats.total) 套")
-                    .font(.system(size: 14))
-                    .foregroundColor(.themeText2)
-                Text("1座 \(stats.tower1) 套")
-                    .font(.system(size: 14))
-                    .foregroundColor(.themeText2)
-                Text("2座 \(stats.tower2) 套")
-                    .font(.system(size: 14))
-                    .foregroundColor(.themeText2)
-                Text("待租 \(stats.available) · 已租 \(stats.rented)")
-                    .font(.system(size: 14))
-                    .foregroundColor(.themeText2)
-                Text("有实拍图 \(stats.withPhoto) · 无实拍图 \(stats.withoutPhoto)")
-                    .font(.system(size: 14))
-                    .foregroundColor(.themeText2)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
 
             // 筛选
             HStack(spacing: 10) {
@@ -596,6 +595,7 @@ struct HouseCard: View {
                         Text(house.towerLabel)
                             .font(.system(size: 13))
                             .foregroundColor(.themeText3)
+                        CloudStatusBadge(raw: house.cloudStatusRaw)
                         Spacer()
                         Text("¥\(house.price)")
                             .font(.system(size: 15, weight: .bold))
@@ -644,6 +644,7 @@ struct HouseRow: View {
                     Text(house.displayRoomNo)
                         .font(.system(size: 15, weight: .semibold))
                     StatusBadge(status: house.status)
+                    CloudStatusBadge(raw: house.cloudStatusRaw)
                 }
                 Text("\(house.layout) · 房东 \(house.landlord) · ¥\(house.price)/月")
                     .font(.system(size: 14))
@@ -655,5 +656,72 @@ struct HouseRow: View {
                 .foregroundColor(.themeText3)
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - 视频首帧缩略图缓存（对齐 iOS：视频卡显示首帧 + 播放角标）
+
+enum VideoThumbCache {
+    private static let memCache = NSCache<NSString, NSImage>()
+
+    /// 取视频首帧（内存缓存 → 磁盘 .thumb.jpg → AVAssetImageGenerator 生成并落盘）
+    static func load(roomKey: String, fileName: String) -> NSImage? {
+        let cacheKey = "\(roomKey)/\(fileName)" as NSString
+        if let hit = memCache.object(forKey: cacheKey) { return hit }
+
+        let videoURL = MediaStore.fileURL(fileName: fileName, roomKey: roomKey)
+        guard FileManager.default.fileExists(atPath: videoURL.path) else { return nil }
+
+        let thumbURL = videoURL.deletingPathExtension().appendingPathExtension("thumb.jpg")
+        if let disk = NSImage(contentsOf: thumbURL) {
+            memCache.setObject(disk, forKey: cacheKey)
+            return disk
+        }
+
+        let asset = AVURLAsset(url: videoURL)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 720, height: 720)
+        guard let cg = try? generator.copyCGImage(at: CMTime(seconds: 0.1, preferredTimescale: 600), actualTime: nil) else {
+            return nil
+        }
+        let img = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
+        // 落盘缓存（NSBitmapImageRep → JPEG）
+        if let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
+           let jpg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.75]) {
+            try? jpg.write(to: thumbURL)
+        }
+        memCache.setObject(img, forKey: cacheKey)
+        return img
+    }
+}
+
+// MARK: - 双端状态徽标（cloudStatusRaw：local 本地 / cloud 云端 / both 双端）
+
+struct CloudStatusBadge: View {
+    let raw: String?
+    var body: some View {
+        switch raw {
+        case "both":
+            Text("双端").font(.system(size: 11, weight: .semibold))
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .foregroundColor(Color(hex: "00695C"))
+                .background(Color(hex: "E0F2F1"))
+                .clipShape(Capsule())
+        case "cloud":
+            Text("云端").font(.system(size: 11, weight: .semibold))
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .foregroundColor(Color(hex: "1565C0"))
+                .background(Color(hex: "E3F2FD"))
+                .clipShape(Capsule())
+        case "local":
+            Text("本地").font(.system(size: 11, weight: .semibold))
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .foregroundColor(Color(hex: "6D4C41"))
+                .background(Color(hex: "EFEBE9"))
+                .clipShape(Capsule())
+        default:
+            EmptyView()
+        }
     }
 }
