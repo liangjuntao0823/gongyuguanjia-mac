@@ -1,63 +1,30 @@
 import Foundation
-import Security
 
-// MARK: - 钥匙串存取（COS 密钥等敏感信息，与 iOS 版共用 KeychainKey 逻辑）
+// MARK: - 本地配置存取
+// v1.2.2 起改为 UserDefaults 存储（不再使用系统钥匙串）：
+// 未签名/本地构建访问钥匙串会触发 macOS 授权弹窗并要求登录钥匙串密码，
+// 导致 App 在无密码环境下无法读取云端配置。改为本地存储后不再弹窗，
+// 云端配置需在设置中重新填写一次（可在 iOS 端设置里照抄同一份 COS 配置）。
 
 enum KeychainStore {
 
-    /// 与 iOS 版保持同一 service，方便用户用同一把钥匙迁移；Mac 上默认按当前用户隔离
-    private static let service = "com.gj.tg"
-    private static let accessGroup: String? = nil
-
-    // MARK: 通用存取
+    /// 键名前缀，避免与其他设置冲突
+    private static func k(_ key: String) -> String { "kc." + key }
 
     static func save(_ value: String, for key: String) -> Bool {
-        guard let data = value.data(using: .utf8) else { return false }
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-        ]
-        let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
-        ]
-        // 已存在则更新
-        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if status == errSecSuccess { return true }
-        if status == errSecItemNotFound {
-            var addQuery = query
-            addQuery.merge(attributes) { _, new in new }
-            let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-            return addStatus == errSecSuccess
-        }
-        return false
+        UserDefaults.standard.set(value, forKey: k(key))
+        return true
     }
 
     static func load(_ key: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        UserDefaults.standard.string(forKey: k(key))
     }
 
     static func delete(_ key: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-        ]
-        SecItemDelete(query as CFDictionary)
+        UserDefaults.standard.removeObject(forKey: k(key))
     }
 
     static func exists(_ key: String) -> Bool {
-        load(key) != nil
+        UserDefaults.standard.object(forKey: k(key)) != nil
     }
 }
