@@ -507,19 +507,29 @@ final class DataManager: ObservableObject {
         let item = TodoItem(content: content, sortOrder: todos.count, reminderDate: reminderDate)
         mainContext.insert(item)
         try? mainContext.save()
+        LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
-    func updateTodo(_ item: TodoItem, content: String) {
+    func updateTodo(_ item: TodoItem, content: String, createdDate: Date? = nil, reminderDate: Date? = nil) {
         item.content = content
+        if let createdDate { item.createdDate = createdDate }
+        if let reminderDate { item.reminderDate = reminderDate }
         try? mainContext.save()
+        LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+    }
+
+    /// 全部待办（含已删除，供回收站）
+    var allTodos: [TodoItem] {
+        (try? mainContext.fetch(FetchDescriptor<TodoItem>())) ?? []
     }
 
     func toggleTodo(_ item: TodoItem) {
         item.isCompleted.toggle()
         item.completedDate = item.isCompleted ? Date() : nil
         try? mainContext.save()
+        LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -527,6 +537,7 @@ final class DataManager: ObservableObject {
         item.isDeleted = true
         item.deletedAt = Date()
         try? mainContext.save()
+        LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 
@@ -534,6 +545,7 @@ final class DataManager: ObservableObject {
         item.isDeleted = false
         item.deletedAt = nil
         try? mainContext.save()
+        LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
     }
 

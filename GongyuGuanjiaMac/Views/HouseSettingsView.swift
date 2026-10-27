@@ -25,6 +25,10 @@ struct HouseSettingsView: View {
     // 名片
     @State private var shareName = ""
     @State private var sharePhone = ""
+    @State private var shareRecords: [ShareRecordItem] = []
+    @State private var shareRecordsLoaded = false
+    @State private var shareRecordsError: String?
+    @State private var copiedShareURL: String?
 
     // 水印
     @State private var wmEnabled = true
@@ -206,6 +210,62 @@ struct HouseSettingsView: View {
                         .macPrimaryButton()
                     }
 
+                    // 分享记录与访问统计（对齐 iOS v1.55：云端 do_shares 按用户名过滤）
+                    sectionCard("分享记录（选房链接访问统计）") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("分享过的选房链接（云端按用户名隔离）")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.themeText3)
+                                Spacer()
+                                Button {
+                                    loadShareRecords()
+                                } label: { Label("刷新", systemImage: "arrow.clockwise") }
+                                .macSecondaryButton()
+                            }
+                            if let err = shareRecordsError {
+                                Text(err).font(.system(size: 12)).foregroundColor(.themeDanger)
+                            } else if shareRecords.isEmpty {
+                                Text(shareRecordsLoaded ? "暂无分享记录，分享过房源后显示在这里。" : "加载分享记录…")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.themeText3)
+                                    .padding(.vertical, 4)
+                            } else {
+                                ScrollView(.vertical, showsIndicators: true) {
+                                    VStack(spacing: 6) {
+                                        ForEach(shareRecords) { r in
+                                            HStack(spacing: 8) {
+                                                Text(r.room).font(.system(size: 13, weight: .bold))
+                                                Text(r.mode).font(.system(size: 11))
+                                                    .padding(.horizontal, 6).padding(.vertical, 1)
+                                                    .background(Color.accentColor.opacity(0.12))
+                                                    .clipShape(Capsule())
+                                                Spacer()
+                                                Text(r.time).font(.system(size: 11)).foregroundColor(.themeText3)
+                                                Button {
+                                                    NSPasteboard.general.clearContents()
+                                                    NSPasteboard.general.setString(r.url, forType: .string)
+                                                    copiedShareURL = r.url
+                                                    MacToastCenter.show("链接已复制")
+                                                } label: {
+                                                    Label(copiedShareURL == r.url ? "已复制" : "复制链接",
+                                                          systemImage: copiedShareURL == r.url ? "checkmark" : "doc.on.doc")
+                                                        .font(.system(size: 11))
+                                                }
+                                                .buttonStyle(.plain)
+                                                .foregroundColor(.accentColor)
+                                            }
+                                            .padding(.horizontal, 8).padding(.vertical, 4)
+                                            .background(Color(red: 0.96, green: 0.97, blue: 0.98))
+                                            .cornerRadius(6)
+                                        }
+                                    }
+                                }
+                                .frame(maxHeight: 160)
+                            }
+                        }
+                    }
+
                     Spacer(minLength: 20)
                 }
                 .padding(16)
@@ -215,6 +275,38 @@ struct HouseSettingsView: View {
         .background(Color.themeBg)
         .onAppear {
             loadAll()
+        }
+    }
+
+    // MARK: - 分享记录
+
+    private func loadShareRecords() {
+        shareRecordsError = nil
+        shareRecordsLoaded = false
+        let u = CloudUser.username.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        Task {
+            do {
+                let data = try await CosUploader.cloudCall(params: [
+                    ("act", "shares"), ("k", CloudConfig.passwordHash), ("u", u)
+                ])
+                let obj = try JSONDecoder().decode(ShareRecordsResponse.self, from: data)
+                guard obj.ok else {
+                    await MainActor.run {
+                        shareRecordsError = "云函数未返回分享记录（请确认函数已部署）"
+                        shareRecordsLoaded = true
+                    }
+                    return
+                }
+                await MainActor.run {
+                    shareRecords = obj.records
+                    shareRecordsLoaded = true
+                }
+            } catch {
+                await MainActor.run {
+                    shareRecordsError = "加载失败：\(error.localizedDescription)"
+                    shareRecordsLoaded = true
+                }
+            }
         }
     }
 
@@ -359,4 +451,20 @@ struct HouseSettingsView: View {
         .cornerRadius(12)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder))
     }
+}
+
+
+// MARK: - 分享记录（云函数 do_shares 返回）
+
+struct ShareRecordItem: Codable, Identifiable {
+    var id: String { url }
+    let room: String
+    let mode: String
+    let time: String
+    let url: String
+}
+
+struct ShareRecordsResponse: Codable {
+    let ok: Bool
+    let records: [ShareRecordItem]
 }

@@ -273,42 +273,7 @@ struct SettingsView: View {
             .frame(width: 560, height: 440)
         }
         .sheet(isPresented: $showOpLogs) {
-            VStack(spacing: 0) {
-                HStack {
-                    Text("操作日志").font(.system(size: 17, weight: .bold))
-                    Spacer()
-                    Button("清空") {
-                        BackupLogStore.clear()
-                        MacToastCenter.show("操作日志已清空")
-                    }.macSecondaryButton()
-                    Button("关闭") { showOpLogs = false }.macPrimaryButton()
-                }
-                .padding(14)
-                Divider()
-                ScrollView {
-                    let entries = BackupLogStore.load()
-                    if entries.isEmpty {
-                        Text("暂无操作日志").font(.system(size: 14)).foregroundColor(.themeText2)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                    } else {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(entries) { e in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("[\(e.kind.uppercased())] \(e.title)")
-                                        .font(.system(size: 13, weight: .semibold)).foregroundColor(.themeText)
-                                    Text("\(e.time.formatted(date: .abbreviated, time: .shortened)) · \(e.detail)")
-                                        .font(.system(size: 12)).foregroundColor(.themeText2)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        }
-                        .padding(12)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-            }
-            .frame(width: 560, height: 440)
+            OperationLogsView(manager: manager) { showOpLogs = false }
         }
         .sheet(isPresented: $showVersionHistory) { VersionHistoryView { showVersionHistory = false } }
         .sheet(isPresented: $showInterconnection) { InterconnectionInfoView { showInterconnection = false } }
@@ -536,6 +501,15 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.5", "2026-10-27", [
+            "待办板块补全：搜索、未办/已办筛选、新增/编辑/预览表单、提醒时间、拖拽排序、完成/删除确认、恢复未办理、提醒本地通知",
+            "成交/包租/收租：新增「导出图片」（表格渲染 PNG 保存）、成交/包租「导出 Excel 模板」；成交增加年/月筛选与定位高亮",
+            "汇总板块：新增年/月筛选（按所选年月统计卡片与月度明细）",
+            "水电计划编辑器对齐 iOS：结算日期选择、按结算频率(月/季)推导期数、结算单备注、结算时间/到期日写入",
+            "同步增强：媒体对账改为先查云端对象——对象在补账本、对象缺有本地文件自动补传、两者皆无才删除，避免误删",
+            "设置页新增「分享记录（选房链接访问统计）」：云端 do_shares 按用户名展示房号/模式/时间/复制链接",
+            "操作日志重做：本机/云端分区、云端多选删除、失败词标红、搜索框"
+        ]),
         ("v1.2.4", "2026-10-27", [
             "房源删除云端联动：删除（进回收站）即同步删除云端账本（iOS 端同步消失），彻底删除=本地媒体+记录+云端桶目录全部对象+账本+分享页一并清除",
             "新增/编辑房源后自动推送单套账本（对齐 iOS uploadOne），不再依赖手动同步",

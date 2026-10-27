@@ -97,7 +97,11 @@ struct PayoutView: View {
                 TextField("搜索房号/包租人/户型…", text: $searchText)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 200)
-                Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "square.and.arrow.up") }
+                Button { exportToImage() } label: { Label("导出图片", systemImage: "photo") }
+                    .macSecondaryButton()
+                Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "tablecells") }
+                    .macSecondaryButton()
+                Button { exportTemplate() } label: { Label("模板", systemImage: "doc.text") }
                     .macSecondaryButton()
                 Button { importFromFile() } label: { Label("导入", systemImage: "square.and.arrow.down") }
                     .macSecondaryButton()
@@ -140,6 +144,31 @@ struct PayoutView: View {
                 payoutToDelete = nil
             }
             Button("取消", role: .cancel) { payoutToDelete = nil }
+        }
+    }
+
+    /// 导出图片（对齐 iOS 包租导出图片）
+    @MainActor
+    private func exportToImage() {
+        let headers = ["房号", "包租人", "户型", "起租日", "到期日", "年租金", "免租期", "支付方式", "备注"]
+        let df = DateFormatter(); df.dateFormat = "yyyy.M.d"
+        let rows: [[String]] = filteredPayouts.map { p in
+            [p.roomNumber, p.manager, p.unitType,
+             df.string(from: p.leaseStartDate), df.string(from: p.leaseEndDate),
+             "¥\(Int(p.annualRent))", "\(p.rentFreeDays)天", p.paymentMethod, p.notes]
+        }
+        ExportImageService.exportTable(title: "包租管理", headers: headers, rows: rows, filename: "包租管理")
+    }
+
+    /// 导出 Excel 模板（对齐 iOS 包租模板）
+    private func exportTemplate() {
+        let headers = ["房号", "包租人", "户型", "起租日", "到期日", "年租金", "免租期", "支付方式", "备注"]
+        let sample = [["1-101", "张三", "单间上层", "2026-01-15", "2027-01-14", "12000", "15天", "季付", "示例数据"]]
+        let data = ExcelService.makeExcelHTML(rows: [headers] + sample, sheetName: "包租管理")
+        MacBridge.saveFile(defaultName: "包租管理-模板.xls", allowedTypes: [Self.xlsType, .spreadsheet]) { url in
+            guard let url else { return }
+            try? data.write(to: url)
+            MacToastCenter.show("已导出模板（示例行请在导入前删除）")
         }
     }
 

@@ -62,6 +62,8 @@ struct RentCollectionView: View {
                     MacToastCenter.show("已刷新")
                 } label: { Label("刷新", systemImage: "arrow.clockwise") }
                 .macSecondaryButton()
+                Button { exportToImage() } label: { Label("导出图片", systemImage: "photo") }
+                    .macSecondaryButton()
                 Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "square.and.arrow.up") }
                     .macSecondaryButton()
                 Button { showingAddProperty = true } label: { Label("新增房源", systemImage: "plus") }
@@ -159,6 +161,23 @@ struct RentCollectionView: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    /// 导出图片（对齐 iOS 收租导出图片）
+    @MainActor
+    private func exportToImage() {
+        let headers = ["房号", "房东", "户型", "月租金", "交租日", "房源类型", "本月状态", "备注"]
+        var rows: [[String]] = []
+        let cal = Calendar.current
+        let cy = cal.component(.year, from: Date())
+        let cm = cal.component(.month, from: Date())
+        for prop in filteredProperties {
+            let current = prop.monthlyRentRecords.first { $0.year == cy && $0.month == cm }
+            let status = current?.isPaid == true ? "已收" : (current != nil ? "未收" : "—")
+            rows.append([prop.roomNumber, prop.landlord, prop.unitType, "¥\(Int(prop.rent))",
+                         "\(max(1, prop.rentDueDay))号", prop.propertyType, status, prop.notes])
+        }
+        ExportImageService.exportTable(title: "收租管理", headers: headers, rows: rows, filename: "收租管理")
     }
 
     private func exportToExcel() {
@@ -905,32 +924,42 @@ struct UtilityPlanEditor: View {
 
     @State private var drafts: [UtilityPlanDraft] = []
 
+    private var frequency: String { property.utilitySettlementFrequency == "monthly" ? "monthly" : "quarterly" }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("编辑水电结算计划 · \(property.roomNumber)").font(.system(size: 17, weight: .bold))
+                Text(frequency == "monthly" ? "（按月）" : "（按季）")
+                    .font(.system(size: 13)).foregroundColor(.themeText3)
                 Spacer()
                 Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             List {
                 ForEach($drafts) { $d in
-                    HStack(spacing: 10) {
-                        Text(d.frequency == "monthly" ? "\(d.period)月" : "\(d.period)季度")
-                            .font(.system(size: 15))
-                            .frame(width: 70, alignment: .leading)
-                        TextField("电费", text: $d.electricAmount).textFieldStyle(.roundedBorder).frame(width: 80)
-                        TextField("水费", text: $d.waterAmount).textFieldStyle(.roundedBorder).frame(width: 80)
-                        TextField("结余", text: $d.balance).textFieldStyle(.roundedBorder).frame(width: 80)
-                        Toggle("已结算", isOn: $d.isSettled)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 10) {
+                            DatePicker("结算日期", selection: $d.date, displayedComponents: .date)
+                                .labelsHidden()
+                                .frame(width: 150)
+                            TextField("电费", text: $d.electricAmount).textFieldStyle(.roundedBorder).frame(width: 80)
+                            TextField("水费", text: $d.waterAmount).textFieldStyle(.roundedBorder).frame(width: 80)
+                            TextField("结余", text: $d.balance).textFieldStyle(.roundedBorder).frame(width: 80)
+                            Toggle("已结算", isOn: $d.isSettled)
+                        }
+                        TextField("结算单（备注）", text: $d.statement)
+                            .textFieldStyle(.roundedBorder)
                     }
                 }
                 .onDelete { drafts.remove(atOffsets: $0) }
             }
             HStack {
                 Button {
-                    drafts.append(UtilityPlanDraft(period: drafts.count + 1, frequency: "quarterly"))
-                } label: { Label("新增季度计划", systemImage: "plus") }
+                    let base = drafts.last?.date ?? Date()
+                    let next = Calendar.current.date(byAdding: .month, value: 1, to: base) ?? base
+                    drafts.append(UtilityPlanDraft(date: next, frequency: frequency))
+                } label: { Label("新增\(frequency == "monthly" ? "月" : "季")度计划", systemImage: "plus") }
                 .macSecondaryButton()
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()
@@ -938,18 +967,29 @@ struct UtilityPlanEditor: View {
             }
         }
         .padding(16)
-        .frame(width: 600, height: 420)
+        .frame(width: 640, height: 440)
         .onAppear {
             drafts = property.utilitySettlementRecords
-                .sorted { $0.year != $1.year ? $0.year < $1.year : $0.period < $1.period }
+                .sorted {
+                    let a = $0.dueDate ?? .distantFuture, b = $1.dueDate ?? .distantFuture
+                    return a < b
+                }
                 .map {
-                    UtilityPlanDraft(id: $0.id, period: $0.period, frequency: $0.frequency,
-                                     electricAmount: String(Int($0.electricAmount)),
-                                     waterAmount: String(Int($0.waterAmount)),
-                                     balance: String(Int($0.balance)),
-                                     isSettled: $0.isSettled)
+                    UtilityPlanDraft(id: $0.id,
+                                     date: $0.dueDate ?? Self.dateFor(year: $0.year, period: $0.period, frequency: $0.frequency),
+                                     frequency: $0.frequency,
+                                     electricAmount: $0.electricAmount == 0 ? "" : String(Int($0.electricAmount)),
+                                     waterAmount: $0.waterAmount == 0 ? "" : String(Int($0.waterAmount)),
+                                     balance: $0.balance == 0 ? "" : String(Int($0.balance)),
+                                     isSettled: $0.isSettled, statement: $0.statement)
                 }
         }
+    }
+
+    private static func dateFor(year: Int, period: Int, frequency: String) -> Date {
+        let month = frequency == "monthly" ? period : (period - 1) * 3 + 1
+        var comps = DateComponents(); comps.year = year; comps.month = month; comps.day = 1
+        return Calendar.current.date(from: comps) ?? Date()
     }
 
     private func save() {
@@ -957,14 +997,19 @@ struct UtilityPlanEditor: View {
             manager.mainContext.delete(record)
         }
         property.utilitySettlementRecords.removeAll()
-        let year = Calendar.current.component(.year, from: Date())
+        let cal = Calendar.current
         for d in drafts {
-            let record = UtilitySettlementRecord(id: d.id == UUID() ? UUID() : d.id, year: year, period: d.period,
+            let y = cal.component(.year, from: d.date)
+            let m = cal.component(.month, from: d.date)
+            let period = d.frequency == "monthly" ? m : ((m - 1) / 3 + 1)
+            let record = UtilitySettlementRecord(id: d.id == UUID() ? UUID() : d.id, year: y, period: period,
                                                  frequency: d.frequency,
                                                  electricAmount: Double(d.electricAmount) ?? 0,
                                                  waterAmount: Double(d.waterAmount) ?? 0,
                                                  balance: Double(d.balance) ?? 0,
-                                                 isSettled: d.isSettled)
+                                                 isSettled: d.isSettled, statement: d.statement,
+                                                 settledAt: d.isSettled ? Date() : nil,
+                                                 dueDate: d.date)
             manager.mainContext.insert(record)
             property.utilitySettlementRecords.append(record)
         }
@@ -977,10 +1022,19 @@ struct UtilityPlanEditor: View {
 
 struct UtilityPlanDraft: Identifiable {
     var id: UUID = UUID()
-    var period: Int
+    var date: Date
     var frequency: String
     var electricAmount: String = "0"
     var waterAmount: String = "0"
     var balance: String = "0"
     var isSettled: Bool = false
+    var statement: String = ""
+
+    init(id: UUID = UUID(), date: Date = Date(), frequency: String = "quarterly",
+         electricAmount: String = "0", waterAmount: String = "0", balance: String = "0",
+         isSettled: Bool = false, statement: String = "") {
+        self.id = id; self.date = date; self.frequency = frequency
+        self.electricAmount = electricAmount; self.waterAmount = waterAmount; self.balance = balance
+        self.isSettled = isSettled; self.statement = statement
+    }
 }

@@ -12,6 +12,11 @@ struct DealsView: View {
 
     @State private var selectedTab = 0
     @State private var searchText = ""
+    @State private var selectedYear: Int? = nil     // 年筛选（nil=全部，iOS WheelYearMonthPicker 对齐）
+    @State private var selectedMonth: Int? = nil    // 月筛选（nil=全部）
+    @State private var selection: UUID? = nil        // 定位高亮（Table 选中）
+    @State private var highlightedID: UUID? = nil    // 杂收杂支行点击高亮
+    @State private var highlightClearTask: Task<Void, Never>?
     @State private var showingAddDeal = false
     @State private var viewingDeal: DealRecord?
     @State private var editingDeal: DealRecord?
@@ -20,8 +25,21 @@ struct DealsView: View {
     @State private var deletingIncome: MiscIncome?
     @State private var deletingExpense: MiscExpense?
 
+    /// 年/月过滤（nil=全部；年筛选可选列表内出现过的年份）
+    private var availableYears: [Int] {
+        var set = Set<Int>()
+        for d in manager.deals where d.isDeleted != true { set.insert(Calendar.current.component(.year, from: d.date)) }
+        for i in manager.miscIncomes where i.isDeleted != true { set.insert(Calendar.current.component(.year, from: i.date)) }
+        for e in manager.miscExpenses where e.isDeleted != true { set.insert(Calendar.current.component(.year, from: e.date)) }
+        return set.sorted(by: >)
+    }
+    private func yearMatch(_ d: Date) -> Bool {
+        if let y = selectedYear, Calendar.current.component(.year, from: d) != y { return false }
+        if let m = selectedMonth, Calendar.current.component(.month, from: d) != m { return false }
+        return true
+    }
     private var deals: [DealRecord] {
-        let list = manager.deals.filter { $0.isDeleted != true }
+        let list = manager.deals.filter { $0.isDeleted != true && yearMatch($0.date) }
         if searchText.isEmpty { return list.sorted { $0.date > $1.date } }
         return list.filter {
             $0.roomNumber.localizedCaseInsensitiveContains(searchText) ||
@@ -31,7 +49,7 @@ struct DealsView: View {
         }.sorted { $0.date > $1.date }
     }
     private var incomes: [MiscIncome] {
-        let list = manager.miscIncomes.filter { $0.isDeleted != true }
+        let list = manager.miscIncomes.filter { $0.isDeleted != true && yearMatch($0.date) }
         if searchText.isEmpty { return list.sorted { $0.date > $1.date } }
         return list.filter {
             $0.item.localizedCaseInsensitiveContains(searchText) ||
@@ -39,7 +57,7 @@ struct DealsView: View {
         }.sorted { $0.date > $1.date }
     }
     private var expenses: [MiscExpense] {
-        let list = manager.miscExpenses.filter { $0.isDeleted != true }
+        let list = manager.miscExpenses.filter { $0.isDeleted != true && yearMatch($0.date) }
         if searchText.isEmpty { return list.sorted { $0.date > $1.date } }
         return list.filter {
             $0.item.localizedCaseInsensitiveContains(searchText) ||
@@ -55,8 +73,29 @@ struct DealsView: View {
                 Spacer()
                 TextField("搜索…", text: $searchText)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 180)
-                Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "square.and.arrow.up") }
+                    .frame(width: 160)
+                // 年/月筛选（对齐 iOS WheelYearMonthPicker）
+                Picker("年", selection: $selectedYear) {
+                    Text("全部年份").tag(nil as Int?)
+                    ForEach(availableYears, id: \.self) { y in Text("\(y)年").tag(Int?(y)) }
+                }
+                .frame(width: 110)
+                Picker("月", selection: $selectedMonth) {
+                    Text("全部月份").tag(nil as Int?)
+                    ForEach(1...12, id: \.self) { m in Text("\(m)月").tag(Int?(m)) }
+                }
+                .frame(width: 100)
+                if selectedYear != nil || selectedMonth != nil {
+                    Button {
+                        selectedYear = nil; selectedMonth = nil
+                    } label: { Image(systemName: "xmark.circle.fill").foregroundColor(.themeText3) }
+                        .buttonStyle(.plain).help("清除筛选")
+                }
+                Button { exportToImage() } label: { Label("导出图片", systemImage: "photo") }
+                    .macSecondaryButton()
+                Button { exportToExcel() } label: { Label("导出 Excel", systemImage: "tablecells") }
+                    .macSecondaryButton()
+                Button { exportTemplate() } label: { Label("模板", systemImage: "doc.text") }
                     .macSecondaryButton()
                 Button { importFromFile() } label: { Label("导入", systemImage: "square.and.arrow.down") }
                     .macSecondaryButton()
@@ -91,7 +130,13 @@ struct DealsView: View {
             }
         }
         .background(Color.themeBg)
-        .sheet(isPresented: $showingAddDeal) { DealEditor(manager: manager, deal: nil) { showingAddDeal = false } }
+        .sheet(isPresented: $showingAddDeal) {
+            DealEditor(manager: manager, deal: nil, onSaved: { record in
+                selection = record.id
+                highlightedID = record.id
+                scheduleHighlightClear()
+            }) { showingAddDeal = false }
+        }
         .sheet(item: $viewingDeal) { deal in DealDetailView(manager: manager, deal: deal) { viewingDeal = nil } }
         .sheet(item: $editingDeal) { deal in DealEditor(manager: manager, deal: deal) { editingDeal = nil } }
         .sheet(item: $editingIncome) { inc in
@@ -127,7 +172,7 @@ struct DealsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Table(deals) {
+                Table(deals, selection: $selection) {
                     TableColumn("成交日期") { deal in Text(FormatKit.dateStr(deal.date)) }.width(95)
                     TableColumn("房号") { deal in Text(deal.roomNumber) }.width(80)
                     TableColumn("房东") { deal in Text(deal.landlord) }.width(70)
@@ -214,6 +259,12 @@ struct DealsView: View {
             Button { deletingIncome = row } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
         .padding(.vertical, 3)
+        .background(highlightedID == row.id ? Color.yellow.opacity(0.3) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            highlightedID = row.id
+            scheduleHighlightClear()
+        }
     }
 
     @ViewBuilder
@@ -232,9 +283,80 @@ struct DealsView: View {
             Button { deletingExpense = row } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
         .padding(.vertical, 3)
+        .background(highlightedID == row.id ? Color.yellow.opacity(0.3) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            highlightedID = row.id
+            scheduleHighlightClear()
+        }
     }
 
     // MARK: 导出 / 导入
+    private func scheduleHighlightClear() {
+        highlightClearTask?.cancel()
+        highlightClearTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { highlightedID = nil }
+        }
+    }
+
+    /// 导出图片（对齐 iOS exportToImage：当前筛选结果渲染成 PNG）
+    @MainActor
+    private func exportToImage() {
+        var title: String
+        var headers: [String]
+        var rows: [[String]]
+        var highlight: Int? = nil
+        if selectedTab == 0 {
+            title = "成交记录"
+            headers = ["日期", "房号", "房东", "户型", "租金", "中介费", "备注"]
+            rows = deals.map { [
+                FormatKit.dateStr($0.date), $0.roomNumber, $0.landlord, $0.unitType,
+                "¥\(FormatKit.money($0.rent))", "¥\(FormatKit.money($0.totalFee))", $0.notes
+            ] }
+            if let sel = selection, let idx = deals.firstIndex(where: { $0.id == sel }) { highlight = idx }
+        } else if selectedTab == 1 {
+            title = "杂项收入"
+            headers = ["日期", "项目", "金额", "备注"]
+            rows = incomes.map { [FormatKit.dateStr($0.date), $0.item, "¥\(FormatKit.money($0.amount))", $0.notes] }
+            if let sel = selection, let idx = incomes.firstIndex(where: { $0.id == sel }) { highlight = idx }
+        } else {
+            title = "杂项支出"
+            headers = ["日期", "项目", "金额", "备注"]
+            rows = expenses.map { [FormatKit.dateStr($0.date), $0.item, "¥\(FormatKit.money($0.amount))", $0.notes] }
+            if let sel = selection, let idx = expenses.firstIndex(where: { $0.id == sel }) { highlight = idx }
+        }
+        ExportImageService.exportTable(title: title, headers: headers, rows: rows,
+                                       filename: title, highlightRow: highlight)
+    }
+
+    /// 导出 Excel 模板（对齐 iOS exportTemplate：带示例行）
+    private func exportTemplate() {
+        var title: String
+        var headers: [String]
+        var sample: [[String]]
+        if selectedTab == 0 {
+            title = "成交记录"
+            headers = ["成交日期", "房号", "房东", "户型", "起租期", "到期日", "租期", "月租金", "押金", "预存", "交租日", "房东中介费", "租客中介费", "管理人", "客源", "备注"]
+            sample = [["2026-01-15", "1-101", "张三", "单间上层", "2026-01-15", "2027-01-14", "一年", "1000", "1000", "500", "1", "500", "500", "李四", "58同城", "示例数据"]]
+        } else if selectedTab == 1 {
+            title = "杂项收入"
+            headers = ["日期", "项目", "金额", "备注"]
+            sample = [["2026-01-15", "保洁费", "200", "示例"]]
+        } else {
+            title = "杂项支出"
+            headers = ["日期", "项目", "金额", "备注"]
+            sample = [["2026-01-15", "维修费", "300", "示例"]]
+        }
+        let data = ExcelService.makeExcelHTML(rows: [headers] + sample, sheetName: title)
+        MacBridge.saveFile(defaultName: "\(title)-模板.xls", allowedTypes: [Self.xlsType, .spreadsheet]) { url in
+            guard let url else { return }
+            try? data.write(to: url)
+            MacToastCenter.show("已导出模板（示例行请在导入前删除）")
+        }
+    }
+
     private func exportToExcel() {
         var rows: [[String]]
         var title: String
@@ -320,6 +442,7 @@ struct DealEditor: View {
     @ObservedObject var manager: DataManager
     let deal: DealRecord?
     let onClose: () -> Void
+    var onSaved: ((DealRecord) -> Void)? = nil
 
     @State private var date = Date()
     @State private var roomNumber = ""
@@ -437,11 +560,13 @@ struct DealEditor: View {
             try? manager.mainContext.save()
             NotificationCenter.default.post(name: .macDataChanged, object: nil)
         } else {
-            _ = manager.addDeal(date: date, roomNumber: roomNumber, landlord: landlord, unitType: unitType,
+            if let record = manager.addDeal(date: date, roomNumber: roomNumber, landlord: landlord, unitType: unitType,
                                  leaseStart: leaseStart, leaseEnd: leaseEnd, leaseDuration: leaseDuration,
                                  rent: r, deposit: d, prepayment: p, rentDueDay: due,
                                  agentFeeLandlord: aL, agentFeeTenant: aT, totalFee: total,
-                                 manager: managerName, source: source, notes: notes)
+                                 manager: managerName, source: source, notes: notes) {
+                onSaved?(record)
+            }
         }
         MacToastCenter.show("已保存")
         onClose()

@@ -172,6 +172,7 @@ enum CloudHouseSync {
         var updatedKeys: [String] = []
         var removedKeys: [String] = []
         var mediaMissing: [String] = []
+        var localExtra: [String: [String]] = [:]   // roomKey → 本地有、云端账本缺的媒体名
         let total = max(cloudRecords.count, 1)
         var done = 0
 
@@ -201,10 +202,10 @@ enum CloudHouseSync {
                 } else if apply {
                     local.cloudStatus = .both
                 }
-                // 媒体双向对账（v1.43 语义）：① 云端有本地缺 → 下载；② 本地有云端无 → 删记录+文件；③ 磁盘孤儿 → 删文件
+                // 媒体双向对账（v1.43 + v1.65 语义）：① 云端有本地缺 → 下载；② 本地有云端账本无 → 暂存，同步后查云端对象决定删/补账本；③ 磁盘孤儿 → 删文件
                 if apply {
                     reconcileMedia(record: record, house: local, houseContext: houseContext,
-                                   mediaMissing: &mediaMissing)
+                                   mediaMissing: &mediaMissing, localExtra: &localExtra)
                 }
             } else {
                 // 本地没有 → 新建
@@ -222,7 +223,7 @@ enum CloudHouseSync {
                     house.cloudStatus = .cloud
                     houseContext.insert(house)
                     reconcileMedia(record: record, house: house, houseContext: houseContext,
-                                   mediaMissing: &mediaMissing)
+                                   mediaMissing: &mediaMissing, localExtra: &localExtra)
                 }
             }
             if apply { try? houseContext.save() }
@@ -238,8 +239,44 @@ enum CloudHouseSync {
             }
         }
 
+        // 无变化媒体对账（v1.65/v1.68 语义）：本地有、云端账本缺的媒体 → 查云端对象
+        //   · 对象存在 → 补写云端账本（补传账本 mediaNames）
+        //   · 对象不存在 → 删除本地记录 + 文件（跟随删），有本地文件则先补传对象再补账本
+        var reconciled = 0
+        var reuploaded = 0
+        if apply && !localExtra.isEmpty, let cfg = CosConfig.load() {
+            for (roomKey, names) in localExtra {
+                let objs = (try? await CosUploader.listObjects(prefix: "h/\(roomKey)/", config: cfg)) ?? []
+                let objNorms = Set(objs.map { mediaNormKey(URL(string: "x://\($0.name)")?.lastPathComponent ?? $0.name) })
+                for name in names {
+                    let norm = mediaNormKey(name)
+                    let localURL = MediaStore.fileURL(fileName: name, roomKey: roomKey)
+                    if objNorms.contains(norm) {
+                        // 云端对象在 → 补账本
+                        if let house = localByKey[roomKey] {
+                            do { try await saveRecord(record(from: house), config: cfg); reconciled += 1 }
+                            catch { CrashLogCollector.record("媒体对账补账本失败", detail: "\(roomKey)/\(name)") }
+                        }
+                    } else if FileManager.default.fileExists(atPath: localURL.path) {
+                        // 对象不在但有本地文件 → 补传对象（入队自动上传）
+                        let kind = name.lowercased().hasSuffix(".mp4") || name.lowercased().hasSuffix(".mov") || name.lowercased().hasSuffix(".m4v") ? "video" : "image"
+                        await HouseMediaUploadQueue.shared.enqueue(roomKey: roomKey, fileName: name, kind: kind)
+                        reuploaded += 1
+                    } else {
+                        // 云端对象与本地文件都不在 → 删记录
+                        if let house = localByKey[roomKey], let item = house.mediaItems.first(where: { mediaNormKey($0.fileName) == norm }) {
+                            MediaStore.removeMedia(fileName: item.fileName, roomKey: roomKey)
+                            houseContext.delete(item)
+                        }
+                    }
+                }
+            }
+            try? houseContext.save()
+        }
+
         progress?(1.0, "完成")
-        let detail = "新增 \(addedKeys.count) 套 · 更新 \(updatedKeys.count) 套 · 删除 \(removedKeys.count) 套 · 媒体补齐 \(mediaMissing.count) 个"
+        let extraNote = (reconciled > 0 || reuploaded > 0) ? " · 账本补齐 \(reconciled) 项 · 媒体补传 \(reuploaded) 个" : ""
+        let detail = "新增 \(addedKeys.count) 套 · 更新 \(updatedKeys.count) 套 · 删除 \(removedKeys.count) 套 · 媒体补齐 \(mediaMissing.count) 个\(extraNote)"
         return .success(added: addedKeys.count, updated: updatedKeys.count, removed: removedKeys.count, detail: detail)
     }
 
@@ -248,17 +285,17 @@ enum CloudHouseSync {
     /// ② 本地记录有、云端账本无 → 删记录 + 删本地文件（跟随云端删除）；
     /// ③ 磁盘上有、账本/记录均无的孤儿文件 → 只删文件（旧首帧图/分享页等残留）
     private static func reconcileMedia(record: CloudHouseRecord, house: House, houseContext: ModelContext,
-                                       mediaMissing: inout [String]) {
+                                       mediaMissing: inout [String], localExtra: inout [String: [String]]) {
         let cloudNorm = Set(record.mediaNames.map { mediaNormKey($0) })
         let localItems = Array(house.mediaItems)
         let localNorm = Set(localItems.map { mediaNormKey($0.fileName) })
         let diskFiles = (try? FileManager.default.contentsOfDirectory(atPath: MediaStore.roomDirectory(roomKey: house.mediaRoomKey).path)) ?? []
         let diskNorm = Set(diskFiles.map { mediaNormKey($0) })
 
-        // ② 本地记录有、云端无 → 删除（记录 + 文件）
+        // ② 本地记录有、云端账本无 → 不立即删，收集后由同步尾部查云端对象决定（删 / 补账本 / 补传）
         for item in localItems where !cloudNorm.contains(mediaNormKey(item.fileName)) {
-            MediaStore.removeMedia(fileName: item.fileName, roomKey: house.mediaRoomKey)
-            houseContext.delete(item)
+            let k = house.mediaRoomKey
+            localExtra[k, default: []].append(item.fileName)
         }
         // ③ 磁盘孤儿（既不在账本也不在记录）→ 只删文件
         for name in diskFiles where !cloudNorm.contains(mediaNormKey(name)) && !localNorm.contains(mediaNormKey(name)) {

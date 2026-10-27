@@ -61,6 +61,21 @@ enum LocalNotificationManager {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }
 
+    // MARK: 待办提醒重建（数据变化后调用）
+
+    static func rebuildTodoReminders(todos: [TodoItem]) {
+        guard isEnabled else { return }
+        // 取消旧的待办提醒（只清 todo. 前缀，不干扰收租提醒）
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+            let todoIDs = requests.filter { $0.identifier.hasPrefix("todo.") }.map { $0.identifier }
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: todoIDs)
+        }
+        for item in todos where item.isDeleted != true && !item.isCompleted, let reminder = item.reminderDate {
+            let body = item.content
+            schedule(title: "待办提醒", body: body, at: reminder, id: "todo.\(item.id.uuidString)", tab: 9, soundKind: "todo")
+        }
+    }
+
     // MARK: 重建全部提醒（数据变化后调用）
 
     /// 收租提醒：成交记录 dealDate + 周期（月）→ 下次收租日

@@ -18,6 +18,19 @@ struct MonthlySummary: Identifiable {
 struct ProfitView: View {
     @ObservedObject var manager: DataManager
 
+    @State private var selectedYear: Int?
+    @State private var selectedMonth: Int?
+
+    /// 数据里出现过的年份（年筛选选项）
+    private var availableYears: [Int] {
+        let cal = Calendar.current
+        var set = Set<Int>()
+        for d in manager.deals where d.isDeleted != true { set.insert(cal.component(.year, from: d.date)) }
+        for i in manager.miscIncomes where i.isDeleted != true { set.insert(cal.component(.year, from: i.date)) }
+        for e in manager.miscExpenses where e.isDeleted != true { set.insert(cal.component(.year, from: e.date)) }
+        return set.sorted(by: >)
+    }
+
     private var monthlySummaries: [MonthlySummary] {
         let cal = Calendar.current
         var summaries: [MonthlySummary] = []
@@ -46,10 +59,14 @@ struct ProfitView: View {
             if y < earliestYear || (y == earliestYear && m < earliestMonth) { earliestYear = y; earliestMonth = m }
         }
 
-        var y = earliestYear
-        var m = earliestMonth
+        var y = selectedYear ?? earliestYear
+        var m = (selectedYear == nil && selectedMonth == nil) ? earliestMonth : 1
+        if let sm = selectedMonth { m = sm }
+        var endY = currentYear
+        var endM = currentMonth
+        if selectedMonth != nil { endM = selectedMonth!; endY = y }
         var guardCount = 0
-        while (y < currentYear || (y == currentYear && m <= currentMonth)) && guardCount < 240 {
+        while (y < endY || (y == endY && m <= endM)) && guardCount < 240 {
             let stats = manager.monthlyStats(month: m, year: y)
             let dealCount = deals.filter {
                 cal.component(.year, from: $0.date) == y && cal.component(.month, from: $0.date) == m
@@ -63,17 +80,24 @@ struct ProfitView: View {
         return summaries.reversed()
     }
 
+    /// 当前筛选范围（年 + 可选月）统计
     private var filteredTotal: MonthlySummary {
         let cal = Calendar.current
         let now = Date()
         let thisYear = cal.component(.year, from: now)
-        let deals = manager.deals.filter { $0.isDeleted != true && cal.component(.year, from: $0.date) == thisYear }
-        let incomes = manager.miscIncomes.filter { $0.isDeleted != true && cal.component(.year, from: $0.date) == thisYear }
-        let expenses = manager.miscExpenses.filter { $0.isDeleted != true && cal.component(.year, from: $0.date) == thisYear }
+        let year = selectedYear ?? thisYear
+        func match(_ d: Date) -> Bool {
+            guard cal.component(.year, from: d) == year else { return false }
+            if let m = selectedMonth, cal.component(.month, from: d) != m { return false }
+            return true
+        }
+        let deals = manager.deals.filter { $0.isDeleted != true && match($0.date) }
+        let incomes = manager.miscIncomes.filter { $0.isDeleted != true && match($0.date) }
+        let expenses = manager.miscExpenses.filter { $0.isDeleted != true && match($0.date) }
         let agentFee = deals.reduce(0) { $0 + $1.totalFee }
         let miscIncome = incomes.reduce(0) { $0 + $1.amount }
         let miscExpense = expenses.reduce(0) { $0 + $1.amount }
-        return MonthlySummary(month: 0, year: thisYear, dealCount: deals.count, agentFee: agentFee,
+        return MonthlySummary(month: selectedMonth ?? 0, year: year, dealCount: deals.count, agentFee: agentFee,
                              miscIncome: miscIncome, miscExpense: miscExpense,
                              netIncome: agentFee + miscIncome - miscExpense)
     }
@@ -81,9 +105,19 @@ struct ProfitView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("汇总 · \(filteredTotal.year)年")
+                Text("汇总 · \(filteredTotal.year)年" + (selectedMonth.map { "\($0)月" } ?? ""))
                     .font(.system(size: 20, weight: .bold))
                 Spacer()
+                Picker("年", selection: $selectedYear) {
+                    Text("\(Calendar.current.component(.year, from: Date()))年").tag(Int?(Calendar.current.component(.year, from: Date())))
+                    ForEach(availableYears, id: \.self) { y in Text("\(y)年").tag(Int?(y)) }
+                }
+                .frame(width: 110)
+                Picker("月", selection: $selectedMonth) {
+                    Text("全年").tag(nil as Int?)
+                    ForEach(1...12, id: \.self) { m in Text("\(m)月").tag(Int?(m)) }
+                }
+                .frame(width: 90)
                 Button("刷新") {
                     NotificationCenter.default.post(name: .macDataChanged, object: nil)
                     MacToastCenter.show("已刷新")
