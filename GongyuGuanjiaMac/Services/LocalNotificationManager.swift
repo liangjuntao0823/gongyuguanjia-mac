@@ -29,10 +29,18 @@ enum LocalNotificationManager {
         UserDefaults.standard.string(forKey: kind) ?? "system"
     }
 
+    /// 四类提醒独立开关（收租 rent / 到期 expiry / 包租 payout / 待办 todo，默认全开）
+    static func categoryEnabled(_ kind: String) -> Bool {
+        UserDefaults.standard.object(forKey: "notify.\(kind).enabled") == nil
+            ? true
+            : UserDefaults.standard.bool(forKey: "notify.\(kind).enabled")
+    }
+
     // MARK: 定时提醒（一次性）
 
     static func schedule(title: String, body: String, at date: Date, id: String, tab: Int? = nil, soundKind: String? = nil) {
         guard isEnabled else { return }
+        if let soundKind, !categoryEnabled(soundKind) { return }   // 该类别提醒被关闭
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

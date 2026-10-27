@@ -572,6 +572,7 @@ final class DataManager: ObservableObject {
                 }
             }
             LocalHouseLedger.rebuildAll(houseContext: houseContext)   // 同步后重建本地账本镜像（v1.77）
+            Task { await RemoteConfig.refresh() }   // 同步成功后顺带拉取远程配置（对齐 iOS v1.80）
             BackupLogStore.log("云端同步", detail: detail, kind: "sync")
             CloudOps.log(category: "同步", action: "拉取", result: "成功", detail: detail)
             return .success(added: added, updated: updated, removed: removed, detail: detail)

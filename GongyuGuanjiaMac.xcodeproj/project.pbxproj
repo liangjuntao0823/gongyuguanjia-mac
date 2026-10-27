@@ -46,6 +46,9 @@
 		B10000000000000000000024 /* TodoViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000024 /* TodoViews.swift */; };
 		B10000000000000000000031 /* ExportImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000031 /* ExportImageService.swift */; };
 		B10000000000000000000032 /* OperationLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000032 /* OperationLogsView.swift */; };
+		B10000000000000000000033 /* RemoteConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000033 /* RemoteConfig.swift */; };
+		B10000000000000000000034 /* SyncTaskCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000034 /* SyncTaskCenter.swift */; };
+		B10000000000000000000035 /* RemoteConfigAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000035 /* RemoteConfigAdminView.swift */; };
 		B10000000000000000000025 /* TrashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000025 /* TrashView.swift */; };
 		B10000000000000000000026 /* UtilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000026 /* UtilityView.swift */; };
 		B10000000000000000000027 /* UserGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000027 /* UserGuideView.swift */; };
@@ -97,6 +100,9 @@
 		F10000000000000000000024 /* TodoViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoViews.swift; sourceTree = "<group>"; };
 		F10000000000000000000031 /* ExportImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportImageService.swift; sourceTree = "<group>"; };
 		F10000000000000000000032 /* OperationLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationLogsView.swift; sourceTree = "<group>"; };
+		F10000000000000000000033 /* RemoteConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfig.swift; sourceTree = "<group>"; };
+		F10000000000000000000034 /* SyncTaskCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTaskCenter.swift; sourceTree = "<group>"; };
+		F10000000000000000000035 /* RemoteConfigAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigAdminView.swift; sourceTree = "<group>"; };
 		F10000000000000000000025 /* TrashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrashView.swift; sourceTree = "<group>"; };
 		F10000000000000000000026 /* UtilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityView.swift; sourceTree = "<group>"; };
 		F10000000000000000000027 /* UserGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserGuideView.swift; sourceTree = "<group>"; };
@@ -182,6 +188,8 @@
 				F10000000000000000000014 /* LocalNotificationManager.swift */,
 				F10000000000000000000015 /* ExcelService.swift */,
 				F10000000000000000000031 /* ExportImageService.swift */,
+				F10000000000000000000033 /* RemoteConfig.swift */,
+				F10000000000000000000034 /* SyncTaskCenter.swift */,
 				F1000000000000000000002B /* SyncCore.swift */,
 				F1000000000000000000002C /* SyncDTO.swift */,
 				F1000000000000000000002D /* SwiftDataSyncSnapshot.swift */,
@@ -216,6 +224,7 @@
 				F10000000000000000000023 /* PlanEditors.swift */,
 				F10000000000000000000024 /* TodoViews.swift */,
 				F10000000000000000000032 /* OperationLogsView.swift */,
+				F10000000000000000000035 /* RemoteConfigAdminView.swift */,
 				F10000000000000000000025 /* TrashView.swift */,
 				F10000000000000000000026 /* UtilityView.swift */,
 				F10000000000000000000027 /* UserGuideView.swift */,
@@ -334,6 +343,9 @@
 				B10000000000000000000024 /* TodoViews.swift in Sources */,
 				B10000000000000000000031 /* ExportImageService.swift in Sources */,
 				B10000000000000000000032 /* OperationLogsView.swift in Sources */,
+				B10000000000000000000033 /* RemoteConfig.swift in Sources */,
+				B10000000000000000000034 /* SyncTaskCenter.swift in Sources */,
+				B10000000000000000000035 /* RemoteConfigAdminView.swift in Sources */,
 				B10000000000000000000025 /* TrashView.swift in Sources */,
 				B10000000000000000000026 /* UtilityView.swift in Sources */,
 				B10000000000000000000027 /* UserGuideView.swift in Sources */,
@@ -466,7 +478,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GongyuGuanjiaMac/Info.plist;
@@ -474,7 +486,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gj.tg.mac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -488,7 +500,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GongyuGuanjiaMac/Info.plist;
@@ -496,7 +508,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gj.tg.mac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

@@ -101,6 +101,8 @@ struct HouseListView: View {
     @State private var syncProgress: Double = 0
     @State private var syncStatus = ""
     @State private var localRefreshing = false
+    @ObservedObject private var syncCenter = SyncTaskCenter.shared
+    @State private var syncMinimized = false
 
     private var houses: [House] { manager.houses }
 
@@ -172,8 +174,8 @@ struct HouseListView: View {
             .padding(.top, 14)
             .padding(.bottom, 10)
 
-            // 同步进度条（对齐 iOS v1.68：同步任务顶部进度条）
-            if syncing || localRefreshing {
+            // 同步任务进度条（对齐 iOS v1.68：全局同步任务中心，可最小化收起）
+            if (syncing || localRefreshing) && !syncMinimized {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(localRefreshing ? "本地媒体检查…" : (syncStatus.isEmpty ? "正在同步…" : syncStatus))
@@ -181,10 +183,24 @@ struct HouseListView: View {
                             .foregroundColor(.themeText2)
                         Spacer()
                         if syncing { Text("\(Int(syncProgress * 100))%").font(.system(size: 12)).foregroundColor(.themeText2) }
+                        Button("收起") { withAnimation { syncMinimized = true } }
+                            .macSecondaryButton()
                     }
                     ProgressView(value: syncing ? syncProgress : 0, total: 1.0)
                         .progressViewStyle(.linear)
                         .controlSize(.small)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+            } else if (syncing || localRefreshing) && syncMinimized {
+                // 最小化条：任务继续后台跑，随时可展开
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small).scaleEffect(0.7)
+                    Text(localRefreshing ? "本地媒体检查进行中…" : "同步任务进行中…")
+                        .font(.system(size: 12)).foregroundColor(.themeText2)
+                    Spacer()
+                    Button("展开") { withAnimation { syncMinimized = false } }
+                        .macSecondaryButton()
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
@@ -337,13 +353,18 @@ struct HouseListView: View {
                 syncAlert = nil
                 syncing = true
                 Task {
+                    syncMinimized = false
+                    SyncTaskCenter.shared.begin(title: "云端同步", roomKeys: filtered.map { $0.mediaRoomKey }, total: filtered.count)
                     let result = await manager.syncFromCloud { p, label in
                         Task { @MainActor in
                             syncProgress = p
                             syncStatus = label
+                            SyncTaskCenter.shared.advance(done: Int(p * Double(max(filtered.count, 1))), current: label)
                         }
                     }
-                    await MainActor.run { syncing = false; syncProgress = 0; syncStatus = "" }
+                    await MainActor.run { syncing = false; syncProgress = 0; syncStatus = ""
+                        SyncTaskCenter.shared.finish(success: { if case .success = result { return true } else { return false } }())
+                    }
                     if case .failure(let e) = result {
                         MacToastCenter.show("同步失败：\(e)")
                     } else if case .success(let a, let u, let r, _) = result {

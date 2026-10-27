@@ -18,6 +18,13 @@ struct SettingsView: View {
     @State private var showPullConfirm = false
     @State private var showInterconnection = false
     @State private var showManualSync = false
+    @State private var showRemoteConfig = false
+    @State private var notifyEnabled = LocalNotificationManager.isEnabled
+    @State private var notifyAdvanceDays = "3"
+    @State private var rentNotifyOn = LocalNotificationManager.categoryEnabled("rent")
+    @State private var expiryNotifyOn = LocalNotificationManager.categoryEnabled("expiry")
+    @State private var payoutNotifyOn = LocalNotificationManager.categoryEnabled("payout")
+    @State private var todoNotifyOn = LocalNotificationManager.categoryEnabled("todo")
     @State private var showClearSheet = false
     @State private var clearConfirm = false
     @State private var clearMessage = ""
@@ -186,6 +193,61 @@ struct SettingsView: View {
                     }
 
 
+                    // 提醒设置（对齐 iOS：四类提醒可配置；Mac 通知使用系统默认音）
+                    section("提醒设置") {
+                        HStack(spacing: 10) {
+                            Toggle("启用提醒", isOn: $notifyEnabled)
+                                .onChange(of: notifyEnabled) { _, v in LocalNotificationManager.isEnabled = v }
+                            Spacer()
+                            Text("提前提醒天数").font(.system(size: 14)).foregroundColor(.themeText2)
+                            TextField("3", text: $notifyAdvanceDays)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 60)
+                                .onChange(of: notifyAdvanceDays) { _, v in
+                                    let d = Int(v.trimmingCharacters(in: .whitespaces)) ?? 3
+                                    LocalNotificationManager.advanceDays = max(0, min(d, 30))
+                                }
+                        }
+                        HStack(spacing: 10) {
+                            Toggle("收租提醒", isOn: $rentNotifyOn)
+                                .onChange(of: rentNotifyOn) { _, v in UserDefaults.standard.set(v, forKey: "notify.rent.enabled") }
+                            Toggle("租期到期提醒", isOn: $expiryNotifyOn)
+                                .onChange(of: expiryNotifyOn) { _, v in UserDefaults.standard.set(v, forKey: "notify.expiry.enabled") }
+                            Spacer()
+                        }
+                        HStack(spacing: 10) {
+                            Toggle("包租付租提醒", isOn: $payoutNotifyOn)
+                                .onChange(of: payoutNotifyOn) { _, v in UserDefaults.standard.set(v, forKey: "notify.payout.enabled") }
+                            Toggle("待办提醒", isOn: $todoNotifyOn)
+                                .onChange(of: todoNotifyOn) { _, v in UserDefaults.standard.set(v, forKey: "notify.todo.enabled") }
+                            Spacer()
+                        }
+                        Text("macOS 通知使用系统默认音；提前天数对收租/到期提醒生效。")
+                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                    }
+
+                    // 远程配置中心（对齐 iOS v1.80-1.82）
+                    section("远程配置") {
+                        HStack(spacing: 10) {
+                            Button("远程配置管理（公告/开关/参数/更新日志）") { showRemoteConfig = true }.macSecondaryButton()
+                            Spacer()
+                            Text(RemoteConfig.summary)
+                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                        }
+                        if let ann = RemoteConfig.announcement, ann.enabled, !ann.text.isEmpty {
+                            HStack(spacing: 8) {
+                                Image(systemName: "megaphone").foregroundColor(.orange)
+                                Text("公告：\(ann.text)").font(.system(size: 13)).foregroundColor(.themeText2)
+                                if let link = ann.link, let url = URL(string: link) {
+                                    Link("查看", destination: url).font(.system(size: 13))
+                                }
+                                Spacer()
+                            }
+                        }
+                        Text("云端 config.json 优先；断网读本地缓存；均无则用内置默认值。")
+                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                    }
+
                     // 日志与历史
                     section("日志与历史") {
                         HStack(spacing: 10) {
@@ -277,6 +339,9 @@ struct SettingsView: View {
                 }
             }
             .frame(width: 560, height: 440)
+        }
+        .sheet(isPresented: $showRemoteConfig) {
+            RemoteConfigAdminView()
         }
         .sheet(isPresented: $showOpLogs) {
             OperationLogsView(manager: manager) { showOpLogs = false }
@@ -513,6 +578,13 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.7", "2026-10-27", [
+            "远程配置中心：云端 config.json 三级兜底（云端→本地缓存→内置默认），启动/同步后自动拉取；设置-远程配置管理可编辑公告/最低版本/功能开关/数值参数/提示文案/云端更新日志并发布（云函数 configGet/configSave）",
+            "全局同步任务中心：同步/补传进度全局登记，房源页顶部可最小化收起，待补传媒体页顶部显示进行中任务卡片",
+            "提醒设置：设置页新增四类提醒独立开关（收租/租期到期/包租付租/待办）+ 总开关 + 提前提醒天数（macOS 使用系统默认音）",
+            "云端运营项：设置页新增刷新网页后台缓存（版本戳）、云端部署图文教程、配置备份到文件/从备份文件恢复、开通步骤简述",
+            "启动自动迁移无前缀媒体目录（对齐 iOS：1 座/2 座目录统一带前缀）",
+        ]),
         ("v1.2.6", "2026-10-27", [
             "本地账本镜像：每套房在 media/<房号>/info.json 同步一份（新增/编辑/媒体增删/删除/云端同步后自动维护）",
             "离线重建房源：设置-数据管理新增入口，扫描本地账本镜像一键重建/补齐房源，无需联网",

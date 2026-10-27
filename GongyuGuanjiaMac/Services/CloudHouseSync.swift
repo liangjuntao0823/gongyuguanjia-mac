@@ -330,6 +330,35 @@ enum CloudHouseSync {
     }
 }
 
+// MARK: - 无前缀媒体目录自动迁移（对齐 iOS v1.69：1 座/2 座目录统一带前缀）
+
+extension CloudHouseSync {
+    /// 扫描 media 根目录下不带 1-/2- 前缀的房源目录，按本地房源匹配归属座后重命名。
+    /// 幂等：返回迁移目录数；无可迁移或全部带前缀时返回 0。
+    static func migrateUnprefixedHouseDirectories(houseContext: ModelContext) -> Int {
+        guard let houses = try? houseContext.fetch(FetchDescriptor<House>()) else { return 0 }
+        let active = houses.filter { $0.isDeleted != true }
+        let names = MediaStore.scanMediaDirectoryKeys()
+        var migrated = 0
+        for dirName in names {
+            if dirName.hasPrefix("1-") || dirName.hasPrefix("2-") { continue }   // 已带前缀
+            // 无前缀目录：找房号与之完全一致的房源确定座号
+            guard let h = active.first(where: { $0.roomNo == dirName }) else { continue }
+            let target = "\(h.tower)-\(dirName)"
+            if target == dirName { continue }
+            let from = MediaStore.mediaDirectory().appendingPathComponent(dirName)
+            let to = MediaStore.mediaDirectory().appendingPathComponent(target)
+            do {
+                try FileManager.default.moveItem(at: from, to: to)
+                migrated += 1
+            } catch {
+                CrashLogCollector.record("媒体目录迁移失败", detail: "\(dirName) → \(target): \(error.localizedDescription)")
+            }
+        }
+        return migrated
+    }
+}
+
 // MARK: - 本地房源账本镜像（对齐 iOS v1.72/v1.75/v1.77）
 
 /// 与云端同构：每套房在 media/<房号>/info.json 存一份 CloudHouseRecord。

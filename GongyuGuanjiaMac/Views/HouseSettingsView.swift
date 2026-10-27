@@ -210,6 +210,47 @@ struct HouseSettingsView: View {
                         .macPrimaryButton()
                     }
 
+                    // 云函数后台运营项（对齐 iOS：刷新网页缓存 / 部署教程 / 配置备份恢复 / 开通步骤）
+                    sectionCard("云函数后台运营") {
+                        // 刷新网页后台缓存
+                        HStack(spacing: 10) {
+                            Button("刷新网页后台缓存") {
+                                WebCache.updateStamp()
+                                MacToastCenter.show("网页后台缓存已刷新，下次打开后台即最新版")
+                            }.macSecondaryButton()
+                            Text("网页后台重新部署后点此刷新，浏览器立即生效").font(.system(size: 12)).foregroundColor(.themeText3)
+                            Spacer()
+                        }
+                        // 部署图文教程
+                        DisclosureGroup("云端部署图文教程") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("1. 登录腾讯云，新建云函数（Node.js），把部署包 zip 上传").font(.system(size: 12)).foregroundColor(.themeText2)
+                                Text("2. 创建 COS 存储桶，记下桶名与地域").font(.system(size: 12)).foregroundColor(.themeText2)
+                                Text("3. 创建 API 网关/云函数 URL 访问，复制云函数地址").font(.system(size: 12)).foregroundColor(.themeText2)
+                                Text("4. 云函数环境变量：BUCKET、REGION、SECRET_ID、SECRET_KEY、PASSWORD（后台口令）").font(.system(size: 12)).foregroundColor(.themeText2)
+                                Text("5. 部署后在 App 点「刷新网页后台缓存」").font(.system(size: 12)).foregroundColor(.themeText2)
+                                Text("给别的房东用：部署后把云函数地址填到他 App 的云端配置即可。").font(.system(size: 12)).foregroundColor(.themeText3)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        // 配置备份/恢复
+                        HStack(spacing: 10) {
+                            Button("备份配置到文件") { exportConfigFile() }.macSecondaryButton()
+                            Button("从备份文件恢复配置") { importConfigFile() }.macSecondaryButton()
+                            Spacer()
+                        }
+                        Text("配置备份为 JSON（含桶/地域/密钥/域名/口令），换机或重装后一键还原；含密钥请勿外泄。")
+                            .font(.system(size: 12)).foregroundColor(.themeText3)
+                        // 开通步骤
+                        DisclosureGroup("开通步骤（简述）") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("① 填云函数地址 / 桶 / 地域 / 自定义域名 / 密钥 → ② 保存并验证连接 → ③ 正常使用").font(.system(size: 12)).foregroundColor(.themeText2)
+                                Text("房源文字、照片视频自动传云端桶；分享卡片好友可直接查看；备份自动留档。").font(.system(size: 12)).foregroundColor(.themeText3)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+
                     // 分享记录与访问统计（对齐 iOS v1.55：云端 do_shares 按用户名过滤）
                     sectionCard("分享记录（选房链接访问统计）") {
                         VStack(alignment: .leading, spacing: 8) {
@@ -279,6 +320,50 @@ struct HouseSettingsView: View {
     }
 
     // MARK: - 分享记录
+
+    /// 导出云端配置到文件（JSON：桶/地域/密钥/域名/口令/用户名）
+    private func exportConfigFile() {
+        let dict: [String: String] = [
+            "bucket": bucket, "region": region, "secretId": secretId, "secretKey": secretKey,
+            "customDomain": customDomain, "functionURL": functionURL, "adminPassword": adminPassword,
+            "username": username,
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys]),
+              let str = String(data: data, encoding: .utf8) else {
+            MacToastCenter.show("导出失败：配置序列化错误")
+            return
+        }
+        let fileName = "\(bucket.isEmpty ? "cloud" : bucket)_\(region)_\(BackupTimestamp.string()).json"
+        MacBridge.saveFile(defaultName: fileName, allowedTypes: [.json]) { url in
+            guard let url = url else { return }
+            try? data.write(to: url)
+            MacToastCenter.show("配置已导出，请妥善保管（含密钥）")
+        }
+    }
+
+    /// 从 JSON 文件恢复云端配置
+    private func importConfigFile() {
+        MacBridge.openFiles(allowedTypes: [.json], allowsMultiple: false) { urls in
+            guard let url = urls.first, let data = try? Data(contentsOf: url),
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+                  let b = obj["bucket"], let r = obj["region"] else {
+                MacToastCenter.show("所选文件不是有效的配置备份")
+                return
+            }
+            bucket = b; region = r
+            secretId = obj["secretId"] ?? secretId
+            secretKey = obj["secretKey"] ?? secretKey
+            customDomain = obj["customDomain"] ?? customDomain
+            functionURL = obj["functionURL"] ?? functionURL
+            adminPassword = obj["adminPassword"] ?? adminPassword
+            username = obj["username"] ?? username
+            CosConfig.save(CosConfig(bucket: b, region: r, secretId: secretId, secretKey: secretKey, customDomain: customDomain))
+            CloudConfig.functionURL = functionURL
+            if !adminPassword.isEmpty { CloudConfig.adminPassword = adminPassword }
+            if !username.isEmpty { CloudUser.username = username }
+            MacToastCenter.show("配置已恢复并保存")
+        }
+    }
 
     private func loadShareRecords() {
         shareRecordsError = nil

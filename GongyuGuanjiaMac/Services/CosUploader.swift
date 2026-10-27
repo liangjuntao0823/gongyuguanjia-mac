@@ -1843,3 +1843,19 @@ extension CosUploader {
         """
     }
 }
+
+// MARK: - 网页后台缓存版本戳（对齐 iOS WebCache；Mac 无内嵌 WebView，仅更新戳供浏览器后台强制刷新）
+
+enum WebCache {
+    private static let stampKey = "cloud.webCacheStamp"
+
+    /// 网页版本戳：每次「刷新网页后台」都更新，后台 URL 带上它 → 浏览器缓存立即失效
+    static var stamp: String {
+        UserDefaults.standard.string(forKey: stampKey) ?? "20261023"
+    }
+
+    /// 更新版本戳（Mac 无 WebView，等效 iOS 的清除 WebKit 缓存）
+    static func updateStamp() {
+        UserDefaults.standard.set("\(Int(Date().timeIntervalSince1970))", forKey: stampKey)
+    }
+}

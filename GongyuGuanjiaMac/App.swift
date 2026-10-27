@@ -183,6 +183,10 @@ struct GongyuGuanjiaMacApp: App {
         // 通知权限
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         UNUserNotificationCenter.current().delegate = NotificationClickHandler.shared
+
+        // 远程配置：先读本地缓存（断网可用），再异步拉取云端最新（对齐 iOS v1.80）
+        RemoteConfig.loadCache()
+        Task { await RemoteConfig.refresh() }
     }
 
     var body: some Scene {
@@ -191,6 +195,13 @@ struct GongyuGuanjiaMacApp: App {
                 .environment(\.modelContext, mainContainer.mainContext)
                 .environment(\.houseModelContext, houseContainer.mainContext)
                 .frame(minWidth: 980, minHeight: 640)
+                .task {
+                    // 启动自动迁移无前缀媒体目录（对齐 iOS v1.69），幂等
+                    if let hc = GlobalContainers.house {
+                        let ctx = ModelContext(hc)
+                        _ = CloudHouseSync.migrateUnprefixedHouseDirectories(houseContext: ctx)
+                    }
+                }
         }
         .defaultSize(width: 1180, height: 780)
         .commands {

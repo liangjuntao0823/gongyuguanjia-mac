@@ -183,6 +183,7 @@ struct MediaPendingView: View {
     @State private var items: [HouseMediaUploadQueue.QueueItem] = []
     @State private var retrying = false
     @State private var isUploading = false
+    @ObservedObject private var syncCenter = SyncTaskCenter.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -193,6 +194,24 @@ struct MediaPendingView: View {
             }
             .padding(14)
             Divider()
+
+            // 进行中的同步任务卡片（对齐 iOS：设置-待补传媒体页顶部显示）
+            if let t = syncCenter.task, t.isRunning {
+                HStack(spacing: 10) {
+                    ProgressView(value: t.fraction).progressViewStyle(.linear).frame(maxWidth: 160)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t.title).font(.system(size: 13, weight: .semibold))
+                        Text(t.current.isEmpty ? "\(t.done)/\(t.total)" : "\(t.done)/\(t.total) · \(t.current)")
+                            .font(.system(size: 12)).foregroundColor(.themeText2)
+                    }
+                    Spacer()
+                    Button("收起") { syncCenter.dismiss() }.macSecondaryButton()
+                }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.blue.opacity(0.08)))
+                .padding(.horizontal, 14)
+                .padding(.top, 10)
+            }
 
             VStack(alignment: .leading, spacing: 10) {
                 if items.isEmpty {
