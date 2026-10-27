@@ -406,7 +406,13 @@ struct ShareMenuView: View {
         }
         .padding(20)
         .frame(width: 460)
-        .onAppear { resultMessage = "" }
+        .onAppear {
+            resultMessage = ""
+            // v1.2.4：详情页打开自动补缺缺失媒体（对齐 iOS v1.43 详情页补缺）
+            if let config = CosConfig.load(), config.isValid {
+                Task { await CloudHouseSync.downloadMissingMedia(house: house, config: config) }
+            }
+        }
     }
 
     private func generate() {
