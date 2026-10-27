@@ -568,7 +568,6 @@ struct DealEditor: View {
                                  agentFeeLandlord: aL, agentFeeTenant: aT, totalFee: total,
                                  manager: managerName, source: source, notes: notes)
             onSaved?(record)
-            }
         }
         MacToastCenter.show("已保存")
         onClose()
