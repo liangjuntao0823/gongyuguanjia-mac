@@ -92,6 +92,11 @@ struct MainSidebar: View {
         }
         .background(Color.themeBg)
         .macToast()
+        .overlay(alignment: .bottomTrailing) {
+            GlobalSyncProgressBar()
+                .padding(.trailing, 18)
+                .padding(.bottom, 14)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .macSwitchTab)) { note in
             if let tab = note.userInfo?["tab"] as? Int, tab >= 0, tab < MainTab.allCases.count {
                 manager.selectedTab = MainTab.allCases[tab]
@@ -231,6 +236,68 @@ struct InitWizardView: View {
                 message = "连接失败：\(error.localizedDescription)（已保存配置，可稍后在设置里重试）"
             }
             testing = false
+        }
+    }
+}
+
+// MARK: - 全局同步进度悬浮条（任意页面可见，对齐 iOS 根级全局悬浮；可最小化收起）
+struct GlobalSyncProgressBar: View {
+    @ObservedObject private var center = SyncTaskCenter.shared
+    @State private var minimized = false
+
+    var body: some View {
+        if let t = center.task {
+            if minimized {
+                Button {
+                    minimized = false
+                } label: {
+                    Label("同步中：\(t.title) \(t.done)/\(t.total)", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 13, weight: .semibold))
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(Color.themeAccent.opacity(0.92))
+                        .foregroundColor(.white)
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label(t.title, systemImage: t.isRunning ? "arrow.triangle.2.circlepath" : (t.success ? "checkmark.circle" : "exclamationmark.triangle"))
+                            .font(.system(size: 13, weight: .semibold))
+                        Spacer()
+                        Text("\(t.done)/\(t.total)")
+                            .font(.system(size: 12))
+                        if t.isRunning {
+                            Button { minimized = true } label: {
+                                Image(systemName: "minus.circle").foregroundColor(.white.opacity(0.9))
+                            }
+                            .buttonStyle(.plain)
+                            .help("最小化进度条（任务继续后台运行）")
+                        } else {
+                            Button { center.dismiss() } label: {
+                                Image(systemName: "xmark.circle").foregroundColor(.white.opacity(0.9))
+                            }
+                            .buttonStyle(.plain)
+                            .help("关闭")
+                        }
+                    }
+                    ProgressView(value: t.fraction)
+                        .progressViewStyle(.linear)
+                        .tint(Color.white)
+                    if !t.isRunning {
+                        Text(t.success ? "同步完成" : "同步完成，部分失败，详见房源列表 / 待补传媒体页")
+                            .font(.system(size: 11))
+                    }
+                }
+                .padding(12)
+                .frame(width: 300)
+                .background(Color.themeAccent.opacity(0.92))
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .shadow(radius: 6)
+                .transition(.opacity)
+            }
         }
     }
 }

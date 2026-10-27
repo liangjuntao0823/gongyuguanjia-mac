@@ -371,6 +371,46 @@ enum CosUploader {
         return blocks
     }
 
+    /// 目录式列出（对齐 iOS fetchAll：listObjects delimiter 目录式）
+    /// 只返回 CommonPrefixes 子目录前缀（如 "h/2334上/"），不列对象/媒体文件
+    static func listDirectoryPrefixes(prefix: String, delimiter: String, config: CosConfig) async throws -> [String] {
+        var result: [String] = []
+        var continuationToken: String?
+        repeat {
+            var params: [(String, String)] = [("list-type", "2"), ("prefix", prefix), ("encoding-type", "url")]
+            params.append(("delimiter", delimiter))
+            if let token = continuationToken { params.append(("continuation-token", token)) }
+            let url = try presignedURL(for: "", method: "GET", expires: 300, headers: [], params: params, config: config)
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                throw CosError.uploadFailed("云端目录列表获取失败（HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)）" + extractCosError(from: data))
+            }
+            guard let xml = String(data: data, encoding: .utf8) else { break }
+            for block in extractCommonPrefixBlocks(from: xml) {
+                if let p = tagValue("Prefix", in: block), !p.isEmpty, p != prefix {
+                    result.append(percentDecode(p))
+                }
+            }
+            if let truncated = tagValue("IsTruncated", in: xml), truncated == "true",
+               let next = tagValue("NextContinuationToken", in: xml), !next.isEmpty {
+                continuationToken = percentDecode(next)
+            } else { break }
+        } while true
+        return result
+    }
+
+    private static func extractCommonPrefixBlocks(from xml: String) -> [String] {
+        var blocks: [String] = []
+        var rest = xml[...]
+        while let start = rest.range(of: "<CommonPrefixes>"), let end = rest[start.upperBound...].range(of: "</CommonPrefixes>") {
+            blocks.append(String(rest[start.upperBound..<end.lowerBound]))
+            rest = rest[end.upperBound...]
+        }
+        return blocks
+    }
+
     private static func tagValue(_ tag: String, in xml: String) -> String? {
         guard let start = xml.range(of: "<\(tag)>")?.upperBound,
               let end = xml[start...].range(of: "</\(tag)>")?.lowerBound else { return nil }
@@ -953,7 +993,7 @@ enum CloudOps {
     }
 }
 
-// MARK: - 云端房源账本（共享区 h/_houses.json）
+// MARK: - 云端房源账本 DTO（一房一文件 h/<房号>/info.json）
 
 struct CloudHouseRecord: Codable, Identifiable {
     var id: String { roomKey }
@@ -969,32 +1009,6 @@ struct CloudHouseRecord: Codable, Identifiable {
     var updatedAt: Date
     var updatedBy: String
     var mediaNames: [String]
-}
-
-enum CloudHouseLedger {
-    static let path = "h/_houses.json"
-
-    /// 读取云端账本（与 iOS v1.42 语义一致：404=空账本，网络/其他错误上抛）
-    static func fetch(config: CosConfig) async -> Result<[CloudHouseRecord], Error> {
-        do {
-            let data = try await CosUploader.fetchObjectData(path: path, config: config)
-            let records = (try? JSONDecoder().decode([CloudHouseRecord].self, from: data)) ?? []
-            return .success(records)
-        } catch let e as CosObjectNotFoundError {
-            _ = e
-            return .success([])   // 账本不存在 = 空账本（首次使用正常空同步）
-        } catch {
-            return .failure(error) // 断网等 → 报错（绝不静默当空）
-        }
-    }
-
-    /// 覆盖写账本
-    static func save(_ records: [CloudHouseRecord], config: CosConfig) async throws {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(records)
-        try await CosUploader.upload(data: data, to: path, contentType: "application/json", config: config)
-    }
 }
 
 // MARK: - 分享 H5 完整流程（单房）

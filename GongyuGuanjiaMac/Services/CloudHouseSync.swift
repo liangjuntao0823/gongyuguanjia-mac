@@ -120,27 +120,37 @@ enum CloudHouseSync {
                                      contentType: "application/json", config: config)
     }
 
-    /// 拉取云端全部账本（一房一文件）：列出 h/ 下全部对象 → 过滤各房 info.json → 并发读取
+    /// 拉取云端全部账本（一房一文件）：
+    /// 1. listDirectoryPrefixes delimiter 目录式列出 → 只收房号目录（与 iOS 一致，不列媒体文件、省流量）
+    /// 2. withThrowingTaskGroup 并发 GET 各套 info.json
     /// 404（某套无 info.json）跳过该套；列表/网络/非 404 一律报错（绝不当作空账本误删本地）
     static func fetchAll(config: CosConfig) async throws -> [CloudHouseRecord] {
-        let objects = try await CosUploader.listObjects(prefix: "h/", config: config)
+        let prefixes = try await CosUploader.listDirectoryPrefixes(prefix: "h/", delimiter: "/", config: config)
         var keys = Set<String>()
-        for obj in objects {
-            // h/<roomKey>/info.json 形式（忽略 _houses.json 等历史散文件与媒体文件）
-            let name = obj.name
-            guard name.hasSuffix("/info.json"), !name.contains("_houses.json") else { continue }
-            let parts = name.split(separator: "/").map(String.init)
-            if parts.count == 3 && parts[0] == "h" && !parts[1].hasPrefix("_") { keys.insert(parts[1]) }
+        for p in prefixes {
+            // 形如 "h/2334上/"、"h/2-1418下/"；忽略 _houses.json 等历史散目录
+            let trimmed = p.hasSuffix("/") ? String(p.dropLast()) : p
+            let parts = trimmed.split(separator: "/").map(String.init)
+            if parts.count == 2 && parts[0] == "h" && !parts[1].hasPrefix("_") {
+                keys.insert(parts[1])
+            }
         }
         var records: [CloudHouseRecord] = []
-        for key in keys.sorted() {
-            do {
-                let data = try await CosUploader.fetchObjectData(path: recordPath(roomKey: key), config: config)
-                if let r = try? JSONDecoder().decode(CloudHouseRecord.self, from: data) {
-                    records.append(r)
+        try await withThrowingTaskGroup(of: CloudHouseRecord?.self) { group in
+            for key in keys {
+                group.addTask {
+                    let data: Data
+                    do {
+                        data = try await CosUploader.fetchObjectData(path: recordPath(roomKey: key), config: config)
+                    } catch let e as CosObjectNotFoundError {
+                        _ = e   // 该套无账本 → 跳过
+                        return nil
+                    }
+                    return try? JSONDecoder().decode(CloudHouseRecord.self, from: data)
                 }
-            } catch let e as CosObjectNotFoundError {
-                _ = e   // 该套无账本 → 跳过
+            }
+            for try await r in group {
+                if let r = r { records.append(r) }
             }
         }
         return records

@@ -578,6 +578,11 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.9", "2026-10-28", [
+            "同步性能：fetchAll 改为 delimiter 目录式列出（只列房号目录，不列媒体文件，省流量/加快列表）+ withThrowingTaskGroup 并发拉取各套账本（对齐 iOS）",
+            "删除死代码 CloudHouseLedger（旧 h/_houses.json 单文件账本 + ISO8601 编码，零调用点），杜绝未来误写出旧格式",
+            "全局同步进度悬浮条：同步/补传任务在任意页面右下角可见，可最小化收起（对齐 iOS 根级全局悬浮；房源页内嵌进度条保留）",
+        ]),
         ("v1.2.8", "2026-10-27", [
             "租金字段类型统一为整数（iOS 同为 Int）：房源编辑/导入/同步/备份全链路对齐，Mac 录入非整数租金会四舍五入，两端同步不再丢小数",
         ]),
