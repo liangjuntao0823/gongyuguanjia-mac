@@ -442,6 +442,12 @@ enum DataBackupManager {
             }
         }
 
+        // 批量恢复后立即刷新界面（对齐 iOS v1.70），并重建本地账本镜像
+        NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        if let houseContext = houseContext {
+            _ = LocalHouseLedger.rebuildAll(houseContext: houseContext)
+        }
         return .success(hasHouses)
     }
 }

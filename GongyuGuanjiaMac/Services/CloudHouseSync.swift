@@ -329,3 +329,97 @@ enum CloudHouseSync {
         }
     }
 }
+
+// MARK: - 本地房源账本镜像（对齐 iOS v1.72/v1.75/v1.77）
+
+/// 与云端同构：每套房在 media/<房号>/info.json 存一份 CloudHouseRecord。
+/// 效果：本地「一房一账本」，删除整套 = 删 media/<房号>/（媒体+账本一步到位）；
+/// 备份/恢复/对账时本地账本与云端结构完全一致；支持离线重建房源。
+enum LocalHouseLedger {
+
+    /// 写本套账本（幂等覆盖）
+    static func save(_ house: House) {
+        let record = CloudHouseSync.record(from: house)
+        let dir = MediaStore.houseDirectory(roomKey: house.mediaRoomKey)
+        let url = dir.appendingPathComponent("info.json")
+        guard let data = try? JSONEncoder().encode(record) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    /// 删本套账本（媒体目录删除时一并清理；单独调用用于软删后彻底清理）
+    static func delete(roomKey: String) {
+        let url = MediaStore.houseDirectory(roomKey: roomKey).appendingPathComponent("info.json")
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    /// 重建/刷新全部本地账本镜像（对齐 iOS v1.76 语义，仅云端同步后调用）：
+    /// 对本地未删除房源逐套与现有账本做语义字段对比，有差异才写盘。
+    /// 返回实际写入套数。
+    static func rebuildAll(houseContext: ModelContext) -> Int {
+        guard let houses = try? houseContext.fetch(FetchDescriptor<House>()) else { return 0 }
+        var written = 0
+        for house in houses where house.isDeleted != true {
+            let url = MediaStore.houseDirectory(roomKey: house.mediaRoomKey).appendingPathComponent("info.json")
+            if let data = try? Data(contentsOf: url),
+               let rec = try? JSONDecoder().decode(CloudHouseRecord.self, from: data),
+               !CloudHouseSync.cloudRecordDiffers(rec, from: house) {
+                continue  // 无差异，零写入
+            }
+            save(house)
+            written += 1
+        }
+        return written
+    }
+
+    /// 离线一键重建（对齐 iOS v1.75）：扫描本地 media/<房号>/info.json，
+    /// 按账本「刷新+补齐」本地房源。幂等合并：已有房源按账本覆盖字段与媒体清单，
+    /// 缺失房源新建；不删除任何现有数据。无需联网。返回处理房源套数。
+    static func restoreAll(houseContext: ModelContext) -> Int {
+        let dir = MediaStore.mediaDirectory()
+        guard let roomDirs = try? FileManager.default.contentsOfDirectory(atPath: dir.path) else { return 0 }
+        var localByKey: [String: House] = [:]
+        if let all = try? houseContext.fetch(FetchDescriptor<House>()) {
+            for h in all where h.isDeleted != true { localByKey[h.mediaRoomKey] = h }
+        }
+        var restored = 0
+        for roomDirName in roomDirs {
+            if roomDirName.hasPrefix(".") { continue }
+            let ledgerURL = dir.appendingPathComponent(roomDirName).appendingPathComponent("info.json")
+            guard let data = try? Data(contentsOf: ledgerURL),
+                  let rec = try? JSONDecoder().decode(CloudHouseRecord.self, from: data) else { continue }
+            let house: House
+            if let h = localByKey[rec.roomKey] {
+                h.roomNo = rec.roomNo; h.tower = rec.tower; h.landlord = rec.landlord
+                h.layout = rec.layout; h.price = Double(rec.price); h.password = rec.password
+                h.remark = rec.remark; h.statusRaw = CloudHouseSync.statusFromCloud(rec.status)
+                h.lastUpdatedAt = rec.updatedAt
+                house = h
+            } else {
+                let h = House(roomNo: rec.roomNo, tower: rec.tower, landlord: rec.landlord,
+                              layout: rec.layout, price: Double(rec.price), password: rec.password,
+                              remark: rec.remark, status: CloudHouseSync.statusFromCloud(rec.status))
+                h.lastUpdatedAt = rec.updatedAt
+                h.cloudStatusRaw = "local"
+                houseContext.insert(h)
+                house = h
+            }
+            // 媒体清单以账本为准：缺的补建记录、账本没有的移除记录（磁盘媒体文件不动）
+            let cloudNames = Set(rec.mediaNames)
+            let existing = Set(house.mediaItems.map { $0.fileName })
+            for name in rec.mediaNames where !existing.contains(name) {
+                let lower = name.lowercased()
+                let kind = (lower.hasSuffix(".mp4") || lower.hasSuffix(".mov")) ? "video" : "image"
+                let item = MediaItem(fileName: name, kind: kind)
+                item.house = house
+                houseContext.insert(item)
+            }
+            for item in Array(house.mediaItems) where !cloudNames.contains(item.fileName) {
+                houseContext.delete(item)
+            }
+            restored += 1
+        }
+        try? houseContext.save()
+        NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        return restored
+    }
+}

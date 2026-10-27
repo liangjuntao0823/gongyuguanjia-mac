@@ -98,6 +98,9 @@ struct HouseListView: View {
     @State private var collectionURL = ""
     @State private var syncing = false
     @State private var syncAlert: String?
+    @State private var syncProgress: Double = 0
+    @State private var syncStatus = ""
+    @State private var localRefreshing = false
 
     private var houses: [House] { manager.houses }
 
@@ -145,9 +148,16 @@ struct HouseListView: View {
                 }
                 .macSecondaryButton()
                 Button {
+                    localRefreshWithMediaCheck()
+                } label: {
+                    Label(localRefreshing ? "检查中…" : "本地刷新", systemImage: "arrow.clockwise")
+                }
+                .macSecondaryButton()
+                .disabled(localRefreshing || syncing)
+                Button {
                     refreshSync()
                 } label: {
-                    Label(syncing ? "同步中…" : "刷新同步", systemImage: "arrow.triangle.2.circlepath")
+                    Label(syncing ? "同步中…" : "云端同步", systemImage: "arrow.triangle.2.circlepath")
                 }
                 .macSecondaryButton()
                 .disabled(syncing)
@@ -161,6 +171,24 @@ struct HouseListView: View {
             .padding(.horizontal, 16)
             .padding(.top, 14)
             .padding(.bottom, 10)
+
+            // 同步进度条（对齐 iOS v1.68：同步任务顶部进度条）
+            if syncing || localRefreshing {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(localRefreshing ? "本地媒体检查…" : (syncStatus.isEmpty ? "正在同步…" : syncStatus))
+                            .font(.system(size: 12))
+                            .foregroundColor(.themeText2)
+                        Spacer()
+                        if syncing { Text("\(Int(syncProgress * 100))%").font(.system(size: 12)).foregroundColor(.themeText2) }
+                    }
+                    ProgressView(value: syncing ? syncProgress : 0, total: 1.0)
+                        .progressViewStyle(.linear)
+                        .controlSize(.small)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+            }
 
             // 统计行
             HStack(spacing: 12) {
@@ -309,8 +337,13 @@ struct HouseListView: View {
                 syncAlert = nil
                 syncing = true
                 Task {
-                    let result = await manager.syncFromCloud()
-                    await MainActor.run { syncing = false }
+                    let result = await manager.syncFromCloud { p, label in
+                        Task { @MainActor in
+                            syncProgress = p
+                            syncStatus = label
+                        }
+                    }
+                    await MainActor.run { syncing = false; syncProgress = 0; syncStatus = "" }
                     if case .failure(let e) = result {
                         MacToastCenter.show("同步失败：\(e)")
                     } else if case .success(let a, let u, let r, _) = result {
@@ -324,6 +357,71 @@ struct HouseListView: View {
         }
     }
 
+    // MARK: 本地刷新——媒体补全检测（对齐 iOS v1.63：不再触发云端同步）
+    /// 磁盘有而记录没有 → 自动补建媒体记录；记录有而磁盘没有 → 提示待云端回补；
+    /// 无对应房源的目录 → 提示可扫描补录。有变化列明细，无变化提示「已刷新，无变化」。
+    private func localRefreshWithMediaCheck() {
+        localRefreshing = true
+        let ctx = manager.houseContext
+        Task {
+            let all = (try? ctx.fetch(FetchDescriptor<House>())) ?? []
+            let active = all.filter { !($0.isDeleted ?? false) }
+            var addedLines: [String] = []
+            var missingLines: [String] = []
+            var addedCount = 0
+            var addedFiles = 0
+            var inserted: [MediaItem] = []
+            for house in active {
+                let dir = MediaStore.houseDirectory(roomKey: house.mediaRoomKey)
+                let disk = Set(MediaStore.mediaFileNames(in: dir))
+                let recorded = Set(house.mediaItems.map { $0.fileName })
+                let toAdd = disk.subtracting(recorded)
+                let missing = recorded.subtracting(disk)
+                if !toAdd.isEmpty {
+                    for f in toAdd.sorted() {
+                        let lower = f.lowercased()
+                        let media = MediaItem(fileName: f, kind: (lower.hasSuffix(".mp4") || lower.hasSuffix(".mov")) ? "video" : "image")
+                        media.house = house
+                        ctx.insert(media)
+                        inserted.append(media)
+                        addedFiles += 1
+                    }
+                    addedCount += 1
+                    addedLines.append("\(house.displayRoomNo)：补全 \(toAdd.count) 个媒体")
+                }
+                if !missing.isEmpty {
+                    missingLines.append("\(house.displayRoomNo)：本地缺 \(missing.count) 个文件（云端回补）")
+                }
+            }
+            var lines: [String] = []
+            if !inserted.isEmpty { try? ctx.save() }
+            // 未收录目录：media 下有目录但无对应房源
+            let keys = MediaStore.scanMediaDirectoryKeys()
+            let orphanKeys = keys.filter { key in
+                !active.contains { $0.mediaRoomKey == key }
+            }
+            if addedCount > 0 {
+                lines.append("媒体补全 \(addedCount) 间（\(addedFiles) 个文件）：")
+                lines.append(contentsOf: addedLines)
+            }
+            if !missingLines.isEmpty {
+                lines.append("待云端回补：" + missingLines.joined(separator: "；"))
+            }
+            if !orphanKeys.isEmpty {
+                lines.append("未收录目录 \(orphanKeys.count) 个：\(orphanKeys.prefix(5).joined(separator: "、"))（可去批量录入-扫描补录导入）")
+            }
+            await MainActor.run {
+                localRefreshing = false
+                if lines.isEmpty {
+                    MacToastCenter.show("已刷新，无变化")
+                } else {
+                    MacToastCenter.show(lines.joined(separator: "\n"))
+                }
+                NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+            }
+        }
+    }
+
     // MARK: 列表刷新同步（P1-1 第 3 点：dryRun 差异预览 → 确认后应用）
 
     private func refreshSync() {
@@ -333,8 +431,13 @@ struct HouseListView: View {
         }
         syncing = true
         Task {
-            let dry = await CloudHouseSync.pullAndMerge(houseContext: manager.houseContext, apply: false)
-            await MainActor.run { syncing = false }
+            let dry = await CloudHouseSync.pullAndMerge(houseContext: manager.houseContext, apply: false) { p, label in
+                Task { @MainActor in
+                    syncProgress = p
+                    syncStatus = label
+                }
+            }
+            await MainActor.run { syncing = false; syncProgress = 0; syncStatus = "" }
             switch dry {
             case .success(let added, let updated, let removed, let detail):
                 if added == 0 && updated == 0 && removed == 0 {

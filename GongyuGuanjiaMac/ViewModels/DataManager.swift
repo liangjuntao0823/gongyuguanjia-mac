@@ -133,6 +133,7 @@ final class DataManager: ObservableObject {
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         pushHouseLedgerIfConfigured(house)
+        LocalHouseLedger.save(house)   // 本地账本镜像：media/<房号>/info.json
         autoRegenerateMaskedShare(for: house)
         CloudOps.log(category: "房源", action: "新增", result: "成功", detail: "\(house.displayRoomNo) · 媒体 \(mediaFiles.count) 个", room: house.mediaRoomKey)
         return house
@@ -161,6 +162,7 @@ final class DataManager: ObservableObject {
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         pushHouseLedgerIfConfigured(house)
+        LocalHouseLedger.save(house)   // 本地账本镜像随更新同步
         autoRegenerateMaskedShare(for: house)
         CloudOps.log(category: "房源", action: "更新", result: "成功", detail: "\(house.displayRoomNo)", room: house.mediaRoomKey)
     }
@@ -178,12 +180,14 @@ final class DataManager: ObservableObject {
         try? houseContext.save()
         Task { await HouseMediaUploadQueue.shared.enqueue(roomKey: house.mediaRoomKey, fileName: fileName, kind: kind) }
         pushHouseLedgerIfConfigured(house)
+        LocalHouseLedger.save(house)   // 本地账本镜像随媒体新增更新
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
     }
 
     func removeMedia(_ item: MediaItem, from house: House) {
         MediaStore.removeMedia(fileName: item.fileName, roomKey: house.mediaRoomKey)
         pushHouseLedgerIfConfigured(house)
+        LocalHouseLedger.save(house)   // 本地账本镜像随媒体删除更新
         houseContext.delete(item)
         house.updatedAt = Date()
         try? houseContext.save()
@@ -205,6 +209,7 @@ final class DataManager: ObservableObject {
         house.lastUpdatedAt = Date()
         try? houseContext.save()
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+        LocalHouseLedger.delete(roomKey: house.mediaRoomKey)   // 本地账本镜像随软删清理
         // 云端账本同步删除（媒体目录与 H5 保留，还原不丢图；iOS 端下次同步即消失）
         if let config = CosConfig.load(), config.isValid {
             Task {
@@ -566,6 +571,7 @@ final class DataManager: ObservableObject {
                     await CloudHouseSync.downloadMissingMedia(house: h, config: config)
                 }
             }
+            LocalHouseLedger.rebuildAll(houseContext: houseContext)   // 同步后重建本地账本镜像（v1.77）
             BackupLogStore.log("云端同步", detail: detail, kind: "sync")
             CloudOps.log(category: "同步", action: "拉取", result: "成功", detail: detail)
             return .success(added: added, updated: updated, removed: removed, detail: detail)

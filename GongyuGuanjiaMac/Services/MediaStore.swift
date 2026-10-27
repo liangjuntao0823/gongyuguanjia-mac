@@ -25,6 +25,31 @@ enum MediaStore {
         mediaDirectory().appendingPathComponent(fileName)
     }
 
+    /// 房源目录（与 iOS houseDirectory 同构；本地账本镜像 info.json 同放此目录）
+    static func houseDirectory(roomKey: String) -> URL {
+        roomDirectory(roomKey: roomKey)
+    }
+
+    /// 列出目录内媒体文件名（排除本地账本镜像 info.json 与系统杂项）
+    static func mediaFileNames(in dir: URL) -> [String] {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        return names.filter { !$0.hasPrefix(".") && $0 != "info.json" }.sorted()
+    }
+
+    /// 扫描媒体根目录下所有房源目录名（roomKey 集合，含无房源对应的孤儿目录）
+    static func scanMediaDirectoryKeys() -> [String] {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: mediaDirectory().path)) ?? []
+        var keys: [String] = []
+        for n in names {
+            if n.hasPrefix(".") || n == "info.json" { continue }
+            var isDir: ObjCBool = false
+            let path = mediaDirectory().appendingPathComponent(n).path
+            FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
+            if isDir.boolValue { keys.append(n) }
+        }
+        return keys.sorted()
+    }
+
     /// 保存媒体文件到房源目录
     @discardableResult
     static func save(data: Data, fileName: String, roomKey: String) -> URL? {

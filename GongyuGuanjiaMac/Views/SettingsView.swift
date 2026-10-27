@@ -96,6 +96,12 @@ struct SettingsView: View {
                             Spacer()
                         }
                         HStack(spacing: 10) {
+                            Button("离线重建房源") { rebuildFromLocalLedger() }.macSecondaryButton()
+                            Text("从本地账本镜像（media/<房号>/info.json）重建/补齐房源，无需联网")
+                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                            Spacer()
+                        }
+                        HStack(spacing: 10) {
                             Text("数据文件夹：\(DataRoot.directory.path)")
                                 .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
                             Spacer()
@@ -326,6 +332,12 @@ struct SettingsView: View {
         if total >= 1_048_576 { return String(format: "%.1f MB", Double(total) / 1_048_576) }
         if total >= 1024 { return String(format: "%.0f KB", Double(total) / 1024) }
         return "\(total) B"
+    }
+
+    /// 离线重建房源：扫描本地账本镜像补齐/新建房源（对齐 iOS v1.75）
+    private func rebuildFromLocalLedger() {
+        let n = LocalHouseLedger.restoreAll(houseContext: manager.houseContext)
+        MacToastCenter.show(n > 0 ? "离线重建完成：处理 \(n) 套房源" : "未找到本地账本镜像（先执行一次云端同步生成）")
     }
 
     private func openDataFolder() {
