@@ -120,7 +120,7 @@ struct PayoutView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 430, maximum: 640), spacing: 14)], spacing: 14) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 380, maximum: 600), spacing: 12)], spacing: 12) {
                         ForEach(filteredPayouts) { payout in
                             PayoutRow(payout: payout,
                                       nextInfo: nextPayoutInfo(for: payout),
@@ -309,12 +309,15 @@ struct PayoutRow: View {
                 }
                 // 进度/下一期
                 HStack(spacing: 10) {
-                    Text("已打 \(paidCount)/\(periodCount) 期")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(paidCount == periodCount ? .themeAccentDark : .themeText2)
-                    Text("¥\(Int(paidAmount))")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.themeText)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("已打 \(paidCount)/\(periodCount) 期 · ¥\(Int(paidAmount))")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(paidCount == periodCount ? .themeAccentDark : .themeText2)
+                        ProgressView(value: Double(paidCount), total: Double(max(periodCount, 1)))
+                            .progressViewStyle(.linear)
+                            .tint(Color(hex: "7B61FF"))
+                            .frame(width: 130)
+                    }
                     Spacer()
                     if !nextText.isEmpty {
                         Text(nextText)
@@ -323,10 +326,13 @@ struct PayoutRow: View {
                     }
                 }
             }
-            .padding(14)
+            .padding(12)
             .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "EEEEEE"), lineWidth: 1))
+            .overlay(
+                HStack { Rectangle().fill(Color(hex: "7B61FF")).frame(width: 4); Spacer() }
+            )
         }
         .buttonStyle(.plain)
     }

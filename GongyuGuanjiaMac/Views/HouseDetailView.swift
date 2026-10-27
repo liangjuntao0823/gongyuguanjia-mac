@@ -100,6 +100,11 @@ struct HouseDetailView: View {
                     .background(Color.themePanel)
                     .cornerRadius(12)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder))
+                    .contextMenu {
+                        Button("编辑") { showEdit = true }
+                        Button("分享") { showShareMenu = true }
+                        Button("下架/删除", role: .destructive) { softDelete() }
+                    }
 
                     // 媒体区
                     VStack(alignment: .leading, spacing: 10) {
@@ -212,6 +217,9 @@ struct HouseDetailView: View {
 
     private func softDelete() {
         manager.softDeleteHouse(house)
+        try? manager.houseContext.save()
+        manager.houseContext.processPendingChanges()
+        NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         MacToastCenter.show("房源已下架，可在回收站恢复")
         onClose()
     }
@@ -226,6 +234,7 @@ struct MediaItemCell: View {
 
     @State private var showImage = false
     @State private var nsImage: NSImage?
+    @State private var videoThumb: NSImage?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -247,14 +256,27 @@ struct MediaItemCell: View {
                     }
                 } else {
                     ZStack {
-                        Color.black.opacity(0.85)
+                        if let thumb = videoThumb {
+                            Image(nsImage: thumb)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 110)
+                                .clipped()
+                        } else {
+                            Color.black.opacity(0.85)
+                        }
                         Image(systemName: "play.circle.fill")
-                            .font(.system(size: 34))
+                            .font(.system(size: 24))
                             .foregroundColor(.white)
+                            .shadow(radius: 2)
                     }
                     .frame(height: 110)
+                    .clipped()
                     .onTapGesture {
                         openVideo()
+                    }
+                    .onAppear {
+                        loadVideoThumb()
                     }
                 }
                 Button {
@@ -303,6 +325,11 @@ struct MediaItemCell: View {
                 .background(Color.black.opacity(0.95))
             }
         }
+    }
+
+    private func loadVideoThumb() {
+        let thumb = VideoThumbCache.load(roomKey: house.mediaRoomKey, fileName: item.fileName)
+        DispatchQueue.main.async { videoThumb = thumb }
     }
 
     private func loadImage() -> NSImage? {

@@ -374,17 +374,19 @@ struct SettingsView: View {
     // MARK: - 数据文件夹
 
     private var folderSizeText: String {
+        // v1.2.11：递归统计整个数据目录（含 media/、备份等子目录），此前只算顶层文件导致偏小
         let fm = FileManager.default
-        guard let dirs = try? fm.contentsOfDirectory(at: DataRoot.directory,
-                                                     includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
-                                                     options: [.skipsHiddenFiles]) else { return "0 KB" }
-        var total: Int64 = 0
-        for url in dirs {
-            if let vals = try? url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey]),
-               vals.isRegularFile == true {
-                total += Int64(vals.fileSize ?? 0)
+        func totalSize(_ url: URL) -> Int64 {
+            var size: Int64 = 0
+            if let vals = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]) {
+                if vals.isRegularFile == true { return Int64(vals.fileSize ?? 0) }
             }
+            if let children = try? fm.contentsOfDirectory(at: url, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey], options: [.skipsHiddenFiles]) {
+                for child in children { size += totalSize(child) }
+            }
+            return size
         }
+        let total = totalSize(DataRoot.directory)
         if total >= 1_048_576 { return String(format: "%.1f MB", Double(total) / 1_048_576) }
         if total >= 1024 { return String(format: "%.0f KB", Double(total) / 1024) }
         return "\(total) B"
@@ -589,6 +591,18 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.11", "2026-10-28", [
+            "修复水电结算「关闭」按钮无效（收租板块入口未绑定关闭回调）",
+            "修复已收录房源文件夹大小统计：改为递归统计整个数据目录（含 media 与备份子目录）",
+            "房源板块新增按户型筛选",
+            "房源卡片点击视频缩略图直接播放视频；播放按钮调小适配桌面",
+            "房源详情页视频文件补全首帧缩略图",
+            "修复详情页「下架/删除」房源无效；列表卡片/行新增右键菜单（编辑/分享/下架删除），对齐 iOS 左滑操作",
+            "修复双端标识：未配置云端信息时一律显示「本地」，不再误标云端",
+            "房源卡片重新排版：第一行房号+户型 | 房东 | 租金，第二行备注 | 双端标识（去掉座数标识）",
+            "收租卡片精简：删除重复的经营类型标识（圆标/文字/chip 三选一），「本月水电」更正为「累积水电」，卡片缩小；包租卡片同步加类型色条与打租进度条",
+            "修复切换 Tab 卡顿：各板块视图常驻 ZStack 按透明度切换，不再每次重建",
+        ]),
         ("v1.2.10", "2026-10-28", [
             "房源卡片：视频显示首帧缩略图（AVAsset 首帧生成并缓存 .thumb.jpg）+ 播放角标；卡片与列表新增双端状态徽标（本地/云端/双端）",
             "左侧导航栏宽度可拖拽调整（150-280），不再固定",

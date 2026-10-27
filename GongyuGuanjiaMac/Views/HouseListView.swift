@@ -48,13 +48,14 @@ struct MediaThumbView: View {
                                 .foregroundColor(.white)
                         }
                         Image(systemName: "play.circle.fill")
-                            .font(.system(size: size * 0.28))
-                            .foregroundColor(.white.opacity(0.9))
+                            .font(.system(size: size * 0.16))
+                            .foregroundColor(.white.opacity(0.92))
                             .shadow(radius: 2)
                     }
                     .onAppear {
                         loadVideoThumb()
                     }
+                    .highPriorityGesture(TapGesture().onEnded { openVideo() })
                 }
             } else {
                 ZStack {
@@ -68,6 +69,16 @@ struct MediaThumbView: View {
         }
         .frame(width: size, height: size)
         .clipped()
+    }
+
+    private func openVideo() {
+        guard let item else { return }
+        let url = MediaStore.fileURL(fileName: item.fileName, roomKey: roomKey)
+        if FileManager.default.fileExists(atPath: url.path) {
+            NSWorkspace.shared.open(url)
+        } else {
+            MacToastCenter.show("本地视频不存在，请先云端同步")
+        }
     }
 
     private func loadVideoThumb() {
@@ -106,8 +117,12 @@ struct HouseListView: View {
     @State private var searchText = ""
     @State private var towerFilter = "全部"
     @State private var statusFilter = "全部"
+    @State private var layoutFilter = "全部户型"
     @State private var viewMode = "网格"
     @State private var selectedHouse: House?
+    @State private var editingHouse: House?
+    @State private var sharingHouse: House?
+    @State private var pendingDelete: House?
     @State private var showNew = false
     @State private var showBatchImport = false
     @State private var selecting = false          // 多选模式
@@ -124,6 +139,12 @@ struct HouseListView: View {
 
     private var houses: [House] { manager.houses }
 
+    private var layoutOptions: [String] {
+        var set = Set<String>()
+        for h in houses where h.isDeleted != true { set.insert(h.layout) }
+        return ["全部户型"] + set.sorted()
+    }
+
     private var filtered: [House] {
         houses.filter { h in
             guard h.isDeleted != true else { return false }
@@ -135,6 +156,7 @@ struct HouseListView: View {
             }
             if towerFilter != "全部" && "\(h.tower)座" != towerFilter { return false }
             if statusFilter != "全部" && h.status != statusFilter { return false }
+            if layoutFilter != "全部户型" && h.layout != layoutFilter { return false }
             return true
         }
         .sorted {
@@ -146,6 +168,10 @@ struct HouseListView: View {
     }
 
     private var stats: DataManager.HouseStats { manager.houseStats(filtered) }
+
+    private func confirmDelete(_ house: House) {
+        pendingDelete = house
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -249,6 +275,12 @@ struct HouseListView: View {
                 .pickerStyle(.segmented)
                 .frame(width: 180)
 
+                Picker("", selection: $layoutFilter) {
+                    ForEach(layoutOptions, id: \.self) { Text($0).tag($0) }
+                }
+                .frame(width: 150)
+                .help("按户型筛选")
+
                 Spacer()
 
                 Picker("", selection: $viewMode) {
@@ -300,7 +332,10 @@ struct HouseListView: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220, maximum: 280), spacing: 14)], spacing: 14) {
                         ForEach(filtered) { house in
-                            HouseCard(house: house, isSelected: selectedKeys.contains(house.id), showCheck: selecting) {
+                            HouseCard(house: house, isSelected: selectedKeys.contains(house.id), showCheck: selecting,
+                                     onEdit: { editingHouse = house },
+                                     onShare: { sharingHouse = house },
+                                     onDelete: { confirmDelete(house) }) {
                                 if selecting {
                                     if selectedKeys.contains(house.id) { selectedKeys.remove(house.id) }
                                     else { selectedKeys.insert(house.id) }
@@ -315,7 +350,10 @@ struct HouseListView: View {
             } else {
                 List {
                     ForEach(filtered) { house in
-                        HouseRow(house: house, isSelected: selectedKeys.contains(house.id), showCheck: selecting)
+                        HouseRow(house: house, isSelected: selectedKeys.contains(house.id), showCheck: selecting,
+                                onEdit: { editingHouse = house },
+                                onShare: { sharingHouse = house },
+                                onDelete: { confirmDelete(house) })
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 if selecting {
@@ -339,6 +377,27 @@ struct HouseListView: View {
             HouseDetailView(manager: manager, house: house) {
                 selectedHouse = nil
             }
+        }
+        .sheet(item: $editingHouse) { house in
+            HouseEditView(manager: manager, house: house) {
+                editingHouse = nil
+            }
+        }
+        .sheet(item: $sharingHouse) { house in
+            ShareMenuView(manager: manager, house: house) {
+                sharingHouse = nil
+            }
+        }
+        .confirmationDialog("确定下架/删除 \(pendingDelete?.displayRoomNo ?? "") 吗？删除后可在回收站恢复。",
+                            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
+            Button("下架/删除", role: .destructive) {
+                if let h = pendingDelete {
+                    manager.softDeleteHouse(h)
+                    MacToastCenter.show("房源已下架，可在回收站恢复")
+                }
+                pendingDelete = nil
+            }
+            Button("取消", role: .cancel) { pendingDelete = nil }
         }
         .sheet(isPresented: $showBatchImport) {
             HouseBatchImportView(manager: manager) {
@@ -554,6 +613,9 @@ struct HouseCard: View {
     let house: House
     var isSelected: Bool = false
     var showCheck: Bool = false
+    var onEdit: () -> Void = {}
+    var onShare: () -> Void = {}
+    var onDelete: () -> Void = {}
     let onTap: () -> Void
 
     var body: some View {
@@ -587,29 +649,36 @@ struct HouseCard: View {
                         }
                     }
                 }
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(house.displayRoomNo)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.themeText)
-                        Text(house.towerLabel)
-                            .font(.system(size: 13))
-                            .foregroundColor(.themeText3)
-                        CloudStatusBadge(raw: house.cloudStatusRaw)
+                VStack(alignment: .leading, spacing: 4) {
+                    // 第一行：房号+户型（左） | 房东（中） | 租金（右）
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(house.displayRoomNo)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.themeText)
+                            Text(house.layout)
+                                .font(.system(size: 12))
+                                .foregroundColor(.themeText3)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        Text("房东 \(house.landlord)")
+                            .font(.system(size: 14))
+                            .foregroundColor(.themeText2)
+                            .lineLimit(1)
                         Spacer()
                         Text("¥\(house.price)")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.themeDanger)
                     }
+                    // 第二行：备注（左） | 双端标识（右）
                     HStack {
-                        Text(house.layout)
-                            .font(.system(size: 14))
-                            .foregroundColor(.themeText2)
-                        Text("房东 \(house.landlord)")
-                            .font(.system(size: 13))
+                        Text(house.remark.isEmpty ? "无备注" : house.remark)
+                            .font(.system(size: 12))
                             .foregroundColor(.themeText3)
                             .lineLimit(1)
                         Spacer()
+                        CloudStatusBadge(raw: house.cloudStatusRaw)
                     }
                 }
                 .padding(10)
@@ -620,6 +689,11 @@ struct HouseCard: View {
             .shadow(color: .black.opacity(0.04), radius: 3, y: 1)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button("编辑") { onEdit() }
+            Button("分享") { onShare() }
+            Button("下架/删除", role: .destructive) { onDelete() }
+        }
     }
 }
 
@@ -629,6 +703,9 @@ struct HouseRow: View {
     let house: House
     var isSelected: Bool = false
     var showCheck: Bool = false
+    var onEdit: () -> Void = {}
+    var onShare: () -> Void = {}
+    var onDelete: () -> Void = {}
 
     var body: some View {
         HStack(spacing: 12) {
@@ -656,6 +733,12 @@ struct HouseRow: View {
                 .foregroundColor(.themeText3)
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button("编辑") { onEdit() }
+            Button("分享") { onShare() }
+            Button("下架/删除", role: .destructive) { onDelete() }
+        }
     }
 }
 
@@ -701,7 +784,9 @@ enum VideoThumbCache {
 struct CloudStatusBadge: View {
     let raw: String?
     var body: some View {
-        switch raw {
+        // v1.2.11：未配置云端时不存在云端数据，一律显示「本地」，避免误标云端
+        let effective: String? = CosConfig.load() == nil ? "local" : raw
+        switch effective {
         case "both":
             Text("双端").font(.system(size: 11, weight: .semibold))
                 .padding(.horizontal, 6).padding(.vertical, 2)

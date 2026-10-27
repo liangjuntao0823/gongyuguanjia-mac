@@ -106,7 +106,7 @@ struct RentCollectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 430, maximum: 640), spacing: 14)], spacing: 14) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 380, maximum: 600), spacing: 12)], spacing: 12) {
                         ForEach(filteredProperties) { prop in
                             if prop.isTerminated {
                                 TerminatedPropertyRow(prop: prop,
@@ -131,7 +131,7 @@ struct RentCollectionView: View {
         .sheet(item: $editingProperty) { prop in PropertyEditor(manager: manager, property: prop) { editingProperty = nil } }
         .sheet(item: $selectedProperty) { prop in PropertyDetailView(manager: manager, property: prop) { selectedProperty = nil } }
         .sheet(item: $terminatingProperty) { prop in TerminationFormView(manager: manager, property: prop) { terminatingProperty = nil } }
-        .sheet(isPresented: $showUtility) { UtilityView(manager: manager) }
+        .sheet(isPresented: $showUtility) { UtilityView(manager: manager, onClose: { showUtility = false }) }
         .confirmationDialog("确定删除房源 \(propertyToDelete?.roomNumber ?? "") 吗？删除后可在回收站还原。",
                             isPresented: Binding(get: { propertyToDelete != nil }, set: { if !$0 { propertyToDelete = nil } })) {
             Button("确定删除", role: .destructive) {
@@ -253,23 +253,14 @@ struct PropertyRentCard: View {
                 Divider()
                 // 户型/状态行
                 HStack(spacing: 8) {
+                    // v1.2.11：仅保留圆形类型标 + 户型，删除重复的「管理/托管」文字与 chip
                     Text(prop.typeChar)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(prop.typeColor)
                         .frame(width: 20, height: 20)
                         .background(prop.typeBgColor)
                         .clipShape(Circle())
-                    Text(prop.typeDisplayName)
-                        .font(.system(size: 13))
-                        .foregroundColor(prop.typeColor)
                     Text(prop.unitType).font(.system(size: 13)).foregroundColor(.themeText2)
-                    // v1.2.4：经营类型徽标（管理/包租/托管），对齐 iOS 截图的「管理」chip
-                    Text(prop.propertyType)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.themeAccent)
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .background(Color(hex: "E3F2FD"))
-                        .clipShape(Capsule())
                     Spacer()
                     // v1.2.10：收租进度条（已收/总期数），更直观
                     VStack(alignment: .trailing, spacing: 3) {
@@ -307,9 +298,9 @@ struct PropertyRentCard: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .trailing, spacing: 3) {
-                        Text("本月水电").font(.system(size: 11)).foregroundColor(.themeText3)
+                        Text("累积水电").font(.system(size: 11)).foregroundColor(.themeText3)
                         Text("¥\(Int(totalUtility))")
-                            .font(.system(size: 14, weight: .semibold)).foregroundColor(paid ? .themeText : .themeRed)
+                            .font(.system(size: 14, weight: .semibold)).foregroundColor(.themeText)
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -327,7 +318,7 @@ struct PropertyRentCard: View {
                     Spacer()
                 }
             }
-            .padding(14)
+            .padding(12)
             .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
