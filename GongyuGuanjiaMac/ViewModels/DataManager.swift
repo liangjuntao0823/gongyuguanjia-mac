@@ -212,6 +212,7 @@ final class DataManager: ObservableObject {
         house.lastUpdatedAt = Date()
         try? houseContext.save()
         houseContext.processPendingChanges()
+        refreshHouses()   // 立即刷新（不依赖通知时序，删除后列表即刻消失、回收站即刻可见）
         NotificationCenter.default.post(name: .macHouseChanged, object: nil)
         LocalHouseLedger.delete(roomKey: house.mediaRoomKey)   // 本地账本镜像随软删清理
         // 云端账本同步删除（媒体目录与 H5 保留，还原不丢图；iOS 端下次同步即消失）
@@ -319,6 +320,7 @@ final class DataManager: ObservableObject {
         try? mainContext.save()
         mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        refreshData()   // 立即刷新
     }
 
     func restoreDeal(_ record: DealRecord) {
@@ -359,6 +361,7 @@ final class DataManager: ObservableObject {
         try? mainContext.save()
         mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        refreshData()   // 立即刷新
     }
 
     func restorePayout(_ record: PayoutRecord) {
@@ -398,6 +401,7 @@ final class DataManager: ObservableObject {
         try? mainContext.save()
         mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        refreshData()   // 立即刷新
     }
 
     func restoreProperty(_ prop: Property) {
@@ -465,6 +469,7 @@ final class DataManager: ObservableObject {
         try? mainContext.save()
         mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        refreshData()   // 立即刷新
     }
 
     func softDeleteMiscExpense(_ rec: MiscExpense) {
@@ -473,6 +478,7 @@ final class DataManager: ObservableObject {
         try? mainContext.save()
         mainContext.processPendingChanges()
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        refreshData()   // 立即刷新
     }
 
     func restoreMiscIncome(_ rec: MiscIncome) {
@@ -555,6 +561,7 @@ final class DataManager: ObservableObject {
         mainContext.processPendingChanges()
         LocalNotificationManager.rebuildTodoReminders(todos: allTodos)
         NotificationCenter.default.post(name: .macDataChanged, object: nil)
+        refreshData()   // 立即刷新
     }
 
     func restoreTodo(_ item: TodoItem) {

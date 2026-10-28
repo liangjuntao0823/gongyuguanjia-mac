@@ -201,6 +201,17 @@ struct DealsView: View {
                         }
                     }.width(170)
                 }
+                .contextMenu(forSelectionType: DealRecord.self) { items in
+                    if let deal = items.first {
+                        Button("详情") { viewingDeal = deal }
+                        Button("编辑") { editingDeal = deal }
+                        Divider()
+                        Button("删除", role: .destructive) {
+                            manager.softDeleteDeal(deal)
+                            MacToastCenter.show("已删除，可在回收站还原")
+                        }
+                    }
+                }
             }
         }
     }
@@ -274,6 +285,14 @@ struct DealsView: View {
             highlightedID = row.id
             scheduleHighlightClear()
         }
+        .contextMenu {
+            Button("编辑") { editingIncome = row }
+            Divider()
+            Button("删除", role: .destructive) {
+                manager.softDeleteMiscIncome(row)
+                MacToastCenter.show("已删除，可在回收站还原")
+            }
+        }
     }
 
     @ViewBuilder
@@ -297,6 +316,14 @@ struct DealsView: View {
         .onTapGesture {
             highlightedID = row.id
             scheduleHighlightClear()
+        }
+        .contextMenu {
+            Button("编辑") { editingExpense = row }
+            Divider()
+            Button("删除", role: .destructive) {
+                manager.softDeleteMiscExpense(row)
+                MacToastCenter.show("已删除，可在回收站还原")
+            }
         }
     }
 

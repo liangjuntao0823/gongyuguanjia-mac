@@ -402,47 +402,60 @@ struct DashboardView: View {
                         if rentReminders.isEmpty {
                             Text("暂无未收租提醒").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                                ForEach(rentReminders) { reminder in
-                                    HStack(spacing: 10) {
-                                        VStack(spacing: 2) {
-                                            Text("\(reminder.dueDay)").font(.system(size: 18, weight: .bold))
-                                            Text("号交租").font(.system(size: 11))
-                                        }
-                                        .frame(width: 46)
-                                        .padding(.vertical, 6)
-                                        .background(reminder.isOverdue ? Color(red: 0.99, green: 0.94, blue: 0.94) : Color(red: 0.98, green: 0.95, blue: 0.87))
-                                        .cornerRadius(8)
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(reminder.roomNumber).font(.system(size: 16, weight: .bold))
-                                            Text("房东: \(reminder.landlord)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
-                                        }
-                                        Spacer()
-                                        VStack(alignment: .trailing, spacing: 3) {
-                                            Text("¥\(Int(reminder.amount))").font(.system(size: 15, weight: .bold))
-                                            if reminder.needUtility {
-                                                Text("需结算水电").font(.system(size: 12, weight: .semibold)).foregroundColor(.themeAmber)
-                                            }
-                                        }
-                                        Button("收") {
-                                            quickCollectProperty = reminder.property
-                                            quickCollectRent = String(Int(reminder.amount))
-                                        }
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 34, height: 34)
-                                        .background(Circle().fill(Color.themeAccent))
-                                        .buttonStyle(.plain)
-                                    }
-                                    .padding(.vertical, 7)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { viewingProperty = reminder.property }
-                                    if reminder.id != rentReminders.last?.id { Divider() }
-                                }
+                            // 房号左右两列均分排布（对齐用户要求：两列都排房号，不留空列）
+                            let half = (rentReminders.count + 1) / 2
+                            let leftCol = Array(rentReminders.prefix(half))
+                            let rightCol = Array(rentReminders.suffix(rentReminders.count - half))
+                            HStack(alignment: .top, spacing: 10) {
+                                VStack(spacing: 0) { reminderRows(leftCol) }
+                                VStack(spacing: 0) { reminderRows(rightCol) }
                             }
                         }
                     }
 
+    }
+
+    @ViewBuilder private func reminderRows(_ reminders: [RentReminder]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(reminders) { reminder in
+                HStack(spacing: 10) {
+                    VStack(spacing: 2) {
+                        Text("\(reminder.dueDay)").font(.system(size: 18, weight: .bold))
+                        Text("号交租").font(.system(size: 11))
+                    }
+                    .frame(width: 46)
+                    .padding(.vertical, 6)
+                    .background(reminder.isOverdue
+                                ? (ThemeManager.isDark ? Color(red: 0.34, green: 0.17, blue: 0.17) : Color(red: 0.99, green: 0.94, blue: 0.94))
+                                : (ThemeManager.isDark ? Color(red: 0.32, green: 0.28, blue: 0.16) : Color(red: 0.98, green: 0.95, blue: 0.87)))
+                    .cornerRadius(8)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(reminder.roomNumber).font(.system(size: 16, weight: .bold))
+                        Text("房东: \(reminder.landlord)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeText2)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("¥\(Int(reminder.amount))").font(.system(size: 15, weight: .bold))
+                        if reminder.needUtility {
+                            Text("需结算水电").font(.system(size: 12, weight: .semibold)).foregroundColor(.themeAmber)
+                        }
+                    }
+                    Button("收") {
+                        quickCollectProperty = reminder.property
+                        quickCollectRent = String(Int(reminder.amount))
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color.themeAccent))
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 7)
+                .contentShape(Rectangle())
+                .onTapGesture { viewingProperty = reminder.property }
+                if reminder.id != reminders.last?.id { Divider() }
+            }
+        }
     }
 
     @ViewBuilder private var payoutReminderSection: some View {

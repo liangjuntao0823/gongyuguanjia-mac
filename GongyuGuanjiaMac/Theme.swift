@@ -33,24 +33,25 @@ enum ThemeManager {
 }
 
 extension Color {
-    static var themeBg: Color { ThemeManager.isDark ? Color(red: 0.09, green: 0.10, blue: 0.10) : Color(red: 0.96, green: 0.96, blue: 0.95) }
-    static var themePanel: Color { ThemeManager.isDark ? Color(red: 0.13, green: 0.14, blue: 0.14) : Color(red: 0.99, green: 0.99, blue: 0.98) }
-    static var themeCard: Color { ThemeManager.isDark ? Color(red: 0.16, green: 0.17, blue: 0.17) : Color.white }
-    static var themeHeader: Color { ThemeManager.isDark ? Color(red: 0.11, green: 0.12, blue: 0.12) : Color(red: 0.96, green: 0.96, blue: 0.95) }
-    static var themeText: Color { ThemeManager.isDark ? Color(red: 0.92, green: 0.93, blue: 0.92) : Color(red: 0.16, green: 0.19, blue: 0.18) }
-    static var themeText2: Color { ThemeManager.isDark ? Color(red: 0.72, green: 0.74, blue: 0.72) : Color(red: 0.36, green: 0.39, blue: 0.38) }
-    static var themeText3: Color { ThemeManager.isDark ? Color(red: 0.52, green: 0.55, blue: 0.53) : Color(red: 0.55, green: 0.58, blue: 0.57) }
-    static var themeBorder: Color { ThemeManager.isDark ? Color(red: 0.28, green: 0.30, blue: 0.29) : Color(red: 0.88, green: 0.89, blue: 0.88) }
-    static var themeAccent: Color { ThemeManager.isDark ? Color(red: 0.30, green: 0.72, blue: 0.44) : Color(red: 0.10, green: 0.48, blue: 0.30) }   // 深绿主色
-    static var themeAccentLight: Color { ThemeManager.isDark ? Color(red: 0.14, green: 0.26, blue: 0.20) : Color(red: 0.85, green: 0.93, blue: 0.89) }
-    static var themeAccentDark: Color { ThemeManager.isDark ? Color(red: 0.42, green: 0.75, blue: 0.53) : Color(red: 0.06, green: 0.36, blue: 0.22) } // 深绿强调
-    static var themeDanger: Color { ThemeManager.isDark ? Color(red: 0.95, green: 0.42, blue: 0.38) : Color(red: 0.82, green: 0.28, blue: 0.24) }
-    static var themeRed: Color { ThemeManager.isDark ? Color(red: 0.98, green: 0.42, blue: 0.38) : Color(red: 0.85, green: 0.25, blue: 0.22) }        // 红（逾期/负值）
-    static var themeOrange: Color { ThemeManager.isDark ? Color(red: 1.0, green: 0.68, blue: 0.24) : Color(red: 0.94, green: 0.55, blue: 0.10) }
-    static var themeWarning: Color { ThemeManager.isDark ? Color(red: 0.98, green: 0.75, blue: 0.28) : Color(red: 0.85, green: 0.60, blue: 0.10) }
-    static var themeBlue: Color { ThemeManager.isDark ? Color(red: 0.38, green: 0.64, blue: 0.96) : Color(red: 0.10, green: 0.42, blue: 0.80) }
-    static var themeAmber: Color { ThemeManager.isDark ? Color(red: 0.98, green: 0.75, blue: 0.28) : Color(red: 0.85, green: 0.60, blue: 0.10) }   // 琥珀（需结算水电）
-    static var themeAccentWeak: Color { ThemeManager.isDark ? Color(red: 0.14, green: 0.26, blue: 0.20) : Color(red: 0.85, green: 0.93, blue: 0.89) } // 浅绿底（已刷新提示）
+    // v1.2.14 对比度重设计：浅色更白（参考 iOS 白底深字）、暗色更亮文字更深背景，杜绝“灰底黑字看不清 / 反色后内容不可见”
+    static var themeBg: Color { ThemeManager.isDark ? Color(red: 0.08, green: 0.09, blue: 0.09) : Color(red: 0.985, green: 0.985, blue: 0.98) }
+    static var themePanel: Color { ThemeManager.isDark ? Color(red: 0.13, green: 0.14, blue: 0.14) : Color.white }
+    static var themeCard: Color { ThemeManager.isDark ? Color(red: 0.17, green: 0.18, blue: 0.18) : Color.white }
+    static var themeHeader: Color { ThemeManager.isDark ? Color(red: 0.10, green: 0.11, blue: 0.11) : Color(red: 0.965, green: 0.965, blue: 0.955) }
+    static var themeText: Color { ThemeManager.isDark ? Color(red: 0.97, green: 0.975, blue: 0.97) : Color(red: 0.14, green: 0.17, blue: 0.16) }
+    static var themeText2: Color { ThemeManager.isDark ? Color(red: 0.80, green: 0.82, blue: 0.80) : Color(red: 0.34, green: 0.37, blue: 0.36) }
+    static var themeText3: Color { ThemeManager.isDark ? Color(red: 0.62, green: 0.65, blue: 0.63) : Color(red: 0.50, green: 0.53, blue: 0.52) }
+    static var themeBorder: Color { ThemeManager.isDark ? Color(red: 0.38, green: 0.40, blue: 0.39) : Color(red: 0.87, green: 0.88, blue: 0.87) }
+    static var themeAccent: Color { ThemeManager.isDark ? Color(red: 0.36, green: 0.80, blue: 0.52) : Color(red: 0.10, green: 0.48, blue: 0.30) }   // 深绿主色
+    static var themeAccentLight: Color { ThemeManager.isDark ? Color(red: 0.14, green: 0.28, blue: 0.21) : Color(red: 0.85, green: 0.93, blue: 0.89) }
+    static var themeAccentDark: Color { ThemeManager.isDark ? Color(red: 0.46, green: 0.80, blue: 0.58) : Color(red: 0.06, green: 0.36, blue: 0.22) } // 深绿强调
+    static var themeDanger: Color { ThemeManager.isDark ? Color(red: 0.96, green: 0.46, blue: 0.42) : Color(red: 0.82, green: 0.28, blue: 0.24) }
+    static var themeRed: Color { ThemeManager.isDark ? Color(red: 1.0, green: 0.48, blue: 0.44) : Color(red: 0.85, green: 0.25, blue: 0.22) }        // 红（逾期/负值）
+    static var themeOrange: Color { ThemeManager.isDark ? Color(red: 1.0, green: 0.70, blue: 0.28) : Color(red: 0.94, green: 0.55, blue: 0.10) }
+    static var themeWarning: Color { ThemeManager.isDark ? Color(red: 1.0, green: 0.78, blue: 0.32) : Color(red: 0.85, green: 0.60, blue: 0.10) }
+    static var themeBlue: Color { ThemeManager.isDark ? Color(red: 0.45, green: 0.70, blue: 1.0) : Color(red: 0.10, green: 0.42, blue: 0.80) }
+    static var themeAmber: Color { ThemeManager.isDark ? Color(red: 1.0, green: 0.78, blue: 0.32) : Color(red: 0.85, green: 0.60, blue: 0.10) }   // 琥珀（需结算水电）
+    static var themeAccentWeak: Color { ThemeManager.isDark ? Color(red: 0.14, green: 0.28, blue: 0.21) : Color(red: 0.85, green: 0.93, blue: 0.89) } // 浅绿底（已刷新提示）
 
     /// 从十六进制字符串创建颜色（如 "7B61FF"）
     init(hex: String) {

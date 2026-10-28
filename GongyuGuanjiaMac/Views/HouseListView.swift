@@ -124,6 +124,7 @@ struct HouseListView: View {
     @State private var sharingHouse: House?
     @State private var pendingDelete: House?
     @State private var showNew = false
+    @State private var showTrash = false
     @State private var showBatchImport = false
     @State private var selecting = false          // 多选模式
     @State private var selectedKeys: Set<UUID> = []
@@ -216,6 +217,12 @@ struct HouseListView: View {
                     Label("新增房源", systemImage: "plus")
                 }
                 .macPrimaryButton()
+                Button {
+                    showTrash = true
+                } label: {
+                    Label("回收站", systemImage: "trash")
+                }
+                .macSecondaryButton()
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)
@@ -392,6 +399,9 @@ struct HouseListView: View {
             HouseEditView(manager: manager, house: nil) {
                 showNew = false
             }
+        }
+        .sheet(isPresented: $showTrash) {
+            TrashView(manager: manager) { showTrash = false }
         }
         .sheet(item: $selectedHouse) { house in
             HouseDetailView(manager: manager, house: house) {
@@ -642,10 +652,13 @@ struct HouseCard: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .bottomLeading) {
-                    MediaThumbView(house: house, size: 240)
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fill)
-                        .clipped()
+                    // 严格正方形缩略图容器（自适应列宽，不再被拉成长方形）
+                    GeometryReader { geo in
+                        MediaThumbView(house: house, size: max(geo.size.width, geo.size.height))
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    }
+                    .aspectRatio(1, contentMode: .fit)
                     HStack {
                         StatusBadge(status: house.status)
                         Spacer()
@@ -670,23 +683,24 @@ struct HouseCard: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    // 第一行：房号+户型+房东名（左） | 价格（右）
-                    HStack(alignment: .firstTextBaseline) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(house.displayRoomNo)
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.themeText)
-                            HStack(spacing: 5) {
-                                Text(house.layout)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.themeText3)
-                                    .lineLimit(1)
-                                Text(house.landlord)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.themeText2)
-                                    .lineLimit(1)
-                            }
+                    // 第一行：房号（左） | 户型+房东（中） | 价格（右）
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(house.displayRoomNo)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.themeText)
+                            .lineLimit(1)
+                        Spacer()
+                        HStack(spacing: 5) {
+                            Text(house.layout)
+                                .font(.system(size: 12))
+                                .foregroundColor(.themeText3)
+                                .lineLimit(1)
+                            Text(house.landlord)
+                                .font(.system(size: 12))
+                                .foregroundColor(.themeText2)
+                                .lineLimit(1)
                         }
+                        .layoutPriority(1)
                         Spacer()
                         Text("¥\(house.price)")
                             .font(.system(size: 15, weight: .bold))

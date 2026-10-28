@@ -1106,8 +1106,18 @@ extension CosUploader {
                                  qrSrc: qrSrc, shareLink: shareURL, wm: wm, trackScript: track)
         }
 
-        // 9) 上传页面（无扩展名）
-        try await upload(data: Data(html.utf8), to: pagePath, contentType: "text/html", config: config)
+        // 9) 上传页面（内容与云端一致则跳过，避免无谓重传——对齐 iOS 分享缓存语义）
+        // 签名链接每次生成时间戳不同，比较前归一化 shareLink 占位
+        let normHTML = html.replacingOccurrences(of: shareURL, with: "<LINK>")
+        let normExisting: String? = {
+            guard let data = try? await fetchObjectData(path: pagePath, config: config) else { return nil }
+            return String(data: data, encoding: .utf8)?.replacingOccurrences(of: shareURL, with: "<LINK>")
+        }()
+        if normExisting == normHTML {
+            // 页面无变化：零上传，仅复用
+        } else {
+            try await upload(data: Data(html.utf8), to: pagePath, contentType: "text/html", config: config)
+        }
 
         // 10) 分享记录
         try? await appendShareRecord(roomKey: roomKey, displayRoomNo: info.displayRoomNo, mode: mode, url: shareURL, config: config)

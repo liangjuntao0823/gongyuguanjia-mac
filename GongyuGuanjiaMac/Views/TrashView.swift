@@ -140,7 +140,7 @@ struct TrashView: View {
                         Text(item.rawValue)
                             .font(.system(size: 13, weight: isSelected ? .bold : .regular))
                             .padding(.horizontal, 12).padding(.vertical, 5)
-                            .background(isSelected ? Color.themeAccent : Color(red: 0.93, green: 0.94, blue: 0.95))
+                            .background(isSelected ? Color.themeAccent : Color.themePanel)
                             .foregroundColor(isSelected ? .white : .themeText)
                             .clipShape(Capsule())
                     }

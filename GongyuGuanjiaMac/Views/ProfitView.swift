@@ -156,24 +156,39 @@ struct ProfitView: View {
                             Table(monthlySummaries) {
                                 TableColumn("月份") { s in
                                     Text(s.year == Calendar.current.component(.year, from: Date()) ? "\(s.month)月" : "\(s.year)年\(s.month)月")
-                                        .font(.system(size: 14))
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .padding(.vertical, 6)
                                 }
-                                .width(100)
-                                TableColumn("成交") { s in Text("\(s.dealCount)单").font(.system(size: 14)) }.width(70)
-                                TableColumn("中介费") { s in Text("¥\(Int(s.agentFee))").font(.system(size: 14)) }.width(100)
-                                TableColumn("杂项收入") { s in Text("¥\(Int(s.miscIncome))").font(.system(size: 14)) }.width(100)
-                                TableColumn("杂项支出") { s in Text("¥\(Int(s.miscExpense))").font(.system(size: 14)) }.width(100)
+                                .width(min: 110, ideal: 130, max: .infinity)
+                                TableColumn("成交") { s in
+                                    Text("\(s.dealCount)单").font(.system(size: 16)).padding(.vertical, 6)
+                                }
+                                .width(min: 70, ideal: 90, max: .infinity)
+                                TableColumn("中介费") { s in
+                                    Text("¥\(Int(s.agentFee))").font(.system(size: 16)).padding(.vertical, 6)
+                                }
+                                .width(min: 110, ideal: 140, max: .infinity)
+                                TableColumn("杂项收入") { s in
+                                    Text("¥\(Int(s.miscIncome))").font(.system(size: 16)).padding(.vertical, 6)
+                                }
+                                .width(min: 110, ideal: 130, max: .infinity)
+                                TableColumn("杂项支出") { s in
+                                    Text("¥\(Int(s.miscExpense))").font(.system(size: 16)).padding(.vertical, 6)
+                                }
+                                .width(min: 110, ideal: 130, max: .infinity)
                                 TableColumn("净收入") { s in
                                     Text("¥\(Int(s.netIncome))")
                                         .foregroundColor(s.netIncome >= 0 ? .themeAccentDark : .themeRed)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.system(size: 16, weight: .bold))
+                                        .padding(.vertical, 6)
                                 }
-                                .width(110)
+                                .width(min: 120, ideal: 150, max: .infinity)
                             }
                             .frame(minHeight: 220)
                         }
                     }
                     .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.themePanel)
                     .cornerRadius(12)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder))
@@ -200,7 +215,7 @@ struct SummaryCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(bgColor)
+        .background(ThemeManager.isDark ? Color.white.opacity(0.08) : bgColor)
         .cornerRadius(10)
     }
 }

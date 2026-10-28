@@ -313,6 +313,18 @@ enum CloudHouseSync {
         }
         // ① 云端有、本地缺 → 挂关系 + 标记待下载
         for name in record.mediaNames where !localNorm.contains(mediaNormKey(name)) {
+            // 本地磁盘可能已有同 norm 的原始名（.mov/.mp4 差异）：优先用本地名挂记录，
+            // 名单以本地名写回云端，杜绝两端在 .mov/.mp4 间反复改写云端名单（对齐 iOS 语义）
+            let norm = mediaNormKey(name)
+            if let diskName = diskFiles.first(where: { mediaNormKey($0) == norm && $0 != "info.json" }),
+               !localNorm.contains(mediaNormKey(diskName)) {
+                let lower = diskName.lowercased()
+                let kind = lower.hasSuffix(".mp4") || lower.hasSuffix(".mov")
+                    || lower.hasSuffix(".m4v") ? "video" : "image"
+                house.mediaItems.append(MediaItem(fileName: diskName, kind: kind))
+                mediaMissing.append("\(record.roomKey)/\(diskName)")
+                continue
+            }
             let kind = name.lowercased().hasSuffix(".mp4") || name.lowercased().hasSuffix(".mov")
                 || name.lowercased().hasSuffix(".m4v") ? "video" : "image"
             house.mediaItems.append(MediaItem(fileName: name, kind: kind))
