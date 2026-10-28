@@ -52,12 +52,12 @@ struct BackupCenterViews: View {
                 if working {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text("处理中…").font(.system(size: 14))
+                        Text("处理中…").font(.system(size: 14, weight: .medium))
                     }
                 }
                 if !message.isEmpty {
                     Text(message)
-                        .font(.system(size: 14))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(message.contains("失败") ? .themeDanger : .themeAccent)
                 }
 
@@ -66,28 +66,30 @@ struct BackupCenterViews: View {
                     Text("本地备份（\(localItems.count)）")
                         .font(.system(size: 14, weight: .semibold))
                     if localItems.isEmpty {
-                        Text("暂无本地备份").font(.system(size: 14)).foregroundColor(.themeText3)
+                        Text("暂无本地备份").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                     } else {
                         List(localItems, id: \.url) { item in
                             HStack {
                                 Text(item.url.lastPathComponent)
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 14, weight: .medium))
                                     .lineLimit(1)
                                 Text(FormatKit.dateTimeStr(item.date))
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(.themeText3)
                                 Text(item.isFull ? "全量" : "快速")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 11, weight: .medium))
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 1)
                                     .background(item.isFull ? Color.purple.opacity(0.15) : Color.blue.opacity(0.15))
                                     .cornerRadius(4)
                                 Text("\(ByteCountFormatter.string(fromByteCount: item.size, countStyle: .file))")
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button("恢复") {
-                                    confirmRestore = { restoreLocal(item.url) }
+                                    MacAlert.confirm("恢复备份会覆盖当前数据，确定继续？",
+                                                      message: "将使用该备份覆盖本地数据，建议先手动做一次快速备份。",
+                                                      confirmTitle: "确定恢复") { restoreLocal(item.url) }
                                 }
                                 .macSecondaryButton()
                                 Button("删除") {
@@ -108,25 +110,27 @@ struct BackupCenterViews: View {
                     Text("云端备份（\(cloudItems.count)）")
                         .font(.system(size: 14, weight: .semibold))
                     if cloudItems.isEmpty {
-                        Text("暂无云端备份（配置云端后自动上传）").font(.system(size: 14)).foregroundColor(.themeText3)
+                        Text("暂无云端备份（配置云端后自动上传）").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                     } else {
                         List(cloudItems, id: \.name) { item in
                             HStack {
                                 Text(item.name)
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 14, weight: .medium))
                                     .lineLimit(1)
                                 Text(FormatKit.dateTimeStr(item.date))
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(.themeText3)
                                 Text("\(ByteCountFormatter.string(fromByteCount: item.size, countStyle: .file))")
-                                    .font(.system(size: 13))
+                                    .font(.system(size: 13, weight: .medium))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button("下载并恢复") {
                                     guard let config = CosConfig.load() else {
                                         message = "失败：未配置云端"; return
                                     }
-                                    confirmRestore = { restoreCloud(item.name, config: config) }
+                                    MacAlert.confirm("恢复备份会覆盖当前数据，确定继续？",
+                                                      message: "将下载云端备份并覆盖本地数据，建议先手动做一次快速备份。",
+                                                      confirmTitle: "确定恢复") { restoreCloud(item.name, config: config) }
                                 }
                                 .macSecondaryButton()
                                 Button("删除") {
@@ -152,16 +156,7 @@ struct BackupCenterViews: View {
         .frame(width: 680, height: 620)
         .background(Color.themeBg)
         .onAppear { refresh() }
-        .confirmationDialog("恢复备份会覆盖当前数据，确定继续？", isPresented: Binding(
-            get: { confirmRestore != nil },
-            set: { if !$0 { confirmRestore = nil } }
-        ), titleVisibility: .visible) {
-            Button("确定恢复", role: .destructive) {
-                confirmRestore?()
-                confirmRestore = nil
-            }
-            Button("取消", role: .cancel) { confirmRestore = nil }
-        }
+        // v1.2.15：恢复覆盖确认改为 AppKit 原生 MacAlert（绕开 SwiftUI confirmationDialog 与其他弹窗互相屏蔽）
     }
 
     private func refresh() {

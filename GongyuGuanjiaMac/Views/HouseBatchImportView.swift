@@ -58,33 +58,33 @@ struct HouseBatchImportView: View {
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.themeDanger)
                     .padding(.horizontal, 14).padding(.top, 8)
             }
 
             if items.isEmpty {
                 VStack(spacing: 10) {
-                    Image(systemName: "square.and.arrow.down").font(.system(size: 40)).foregroundColor(.gray)
+                    Image(systemName: "square.and.arrow.down").font(.system(size: 40, weight: .medium)).foregroundColor(.gray)
                     switch mode {
                     case 0:
                         Text("选择一个 CSV/Excel 文件，列依次为：房号、房东、户型、租金（元）、密码、备注、状态")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText3)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 30)
                         Text("房号必须以 1- 或 2- 前缀开头（如 1-2334上）；无前缀行将标红跳过")
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.themeDanger)
                     case 1:
                         Text("选择 iOS 导出的媒体包 zip：根目录为房号目录（如 1-2334上/），无记录自动建房源，已有记录自动补媒体")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText3)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 30)
                     default:
                         Text("扫描本机 media 目录：与已收录房源比对，缺失的自动建房源，已有的自动补挂媒体关系（不复制文件）")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText3)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 30)
@@ -107,21 +107,21 @@ struct HouseBatchImportView: View {
                         Text("\(item.tower == 2 ? "2-" : (item.tower == 1 ? "1-" : ""))\(item.roomNo)")
                             .font(.system(size: 14, weight: .semibold))
                             .frame(width: 100, alignment: .leading)
-                        Text(item.landlord).font(.system(size: 14)).frame(width: 70, alignment: .leading)
-                        Text(item.layout).font(.system(size: 14)).frame(width: 60, alignment: .leading)
-                        Text(item.price > 0 ? "¥\(item.price)" : "-").font(.system(size: 14)).frame(width: 60, alignment: .leading)
-                        Text(item.status).font(.system(size: 14)).frame(width: 40, alignment: .leading)
+                        Text(item.landlord).font(.system(size: 14, weight: .medium)).frame(width: 70, alignment: .leading)
+                        Text(item.layout).font(.system(size: 14, weight: .medium)).frame(width: 60, alignment: .leading)
+                        Text(item.price > 0 ? "¥\(item.price)" : "-").font(.system(size: 14, weight: .medium)).frame(width: 60, alignment: .leading)
+                        Text(item.status).font(.system(size: 14, weight: .medium)).frame(width: 40, alignment: .leading)
                         Spacer()
                         if item.invalid {
                             Text("不符合规范")
-                                .font(.system(size: 13))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.themeDanger)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
                                 .background(ThemeManager.isDark ? Color(red: 0.30, green: 0.16, blue: 0.16) : Color(hex: "FFEBEE"))
                                 .clipShape(Capsule())
                         } else if item.duplicate {
                             Text("重复跳过")
-                                .font(.system(size: 13))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.themeWarning)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
                                 .background(ThemeManager.isDark ? Color(red: 0.30, green: 0.26, blue: 0.15) : Color(hex: "FFF3E0"))
@@ -132,7 +132,7 @@ struct HouseBatchImportView: View {
                 }
                 if !importMessage.isEmpty {
                     Text(importMessage)
-                        .font(.system(size: 14))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.themeAccent)
                         .padding(.horizontal, 14).padding(.bottom, 6)
                 }
@@ -140,7 +140,7 @@ struct HouseBatchImportView: View {
                     let invalidCount = items.filter(\.invalid).count
                     let dupCount = items.filter(\.duplicate).count
                     Text("共解析 \(items.count) 间：不符合规范 \(invalidCount) 间 · 重复 \(dupCount) 间，将跳过")
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.themeText3)
                     Spacer()
                     Button("重新选择") { items = []; imported = false }.macSecondaryButton()

@@ -47,27 +47,27 @@ struct HouseDetailView: View {
                                     .font(.system(size: 23, weight: .bold))
                                 StatusBadge(status: house.status)
                                 Text(house.towerLabel)
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.themeText3)
                             }
                             Text("户型：\(house.layout)")
-                                .font(.system(size: 16))
+                                .font(.system(size: 16, weight: .medium))
                             Text("租金：¥\(house.price) / 月")
-                                .font(.system(size: 16))
+                                .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.themeDanger)
                             Text("房东：\(house.landlord)")
-                                .font(.system(size: 16))
+                                .font(.system(size: 16, weight: .medium))
                             if !house.password.isEmpty {
                                 Text("门锁密码：\(house.password)")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 16, weight: .medium))
                             }
                             if !house.remark.isEmpty {
                                 Text("备注：\(house.remark)")
-                                    .font(.system(size: 15))
+                                    .font(.system(size: 15, weight: .medium))
                                     .foregroundColor(.themeText2)
                             }
                             Text(house.photoSummary)
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.themeText3)
                         }
                         Spacer()
@@ -128,7 +128,7 @@ struct HouseDetailView: View {
 
                         if house.mediaItems.isEmpty {
                             Text("暂无媒体，点击右上「添加图片/视频」上传实拍图")
-                                .font(.system(size: 15))
+                                .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.themeText3)
                                 .padding(.vertical, 20)
                         } else {
@@ -152,7 +152,7 @@ struct HouseDetailView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text("正在生成分享链接…")
-                                .font(.system(size: 15))
+                                .font(.system(size: 15, weight: .medium))
                         }
                         .padding(.vertical, 6)
                     }
@@ -161,7 +161,7 @@ struct HouseDetailView: View {
                             Image(systemName: shareMessage.contains("失败") ? "xmark.circle.fill" : "checkmark.circle.fill")
                                 .foregroundColor(shareMessage.contains("失败") ? .themeDanger : .themeAccent)
                             Text(shareMessage)
-                                .font(.system(size: 15))
+                                .font(.system(size: 15, weight: .medium))
                             Spacer()
                             if shareMessage.contains("链接") && !shareMessage.contains("失败") {
                                 Button("复制链接") {
@@ -248,12 +248,17 @@ struct HouseDetailView: View {
     }
 
     private func softDelete() {
-        manager.softDeleteHouse(house)
-        try? manager.houseContext.save()
-        manager.houseContext.processPendingChanges()
-        NotificationCenter.default.post(name: .macHouseChanged, object: nil)
-        MacToastCenter.show("已删除，可在回收站还原")
-        onClose()
+        // v1.2.15：房源删除 = 直接彻底删除（不进回收站，与 iOS 对齐）；AppKit 原生确认
+        MacAlert.confirm("确定删除 \(house.displayRoomNo) 吗？",
+                         message: "房源将直接删除（不进入回收站），本地与云端媒体数据一并删除，不可恢复。",
+                         confirmTitle: "彻底删除") {
+            manager.permanentDeleteHouse(house)
+            try? manager.houseContext.save()
+            manager.houseContext.processPendingChanges()
+            NotificationCenter.default.post(name: .macHouseChanged, object: nil)
+            MacToastCenter.show("已彻底删除")
+            self.onClose()
+        }
     }
 }
 
@@ -298,7 +303,7 @@ struct MediaItemCell: View {
                             Color.black.opacity(0.85)
                         }
                         Image(systemName: "play.circle.fill")
-                            .font(.system(size: 30))
+                            .font(.system(size: 30, weight: .medium))
                             .foregroundColor(.white)
                             .shadow(radius: 2)
                     }
@@ -315,7 +320,7 @@ struct MediaItemCell: View {
                     onDelete()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 17))
+                        .font(.system(size: 17, weight: .medium))
                         .foregroundColor(.white)
                         .background(Color.black.opacity(0.4), in: Circle())
                 }
@@ -323,7 +328,7 @@ struct MediaItemCell: View {
                 .padding(4)
             }
             Text(item.fileName)
-                .font(.system(size: 10))
+                .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.themeText3)
                 .lineLimit(1)
                 .padding(4)
@@ -340,7 +345,7 @@ struct MediaItemCell: View {
                             showImage = false
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 23))
+                                .font(.system(size: 23, weight: .medium))
                                 .foregroundColor(.white)
                         }
                         .buttonStyle(.plain)
@@ -402,7 +407,7 @@ struct ShareMenuView: View {
                     onClose()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 19))
+                        .font(.system(size: 19, weight: .medium))
                         .foregroundColor(.gray)
                 }
                 .buttonStyle(.plain)
@@ -415,21 +420,21 @@ struct ShareMenuView: View {
             .pickerStyle(.radioGroup)
 
             Text("脱敏版适合发给租客初步挑选；完整版适合已确定意向的租客。")
-                .font(.system(size: 13))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.themeText3)
 
             if working {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text("正在生成 H5 页面并上传云端…")
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                 }
             }
 
             if !resultMessage.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(resultMessage)
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(resultMessage.contains("失败") ? .themeDanger : .themeAccent)
                     if !resultLink.isEmpty {
                         HStack(spacing: 8) {

@@ -101,7 +101,7 @@ struct OperationLogsView: View {
         ScrollView {
             let entries = localEntries
             if entries.isEmpty {
-                Text("暂无操作日志").font(.system(size: 14)).foregroundColor(.themeText2)
+                Text("暂无操作日志").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(12)
             } else {
                 VStack(alignment: .leading, spacing: 8) {
@@ -111,7 +111,7 @@ struct OperationLogsView: View {
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(isFail(e.title + " " + e.detail) ? .themeDanger : .themeText)
                             Text("\(e.time.formatted(date: .abbreviated, time: .shortened)) · \(e.detail)")
-                                .font(.system(size: 12))
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(isFail(e.detail) ? .themeDanger : .themeText2)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -128,14 +128,14 @@ struct OperationLogsView: View {
         Group {
             if let err = cloudError {
                 VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle").font(.system(size: 30)).foregroundColor(.themeDanger)
-                    Text(err).font(.system(size: 13)).foregroundColor(.themeDanger)
+                    Image(systemName: "exclamationmark.triangle").font(.system(size: 30, weight: .medium)).foregroundColor(.themeDanger)
+                    Text(err).font(.system(size: 13, weight: .medium)).foregroundColor(.themeDanger)
                     Button("重试") { loadCloud() }.macSecondaryButton()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filteredCloud.isEmpty {
                 Text(cloudLoaded ? "暂无云端操作记录" : "加载云端操作记录…")
-                    .font(.system(size: 14)).foregroundColor(.themeText2)
+                    .font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
@@ -156,19 +156,19 @@ struct OperationLogsView: View {
                                             .font(.system(size: 13, weight: .semibold))
                                             .foregroundColor(isFail(e.op + " " + e.detail) ? .themeDanger : .themeText)
                                         Text("👤 \(e.user)")
-                                            .font(.system(size: 11))
+                                            .font(.system(size: 11, weight: .medium))
                                             .padding(.horizontal, 5).padding(.vertical, 1)
                                             .background(Color.accentColor.opacity(0.12))
                                             .clipShape(Capsule())
                                         Spacer()
-                                        Text(e.t).font(.system(size: 11)).foregroundColor(.themeText2)
+                                        Text(e.t).font(.system(size: 11, weight: .medium)).foregroundColor(.themeText2)
                                     }
                                     if !e.room.isEmpty {
-                                        Text("房号：\(e.room)").font(.system(size: 11)).foregroundColor(.themeText2)
+                                        Text("房号：\(e.room)").font(.system(size: 11, weight: .medium)).foregroundColor(.themeText2)
                                     }
                                     if !e.detail.isEmpty {
                                         Text(e.detail)
-                                            .font(.system(size: 12))
+                                            .font(.system(size: 12, weight: .medium))
                                             .foregroundColor(isFail(e.detail) ? .themeDanger : .themeText2)
                                     }
                                 }

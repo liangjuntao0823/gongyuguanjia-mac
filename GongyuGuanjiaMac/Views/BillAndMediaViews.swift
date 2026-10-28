@@ -38,7 +38,7 @@ struct BillTemplateSettingsView: View {
                             TextField("问候语", text: $billGreeting, axis: .vertical).lineLimit(1...3)
                             HStack(spacing: 6) {
                                 TextField("引导语前段", text: $billDuePrefix)
-                                Text("交租日期").font(.system(size: 14)).foregroundColor(.gray)
+                                Text("交租日期").font(.system(size: 14, weight: .medium)).foregroundColor(.gray)
                                 TextField("引导语后段", text: $billDueSuffix)
                             }
                             TextField("滞纳金提示", text: $billLateFeeTip, axis: .vertical).lineLimit(1...3)
@@ -51,7 +51,7 @@ struct BillTemplateSettingsView: View {
                         qrRow("支付宝收款码", file: $billQRAlipayFile, preview: $alipayPreview)
                         qrRow("微信收款码", file: $billQRWechatFile, preview: $wechatPreview)
                         Text("点击「更换」从文件中选择新收款码图片，立即生效；点击「清除」恢复内置默认收款码。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                     }
 
                     sectionCard("预览") {
@@ -60,12 +60,12 @@ struct BillTemplateSettingsView: View {
                             Spacer()
                         }
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(billFixedTip).font(.system(size: 15)).foregroundColor(.themeText3)
-                            Text(billGreeting).font(.system(size: 15)).foregroundColor(.themeText3)
-                            Text("\(billDuePrefix)2026年10月15日\(billDueSuffix)").font(.system(size: 15)).foregroundColor(.themeText3)
-                            Text("电费：¥50.00 · 水费：¥20.00").font(.system(size: 15)).foregroundColor(.themeText3)
-                            Text(billLateFeeTip).font(.system(size: 13)).foregroundColor(.themeText3)
-                            Text(billSign).font(.system(size: 15)).foregroundColor(.themeText3)
+                            Text(billFixedTip).font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3)
+                            Text(billGreeting).font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3)
+                            Text("\(billDuePrefix)2026年10月15日\(billDueSuffix)").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3)
+                            Text("电费：¥50.00 · 水费：¥20.00").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3)
+                            Text(billLateFeeTip).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
+                            Text(billSign).font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3)
                             // 收款码预览：与账单生成时一致并排展示
                             if alipayPreview != nil || wechatPreview != nil {
                                 Divider().padding(.vertical, 4)
@@ -73,13 +73,13 @@ struct BillTemplateSettingsView: View {
                                     if let img = alipayPreview {
                                         VStack(spacing: 4) {
                                             Image(nsImage: img).resizable().frame(width: 72, height: 72).cornerRadius(8)
-                                            Text("支付宝收款码").font(.system(size: 12)).foregroundColor(.themeText3)
+                                            Text("支付宝收款码").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                                         }
                                     }
                                     if let img = wechatPreview {
                                         VStack(spacing: 4) {
                                             Image(nsImage: img).resizable().frame(width: 72, height: 72).cornerRadius(8)
-                                            Text("微信收款码").font(.system(size: 12)).foregroundColor(.themeText3)
+                                            Text("微信收款码").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                                         }
                                     }
                                     Spacer()
@@ -202,7 +202,7 @@ struct MediaPendingView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(t.title).font(.system(size: 13, weight: .semibold))
                         Text(t.current.isEmpty ? "\(t.done)/\(t.total)" : "\(t.done)/\(t.total) · \(t.current)")
-                            .font(.system(size: 12)).foregroundColor(.themeText2)
+                            .font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
                     }
                     Spacer()
                     Button("收起") { syncCenter.dismiss() }.macSecondaryButton()
@@ -217,16 +217,16 @@ struct MediaPendingView: View {
                 if items.isEmpty {
                     VStack(spacing: 10) {
                         Image(systemName: "checkmark.circle")
-                            .font(.system(size: 40))
+                            .font(.system(size: 40, weight: .medium))
                             .foregroundColor(.green)
                         Text("没有待补传任务").font(.system(size: 16, weight: .semibold))
                         Text("上传失败的媒体会自动保留在这里，可集中查看和重试")
-                            .font(.system(size: 14)).foregroundColor(.themeText3)
+                            .font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     HStack(spacing: 10) {
-                        Text("共 \(items.count) 个媒体待补传").font(.system(size: 15)).foregroundColor(.themeText2)
+                        Text("共 \(items.count) 个媒体待补传").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                         Spacer()
                         Button(retrying ? "重试中…" : "全部重试") {
                             retrying = true
@@ -247,9 +247,9 @@ struct MediaPendingView: View {
                             Image(systemName: item.kind == "video" ? "film" : "photo")
                                 .foregroundColor(.themeText3)
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(item.fileName).font(.system(size: 15))
+                                Text(item.fileName).font(.system(size: 15, weight: .medium))
                                 Text("房源：\(item.roomKey) · \(item.kind == "video" ? "视频" : "图片")")
-                                    .font(.system(size: 13)).foregroundColor(.themeText3)
+                                    .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                             }
                             Spacer()
                             Image(systemName: "arrow.clockwise.circle.fill")

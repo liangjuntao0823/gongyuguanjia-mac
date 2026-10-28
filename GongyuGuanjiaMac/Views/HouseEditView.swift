@@ -60,7 +60,7 @@ struct HouseEditView: View {
                     onClose()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 19))
+                        .font(.system(size: 19, weight: .medium))
                         .foregroundColor(.gray)
                 }
                 .buttonStyle(.plain)
@@ -78,7 +78,7 @@ struct HouseEditView: View {
                 }
                 if !duplicateMessage.isEmpty {
                     Text(duplicateMessage)
-                        .font(.system(size: 14))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.themeDanger)
                 }
                 TextField("房东", text: $landlord)
@@ -115,7 +115,7 @@ struct HouseEditView: View {
                                             mediaToRemove.insert(item.fileName)
                                         } label: {
                                             Image(systemName: "xmark.circle.fill")
-                                                .font(.system(size: 15))
+                                                .font(.system(size: 15, weight: .medium))
                                                 .foregroundColor(.white)
                                                 .background(Circle().fill(Color.black.opacity(0.7)))
                                         }
@@ -123,7 +123,7 @@ struct HouseEditView: View {
                                         .padding(2)
                                     }
                                     Text(item.kind == "video" ? "视频" : "图片")
-                                        .font(.system(size: 10)).foregroundColor(.themeText3)
+                                        .font(.system(size: 10, weight: .medium)).foregroundColor(.themeText3)
                                 }
                             }
                         }
@@ -143,7 +143,7 @@ struct HouseEditView: View {
                         .macSecondaryButton()
                         if !addedFiles.isEmpty {
                             Text("新增 \(addedFiles.count) 个")
-                                .font(.system(size: 14)).foregroundColor(.themeText2)
+                                .font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                         }
                     }
                 }
@@ -163,7 +163,7 @@ struct HouseEditView: View {
                     .macSecondaryButton()
                     if !addedFiles.isEmpty {
                         Text("已选 \(addedFiles.count) 个")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText2)
                     }
                 }
@@ -171,7 +171,7 @@ struct HouseEditView: View {
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.themeDanger)
             }
 

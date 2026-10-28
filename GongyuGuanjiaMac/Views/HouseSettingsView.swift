@@ -77,7 +77,7 @@ struct HouseSettingsView: View {
 
                         if !verifyMessage.isEmpty {
                             Text(verifyMessage)
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(verifyMessage.contains("✓") ? .themeAccent : .themeDanger)
                         }
                         HStack {
@@ -139,17 +139,17 @@ struct HouseSettingsView: View {
                                 MediaSettingsStore.compressUpload = newValue
                             }
                         Text("关闭后视频/图片原样上传，画质无损但较慢。")
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.themeText3)
                     }
 
                     // 选房链接
                     sectionCard("公开选房链接") {
                         Text("生成一个「米兰公馆 · 在租房源」H5，自动列出所有未出租房源，支持按户型筛选。")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText2)
                         HStack(spacing: 10) {
-                            Text("链接有效期").font(.system(size: 15)).foregroundColor(.themeText2)
+                            Text("链接有效期").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                             Picker("", selection: $roomsLinkExpiry) {
                                 Text("1 天").tag(1)
                                 Text("2 天").tag(2)
@@ -186,7 +186,7 @@ struct HouseSettingsView: View {
                         }
                         if !roomsMessage.isEmpty {
                             Text(roomsMessage)
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(roomsMessage.contains("失败") ? .themeDanger : .themeAccent)
                         }
                         if !roomsLink.isEmpty {
@@ -218,18 +218,18 @@ struct HouseSettingsView: View {
                                 WebCache.updateStamp()
                                 MacToastCenter.show("网页后台缓存已刷新，下次打开后台即最新版")
                             }.macSecondaryButton()
-                            Text("网页后台重新部署后点此刷新，浏览器立即生效").font(.system(size: 12)).foregroundColor(.themeText3)
+                            Text("网页后台重新部署后点此刷新，浏览器立即生效").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                             Spacer()
                         }
                         // 部署图文教程
                         DisclosureGroup("云端部署图文教程") {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("1. 登录腾讯云，新建云函数（Node.js），把部署包 zip 上传").font(.system(size: 12)).foregroundColor(.themeText2)
-                                Text("2. 创建 COS 存储桶，记下桶名与地域").font(.system(size: 12)).foregroundColor(.themeText2)
-                                Text("3. 创建 API 网关/云函数 URL 访问，复制云函数地址").font(.system(size: 12)).foregroundColor(.themeText2)
-                                Text("4. 云函数环境变量：BUCKET、REGION、SECRET_ID、SECRET_KEY、PASSWORD（后台口令）").font(.system(size: 12)).foregroundColor(.themeText2)
-                                Text("5. 部署后在 App 点「刷新网页后台缓存」").font(.system(size: 12)).foregroundColor(.themeText2)
-                                Text("给别的房东用：部署后把云函数地址填到他 App 的云端配置即可。").font(.system(size: 12)).foregroundColor(.themeText3)
+                                Text("1. 登录腾讯云，新建云函数（Node.js），把部署包 zip 上传").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
+                                Text("2. 创建 COS 存储桶，记下桶名与地域").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
+                                Text("3. 创建 API 网关/云函数 URL 访问，复制云函数地址").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
+                                Text("4. 云函数环境变量：BUCKET、REGION、SECRET_ID、SECRET_KEY、PASSWORD（后台口令）").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
+                                Text("5. 部署后在 App 点「刷新网页后台缓存」").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
+                                Text("给别的房东用：部署后把云函数地址填到他 App 的云端配置即可。").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                             }
                             .padding(.vertical, 4)
                         }
@@ -240,12 +240,12 @@ struct HouseSettingsView: View {
                             Spacer()
                         }
                         Text("配置备份为 JSON（含桶/地域/密钥/域名/口令），换机或重装后一键还原；含密钥请勿外泄。")
-                            .font(.system(size: 12)).foregroundColor(.themeText3)
+                            .font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                         // 开通步骤
                         DisclosureGroup("开通步骤（简述）") {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("① 填云函数地址 / 桶 / 地域 / 自定义域名 / 密钥 → ② 保存并验证连接 → ③ 正常使用").font(.system(size: 12)).foregroundColor(.themeText2)
-                                Text("房源文字、照片视频自动传云端桶；分享卡片好友可直接查看；备份自动留档。").font(.system(size: 12)).foregroundColor(.themeText3)
+                                Text("① 填云函数地址 / 桶 / 地域 / 自定义域名 / 密钥 → ② 保存并验证连接 → ③ 正常使用").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
+                                Text("房源文字、照片视频自动传云端桶；分享卡片好友可直接查看；备份自动留档。").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                             }
                             .padding(.vertical, 4)
                         }
@@ -256,7 +256,7 @@ struct HouseSettingsView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text("分享过的选房链接（云端按用户名隔离）")
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.themeText3)
                                 Spacer()
                                 Button {
@@ -265,10 +265,10 @@ struct HouseSettingsView: View {
                                 .macSecondaryButton()
                             }
                             if let err = shareRecordsError {
-                                Text(err).font(.system(size: 12)).foregroundColor(.themeDanger)
+                                Text(err).font(.system(size: 12, weight: .medium)).foregroundColor(.themeDanger)
                             } else if shareRecords.isEmpty {
                                 Text(shareRecordsLoaded ? "暂无分享记录，分享过房源后显示在这里。" : "加载分享记录…")
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.themeText3)
                                     .padding(.vertical, 4)
                             } else {
@@ -277,12 +277,12 @@ struct HouseSettingsView: View {
                                         ForEach(shareRecords) { r in
                                             HStack(spacing: 8) {
                                                 Text(r.room).font(.system(size: 13, weight: .bold))
-                                                Text(r.mode).font(.system(size: 11))
+                                                Text(r.mode).font(.system(size: 11, weight: .medium))
                                                     .padding(.horizontal, 6).padding(.vertical, 1)
                                                     .background(Color.accentColor.opacity(0.12))
                                                     .clipShape(Capsule())
                                                 Spacer()
-                                                Text(r.time).font(.system(size: 11)).foregroundColor(.themeText3)
+                                                Text(r.time).font(.system(size: 11, weight: .medium)).foregroundColor(.themeText3)
                                                 Button {
                                                     NSPasteboard.general.clearContents()
                                                     NSPasteboard.general.setString(r.url, forType: .string)
@@ -291,7 +291,7 @@ struct HouseSettingsView: View {
                                                 } label: {
                                                     Label(copiedShareURL == r.url ? "已复制" : "复制链接",
                                                           systemImage: copiedShareURL == r.url ? "checkmark" : "doc.on.doc")
-                                                        .font(.system(size: 11))
+                                                        .font(.system(size: 11, weight: .medium))
                                                 }
                                                 .buttonStyle(.plain)
                                                 .foregroundColor(.accentColor)

@@ -13,8 +13,6 @@ struct TodoViews: View {
     @State private var isSorting = false
     @State private var editingItem: TodoItem?
     @State private var previewItem: TodoItem?
-    @State private var completingItem: TodoItem?
-    @State private var deletingItem: TodoItem?
     @State private var showNewForm = false
 
     private var activeItems: [TodoItem] {
@@ -44,7 +42,7 @@ struct TodoViews: View {
                 Text("待办事项")
                     .font(.system(size: 19, weight: .bold))
                 Text("未办 \(uncompletedCount) · 已办 \(completedCount)")
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.themeText3)
                 Spacer()
                 if selectedStatus == 0 && searchText.isEmpty {
@@ -97,10 +95,10 @@ struct TodoViews: View {
             if visibleItems.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: selectedStatus == 1 ? "checkmark.seal" : "checklist")
-                        .font(.system(size: 36))
+                        .font(.system(size: 36, weight: .medium))
                         .foregroundColor(.gray)
                     Text(selectedStatus == 1 ? "暂无已办事项" : "暂无待办")
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.themeText3)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -109,8 +107,19 @@ struct TodoViews: View {
                     ForEach(visibleItems) { item in
                         TodoRow(item: item, showComplete: !item.isCompleted, isSorting: isSorting && selectedStatus == 0,
                                 onMoveUp: { move(item, up: true) }, onMoveDown: { move(item, up: false) },
-                                onComplete: { completingItem = item },
-                                onEdit: { editingItem = item }, onDelete: { deletingItem = item })
+                                onComplete: {
+                                    MacAlert.confirm("确认已办？", message: "该事项将移到「已办」列表。",
+                                                      confirmTitle: "确认已办", destructive: false) {
+                                        manager.toggleTodo(item)
+                                    }
+                                },
+                                onEdit: { editingItem = item },
+                                onDelete: {
+                                    MacAlert.confirm("确认删除？", message: "删除后可在回收站找回。", confirmTitle: "确定删除") {
+                                        manager.softDeleteTodo(item)
+                                        MacToastCenter.show("已删除，可在回收站还原")
+                                    }
+                                })
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 if item.isCompleted { previewItem = item } else { editingItem = item }
@@ -131,22 +140,7 @@ struct TodoViews: View {
         .sheet(item: $previewItem) { item in
             TodoItemFormView(manager: manager, item: item, readOnly: true, onClose: { previewItem = nil })
         }
-        // 完成确认
-        .alert("确认已办？", isPresented: Binding(get: { completingItem != nil }, set: { if !$0 { completingItem = nil } })) {
-            Button("取消", role: .cancel) { completingItem = nil }
-            Button("确认已办") {
-                if let item = completingItem { manager.toggleTodo(item) }
-                completingItem = nil
-            }
-        } message: { Text("该事项将移到「已办」列表。") }
-        // 删除确认
-        .alert("确认删除？", isPresented: Binding(get: { deletingItem != nil }, set: { if !$0 { deletingItem = nil } })) {
-            Button("取消", role: .cancel) { deletingItem = nil }
-            Button("确定删除", role: .destructive) {
-                if let item = deletingItem { manager.softDeleteTodo(item) }
-                deletingItem = nil
-            }
-        } message: { Text("删除后可在回收站找回。") }
+        // v1.2.15：完成/删除确认已改为 AppKit 原生 MacAlert（移除 SwiftUI alert——多弹窗修饰符共存会互相屏蔽导致删除无反应）
     }
 
     private var uncompletedCount: Int { activeItems.filter { !$0.isCompleted }.count }
@@ -208,11 +202,11 @@ struct TodoRow: View {
                     .lineLimit(2)
                 HStack(spacing: 8) {
                     Text(text(item.createdDate))
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.themeText3)
                     if let reminder = item.reminderDate, !item.isCompleted {
                         Text("⏰ \(reminder.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.orange)
                     }
                 }
@@ -240,7 +234,7 @@ struct TodoRow: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.green)
                     Text(text(item.completedDate))
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.themeText3)
                 }
             }
@@ -273,7 +267,6 @@ struct TodoItemFormView: View {
     @State private var content: String
     @State private var reminderEnabled: Bool
     @State private var reminderDate: Date
-    @State private var restoreConfirm = false
 
     init(manager: DataManager, item: TodoItem?, readOnly: Bool = false, onClose: @escaping () -> Void) {
         self.manager = manager
@@ -294,14 +287,14 @@ struct TodoItemFormView: View {
                 Text(readOnly ? "待办预览" : (isNew ? "新增待办" : "编辑待办"))
                     .font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18, weight: .medium)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
 
             if readOnly {
                 infoRow("新增时间", createdDate.formatted(date: .numeric, time: .omitted))
                 Text(content)
-                    .font(.system(size: 15))
+                    .font(.system(size: 15, weight: .medium))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if let reminder = item?.reminderDate {
@@ -312,24 +305,24 @@ struct TodoItemFormView: View {
                 }
             } else {
                 HStack(spacing: 12) {
-                    Text("新增时间").font(.system(size: 14)).foregroundColor(.themeText3).frame(width: 70, alignment: .leading)
+                    Text("新增时间").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3).frame(width: 70, alignment: .leading)
                     DatePicker("", selection: $createdDate, displayedComponents: .date)
                         .labelsHidden()
                     Spacer()
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("待办内容").font(.system(size: 14)).foregroundColor(.themeText3)
+                    Text("待办内容").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                     TextEditor(text: $content)
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                         .frame(height: 80)
                         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(hex: "CCCCCC")))
                 }
                 Toggle("设置提醒", isOn: $reminderEnabled)
                     .toggleStyle(.checkbox)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                 if reminderEnabled {
                     HStack(spacing: 12) {
-                        Text("提醒时间").font(.system(size: 14)).foregroundColor(.themeText3).frame(width: 70, alignment: .leading)
+                        Text("提醒时间").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3).frame(width: 70, alignment: .leading)
                         DatePicker("", selection: $reminderDate)
                             .labelsHidden()
                     }
@@ -340,8 +333,16 @@ struct TodoItemFormView: View {
 
             HStack {
                 if readOnly, item?.isCompleted == true {
-                    Button("恢复未办理") { restoreConfirm = true }
-                        .macSecondaryButton()
+                    Button("恢复未办理") {
+                        MacAlert.confirm("恢复未办理？", message: "该事项将回到未办列表。",
+                                          confirmTitle: "确认恢复", destructive: false) {
+                            if let item {
+                                manager.toggleTodo(item)
+                                onClose()
+                            }
+                        }
+                    }
+                    .macSecondaryButton()
                     Spacer()
                     Button("关闭") { onClose() }.macPrimaryButton()
                 } else {
@@ -355,20 +356,12 @@ struct TodoItemFormView: View {
         }
         .padding(20)
         .frame(width: 430)
-        .alert("恢复未办理？", isPresented: $restoreConfirm) {
-            Button("取消", role: .cancel) { }
-            Button("确认恢复") {
-                if let item {
-                    manager.toggleTodo(item)
-                    onClose()
-                }
-            }
-        } message: { Text("该事项将回到未办列表。") }
+        // v1.2.15：恢复确认改为 AppKit 原生 MacAlert
     }
 
     private func infoRow(_ key: String, _ value: String) -> some View {
         HStack {
-            Text(key).font(.system(size: 13)).foregroundColor(.themeText3)
+            Text(key).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
             Text(value).font(.system(size: 14, weight: .medium))
             Spacer()
         }

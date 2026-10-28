@@ -127,10 +127,10 @@ struct ProfitView: View {
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
             Divider()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    // 年度合计卡片
-                    HStack(spacing: 10) {
+            // v1.2.15：去掉外层 ScrollView + 固定 minHeight，月度明细表格撑满剩余窗口高度（消除下方大片空白）
+            VStack(alignment: .leading, spacing: 14) {
+                // 年度合计卡片
+                HStack(spacing: 10) {
                         SummaryCard(title: "成交", value: "\(filteredTotal.dealCount)单",
                                     color: Color(hex: "F59E0B"), bgColor: Color(hex: "FFF3E0"))
                         SummaryCard(title: "中介费", value: "¥\(Int(filteredTotal.agentFee))",
@@ -149,7 +149,7 @@ struct ProfitView: View {
                             .font(.system(size: 16, weight: .semibold))
                         if monthlySummaries.isEmpty {
                             Text("暂无统计数据")
-                                .font(.system(size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.themeText3)
                                 .padding(.vertical, 12)
                         } else {
@@ -161,19 +161,19 @@ struct ProfitView: View {
                                 }
                                 .width(min: 110, ideal: 130, max: .infinity)
                                 TableColumn("成交") { s in
-                                    Text("\(s.dealCount)单").font(.system(size: 16)).padding(.vertical, 6)
+                                    Text("\(s.dealCount)单").font(.system(size: 16, weight: .medium)).padding(.vertical, 6)
                                 }
                                 .width(min: 70, ideal: 90, max: .infinity)
                                 TableColumn("中介费") { s in
-                                    Text("¥\(Int(s.agentFee))").font(.system(size: 16)).padding(.vertical, 6)
+                                    Text("¥\(Int(s.agentFee))").font(.system(size: 16, weight: .medium)).padding(.vertical, 6)
                                 }
                                 .width(min: 110, ideal: 140, max: .infinity)
                                 TableColumn("杂项收入") { s in
-                                    Text("¥\(Int(s.miscIncome))").font(.system(size: 16)).padding(.vertical, 6)
+                                    Text("¥\(Int(s.miscIncome))").font(.system(size: 16, weight: .medium)).padding(.vertical, 6)
                                 }
                                 .width(min: 110, ideal: 130, max: .infinity)
                                 TableColumn("杂项支出") { s in
-                                    Text("¥\(Int(s.miscExpense))").font(.system(size: 16)).padding(.vertical, 6)
+                                    Text("¥\(Int(s.miscExpense))").font(.system(size: 16, weight: .medium)).padding(.vertical, 6)
                                 }
                                 .width(min: 110, ideal: 130, max: .infinity)
                                 TableColumn("净收入") { s in
@@ -184,11 +184,11 @@ struct ProfitView: View {
                                 }
                                 .width(min: 120, ideal: 150, max: .infinity)
                             }
-                            .frame(minHeight: 220)
+                            .frame(maxHeight: .infinity)   // 撑满剩余高度，表格自身滚动
                         }
                     }
                     .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(Color.themePanel)
                     .cornerRadius(12)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.themeBorder))
@@ -197,11 +197,9 @@ struct ProfitView: View {
                 }
                 .padding(16)
             }
-        }
         .background(Color.themeBg)
     }
 }
-
 struct SummaryCard: View {
     let title: String
     let value: String
@@ -210,7 +208,7 @@ struct SummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 14)).foregroundColor(.themeText3)
+            Text(title).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
             Text(value).font(.system(size: 19, weight: .bold)).foregroundColor(color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -122,7 +122,6 @@ struct HouseListView: View {
     @State private var selectedHouse: House?
     @State private var editingHouse: House?
     @State private var sharingHouse: House?
-    @State private var pendingDelete: House?
     @State private var showNew = false
     @State private var showTrash = false
     @State private var showBatchImport = false
@@ -171,7 +170,13 @@ struct HouseListView: View {
     private var stats: DataManager.HouseStats { manager.houseStats(filtered) }
 
     private func confirmDelete(_ house: House) {
-        pendingDelete = house
+        // v1.2.15：房源删除 = 直接彻底删除（不进回收站，与 iOS 对齐）；AppKit 原生确认框（绕开 SwiftUI 多弹窗互相屏蔽）
+        MacAlert.confirm("确定删除 \(house.displayRoomNo) 吗？",
+                         message: "房源将直接删除（不进入回收站），本地与云端媒体数据一并删除，不可恢复。",
+                         confirmTitle: "彻底删除") {
+            manager.permanentDeleteHouse(house)
+            MacToastCenter.show("已彻底删除")
+        }
     }
 
     var body: some View {
@@ -181,7 +186,7 @@ struct HouseListView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("房源管理").font(.system(size: 20, weight: .bold))
                     Text("共 \(stats.total) 套 · 1座 \(stats.tower1) · 2座 \(stats.tower2) · 待租 \(stats.available) · 已租 \(stats.rented) · 实拍图 \(stats.withPhoto)/无 \(stats.withoutPhoto)")
-                        .font(.system(size: 12)).foregroundColor(.themeText3)
+                        .font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                 }
                 Spacer()
                 Button {
@@ -217,12 +222,6 @@ struct HouseListView: View {
                     Label("新增房源", systemImage: "plus")
                 }
                 .macPrimaryButton()
-                Button {
-                    showTrash = true
-                } label: {
-                    Label("回收站", systemImage: "trash")
-                }
-                .macSecondaryButton()
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)
@@ -233,10 +232,10 @@ struct HouseListView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(localRefreshing ? "本地媒体检查…" : (syncStatus.isEmpty ? "正在同步…" : syncStatus))
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.themeText2)
                         Spacer()
-                        if syncing { Text("\(Int(syncProgress * 100))%").font(.system(size: 12)).foregroundColor(.themeText2) }
+                        if syncing { Text("\(Int(syncProgress * 100))%").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2) }
                         Button("收起") { withAnimation { syncMinimized = true } }
                             .macSecondaryButton()
                     }
@@ -251,7 +250,7 @@ struct HouseListView: View {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small).scaleEffect(0.7)
                     Text(localRefreshing ? "本地媒体检查进行中…" : "同步任务进行中…")
-                        .font(.system(size: 12)).foregroundColor(.themeText2)
+                        .font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
                     Spacer()
                     Button("展开") { withAnimation { syncMinimized = false } }
                         .macSecondaryButton()
@@ -288,17 +287,23 @@ struct HouseListView: View {
                             if selectedLayouts.contains(opt) { selectedLayouts.remove(opt) }
                             else { selectedLayouts.insert(opt) }
                         } label: {
-                            Label(opt, systemImage: selectedLayouts.contains(opt) ? "checkmark.square.fill" : "square")
+                            // 手绘复选框（Menu 内 Label 的 systemImage 在 macOS 常不渲染，必须显式 HStack 才可见）
+                            HStack(spacing: 8) {
+                                Image(systemName: selectedLayouts.contains(opt) ? "checkmark.square.fill" : "square")
+                                    .frame(width: 16)
+                                Text(opt)
+                            }
                         }
                     }
                     Divider()
                     Button("全部户型") { selectedLayouts.removeAll() }
+                    Button("全选户型") { selectedLayouts = Set(layoutOptions.filter { $0 != "全部户型" }) }
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "square.on.square")
                         Text(selectedLayouts.isEmpty ? "全部户型" : "户型(\(selectedLayouts.count))")
                     }
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, weight: .medium))
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Color.themePanel)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -332,7 +337,7 @@ struct HouseListView: View {
                     Spacer()
                     if !collectionURL.isEmpty {
                         Text("合集链接已生成：\(collectionURL)")
-                            .font(.system(size: 13)).foregroundColor(.themeAccent).lineLimit(1)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeAccent).lineLimit(1)
                     }
                     Button("批量已租") { batchMarkRented() }.macPrimaryButton().disabled(batchBusy || selectedKeys.isEmpty)
                     Button("批量删除") { batchDelete() }.macSecondaryButton().disabled(batchBusy || selectedKeys.isEmpty)
@@ -346,10 +351,10 @@ struct HouseListView: View {
             if filtered.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "house")
-                        .font(.system(size: 40))
+                        .font(.system(size: 40, weight: .medium))
                         .foregroundColor(.gray)
                     Text("没有符合条件的房源")
-                        .font(.system(size: 16))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.themeText3)
                     Button("新增房源") { showNew = true }
                         .macSecondaryButton()
@@ -418,17 +423,8 @@ struct HouseListView: View {
                 sharingHouse = nil
             }
         }
-        .confirmationDialog("确定删除 \(pendingDelete?.displayRoomNo ?? "") 吗？删除后可到回收站还原。",
-                            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
-            Button("删除", role: .destructive) {
-                if let h = pendingDelete {
-                    manager.softDeleteHouse(h)
-                    MacToastCenter.show("已删除，可在回收站还原")
-                }
-                pendingDelete = nil
-            }
-            Button("取消", role: .cancel) { pendingDelete = nil }
-        }
+        // v1.2.15：删除确认已改为 MacAlert（AppKit 原生），此 confirmationDialog 移除——
+        // 与下方 syncAlert 共存会互相屏蔽导致「点删除无反应」
         .sheet(isPresented: $showBatchImport) {
             HouseBatchImportView(manager: manager) {
                 showBatchImport = false
@@ -582,18 +578,22 @@ struct HouseListView: View {
     }
 
     private func batchDelete() {
-        batchBusy = true
-        var count = 0
-        for house in filtered where selectedKeys.contains(house.id) {
-            manager.softDeleteHouse(house)
-            count += 1
-        }
-        Task {
-            if CosConfig.load() != nil { _ = await manager.pushToCloud() }
-            selectedKeys.removeAll()
-            selecting = false
-            batchBusy = false
-            MacToastCenter.show("已删除 \(count) 间（可到回收站恢复）")
+        // v1.2.15：批量删除房源 = 直接彻底删除（不进回收站）
+        let count = filtered.filter { selectedKeys.contains($0.id) }.count
+        MacAlert.confirm("确定彻底删除选中的 \(count) 间房源吗？",
+                         message: "房源将直接删除（不进入回收站），本地与云端媒体数据一并删除，不可恢复。",
+                         confirmTitle: "彻底删除") {
+            batchBusy = true
+            for house in filtered where selectedKeys.contains(house.id) {
+                manager.permanentDeleteHouse(house)
+            }
+            Task {
+                if CosConfig.load() != nil { _ = await manager.pushToCloud() }
+                selectedKeys.removeAll()
+                selecting = false
+                batchBusy = false
+                MacToastCenter.show("已彻底删除 \(count) 间")
+            }
         }
     }
 
@@ -663,7 +663,7 @@ struct HouseCard: View {
                         StatusBadge(status: house.status)
                         Spacer()
                         Text(house.photoSummary)
-                            .font(.system(size: 11))
+                            .font(.system(size: 11, weight: .medium))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.black.opacity(0.55))
@@ -675,7 +675,7 @@ struct HouseCard: View {
                         ZStack(alignment: .topTrailing) {
                             Color.clear
                             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 22))
+                                .font(.system(size: 22, weight: .medium))
                                 .foregroundColor(isSelected ? .themeAccent : .white.opacity(0.85))
                                 .background(Circle().fill(Color.black.opacity(0.35)))
                                 .padding(6)
@@ -683,24 +683,25 @@ struct HouseCard: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    // 第一行：房号（左） | 户型+房东（中） | 价格（右）
+                    // 第一行（v1.2.11 布局）：房号+户型（左 VStack） | 房东名（中，不带「房东」二字） | 租金（右）
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(house.displayRoomNo)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.themeText)
-                            .lineLimit(1)
-                        Spacer()
-                        HStack(spacing: 5) {
-                            Text(house.layout)
-                                .font(.system(size: 12))
-                                .foregroundColor(.themeText3)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(house.displayRoomNo)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.themeText)
                                 .lineLimit(1)
-                            Text(house.landlord)
-                                .font(.system(size: 12))
-                                .foregroundColor(.themeText2)
+                            Text(house.layout)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.themeText3)
                                 .lineLimit(1)
                         }
                         .layoutPriority(1)
+                        Spacer()
+                        Text(house.landlord)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.themeText2)
+                            .lineLimit(1)
+                            .padding(.top, 12)   // 与房号行对齐
                         Spacer()
                         Text("¥\(house.price)")
                             .font(.system(size: 15, weight: .bold))
@@ -709,7 +710,7 @@ struct HouseCard: View {
                     // 第二行：备注（左，无备注显示-） | 双端标识（右）
                     HStack {
                         Text(house.remark.isEmpty ? "-" : house.remark)
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.themeText3)
                             .lineLimit(1)
                         Spacer()
@@ -746,7 +747,7 @@ struct HouseRow: View {
         HStack(spacing: 12) {
             if showCheck {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundColor(isSelected ? .themeAccent : .themeText3)
             }
             MediaThumbView(house: house, size: 44)
@@ -759,12 +760,12 @@ struct HouseRow: View {
                     CloudStatusBadge(raw: house.cloudStatusRaw)
                 }
                 Text("\(house.layout) · \(house.landlord) · ¥\(house.price)/月")
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.themeText2)
             }
             Spacer()
             Text(house.photoSummary)
-                .font(.system(size: 13))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.themeText3)
         }
         .padding(.vertical, 4)

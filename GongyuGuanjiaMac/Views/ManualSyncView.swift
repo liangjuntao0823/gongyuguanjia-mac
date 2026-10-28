@@ -47,7 +47,7 @@ struct ManualSyncView: View {
                                         Text("地址 \(hostIP):8765")
                                             .font(.system(size: 15, weight: .semibold))
                                         Text("iOS 端操作：「手动同步 → 扫一扫」扫此码即可从 Mac 拉取经营数据与房源。")
-                                            .font(.system(size: 14))
+                                            .font(.system(size: 14, weight: .medium))
                                             .foregroundColor(.themeText3)
                                             .fixedSize(horizontal: false, vertical: true)
                                         HStack(spacing: 10) {
@@ -59,7 +59,7 @@ struct ManualSyncView: View {
                                 }
                             } else {
                                 ProgressView().controlSize(.small)
-                                Text("正在生成同步码…").font(.system(size: 14)).foregroundColor(.themeText3)
+                                Text("正在生成同步码…").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                             }
                         }
                     }
@@ -70,17 +70,17 @@ struct ManualSyncView: View {
                             Text(hasSynced ? "已建立同步基线（后续可继续增量同步）" : "尚未进行过手动同步（或基线已清空）")
                                 .foregroundColor(.themeText3)
                         }
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                     }
                     infoCard("说明") {
                         Text("Mac 版已内置同步协议层（SyncCore / SyncDTO / SwiftDataSyncSnapshot），与 iOS 版同一套数据结构。由于 Mac 无摄像头扫码，局域网扫码同步改为云端同步通道：在「设置 → 云端同步」中配置同一用户名，即可与 iOS 双向同步房源与经营数据。")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText3)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     infoCard("数据迁移（对应 iOS MigrationView）") {
                         Text("iOS 版的 zfgj 迁移文件在 Mac 端以备份文件形态实现：在「设置 → 备份与恢复 → 打开备份中心」中，用「恢复」选择备份文件即可完整迁移经营数据+房源字段；全量备份还含实拍照片/视频。")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.themeText3)
                             .fixedSize(horizontal: false, vertical: true)
                         HStack(spacing: 10) {

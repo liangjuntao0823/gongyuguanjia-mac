@@ -142,6 +142,26 @@ struct MacToastCenter {
     }
 }
 
+// MARK: - 原生确认弹窗（v1.2.15 根治「删除无反应」）
+// SwiftUI 同一视图链上挂多个 confirmationDialog/alert 在 macOS 上会互相屏蔽（只显示其中一个，甚至全不显示）。
+// 全部删除/危险确认统一改用 AppKit NSAlert：100% 可靠，且为「进回收站可还原」的软删除提供确认。
+enum MacAlert {
+    static func confirm(_ title: String, message: String, confirmTitle: String = "删除",
+                        destructive: Bool = true, onConfirm: @escaping () -> Void) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = destructive ? .warning : .informational
+            alert.messageText = title
+            alert.informativeText = message
+            alert.addButton(withTitle: confirmTitle)
+            alert.addButton(withTitle: "取消")
+            if alert.runModal() == .alertFirstButtonReturn {
+                onConfirm()
+            }
+        }
+    }
+}
+
 extension Notification.Name {
     static let macShowToast = Notification.Name("macShowToast")
 }
@@ -203,7 +223,7 @@ struct MacPrimaryButtonStyle: ButtonStyle {
 struct MacSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 14))
+            .font(.system(size: 14, weight: .medium))
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
             .foregroundColor(.themeText)

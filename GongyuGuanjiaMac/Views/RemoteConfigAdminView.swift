@@ -43,7 +43,7 @@ struct RemoteConfigAdminView: View {
             if saving { ProgressView("保存中…").controlSize(.small) }
 
             if !statusText.isEmpty {
-                Text(statusText).font(.system(size: 13)).foregroundColor(.themeText2)
+                Text(statusText).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText2)
             }
 
             ScrollView {
@@ -109,7 +109,7 @@ struct RemoteConfigAdminView: View {
                                         Text("\(entry.version)\(entry.date.map { " · \($0)" } ?? "")")
                                             .font(.system(size: 13, weight: .semibold))
                                         ForEach(entry.changes, id: \.self) { c in
-                                            Text("· \(c)").font(.system(size: 12)).foregroundColor(.themeText2)
+                                            Text("· \(c)").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText2)
                                         }
                                     }
                                     Spacer()
@@ -121,7 +121,7 @@ struct RemoteConfigAdminView: View {
                                 .background(RoundedRectangle(cornerRadius: 6).fill(Color.themeBg.opacity(0.5)))
                             }
                         } else {
-                            Text("暂无云端更新日志，可在下方添加").font(.system(size: 12)).foregroundColor(.themeText3)
+                            Text("暂无云端更新日志，可在下方添加").font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                         }
                         Divider()
                         HStack {
@@ -139,10 +139,10 @@ struct RemoteConfigAdminView: View {
                     // 当前缓存
                     configSection("本地缓存") {
                         Text("\(RemoteConfig.summary)")
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.themeText2)
                         Text("云端 config.json 优先；断网读本地缓存；均无则用内置默认值。")
-                            .font(.system(size: 12)).foregroundColor(.themeText3)
+                            .font(.system(size: 12, weight: .medium)).foregroundColor(.themeText3)
                     }
                 }
                 .padding(.bottom, 20)

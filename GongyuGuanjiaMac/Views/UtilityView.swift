@@ -117,7 +117,7 @@ struct UtilityView: View {
                     }
                     section("结算单") {
                         Text(statement)
-                            .font(.system(size: 16))
+                            .font(.system(size: 16, weight: .medium))
                             .textSelection(.enabled)
                             .padding(.vertical, 6)
                         HStack(spacing: 10) {
@@ -174,18 +174,18 @@ struct UtilityView: View {
 
     private func amountRow(_ title: String, _ text: Binding<String>, unit: String = "") -> some View {
         HStack {
-            Text(title).font(.system(size: 15))
+            Text(title).font(.system(size: 15, weight: .medium))
             Spacer()
             TextField("请输入", text: text)
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 120)
-            if !unit.isEmpty { Text(unit).font(.system(size: 14)).foregroundColor(.themeText3) }
+            if !unit.isEmpty { Text(unit).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3) }
         }
     }
     private func infoRow(_ title: String, _ value: String) -> some View {
         HStack {
-            Text(title).font(.system(size: 15))
+            Text(title).font(.system(size: 15, weight: .medium))
             Spacer()
             Text(value).font(.system(size: 14, weight: .semibold))
         }
@@ -226,7 +226,6 @@ struct UtilityHistoryView: View {
     @State private var searchText = ""
     @State private var selected: UtilitySettlementHistory?
     @State private var editing: UtilitySettlementHistory?
-    @State private var deleting: UtilitySettlementHistory?
 
     private var histories: [UtilitySettlementHistory] {
         manager.utilityHistories.sorted { $0.settledAt > $1.settledAt }
@@ -259,8 +258,8 @@ struct UtilityHistoryView: View {
                 }) { item in
                     VStack(alignment: .leading, spacing: 5) {
                         Text(item.roomNumber + "房").font(.system(size: 15, weight: .semibold))
-                        Text(item.settledAt.formatted(date: .numeric, time: .shortened)).font(.system(size: 13)).foregroundColor(.themeText3)
-                        Text(item.statement).font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
+                        Text(item.settledAt.formatted(date: .numeric, time: .shortened)).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
+                        Text(item.statement).font(.system(size: 13, weight: .medium)).fixedSize(horizontal: false, vertical: true)
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { selected = item }
@@ -273,7 +272,15 @@ struct UtilityHistoryView: View {
                             MacToastCenter.show("已复制")
                         } label: { Label("复制", systemImage: "doc.on.doc") }
                         Button { editing = item } label: { Label("编辑", systemImage: "pencil") }
-                        Button(role: .destructive) { deleting = item } label: { Label("删除", systemImage: "trash") }
+                        Button(role: .destructive) {
+                            // v1.2.15：AppKit 原生确认（绕开与「写入成功」alert 共存互相屏蔽）
+                            MacAlert.confirm("确认删除这条结算记录？", message: "删除后无法恢复。", confirmTitle: "确定删除") {
+                                manager.mainContext.delete(item)
+                                try? manager.mainContext.save()
+                                NotificationCenter.default.post(name: .macDataChanged, object: nil)
+                                MacToastCenter.show("已删除")
+                            }
+                        } label: { Label("删除", systemImage: "trash") }
                     }
                 }
             }
@@ -281,19 +288,6 @@ struct UtilityHistoryView: View {
         .frame(width: 560, height: 520)
         .sheet(item: $selected) { UtilityHistoryPreview(history: $0) }
         .sheet(item: $editing) { UtilityHistoryEditView(manager: manager, history: $0) }
-        .confirmationDialog("确认删除这条结算记录？删除后无法恢复。",
-                            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
-            Button("确定删除", role: .destructive) {
-                if let d = deleting {
-                    manager.mainContext.delete(d)
-                    try? manager.mainContext.save()
-                    NotificationCenter.default.post(name: .macDataChanged, object: nil)
-                    MacToastCenter.show("已删除")
-                }
-                deleting = nil
-            }
-            Button("取消", role: .cancel) { deleting = nil }
-        }
     }
 }
 
@@ -326,7 +320,7 @@ struct UtilityHistoryEditView: View {
             .padding(14)
             Divider()
             TextEditor(text: $text)
-                .font(.system(size: 15))
+                .font(.system(size: 15, weight: .medium))
                 .padding(10)
         }
         .frame(width: 520, height: 380)
@@ -362,7 +356,7 @@ struct UtilityStatementCard: View {
             Text(history.roomNumber + "房水电结算单").font(.system(size: 23, weight: .bold))
             Text(history.settledAt.formatted(date: .long, time: .omitted)).foregroundColor(.secondary)
             Divider()
-            Text(history.statement).font(.system(size: 17)).fixedSize(horizontal: false, vertical: true)
+            Text(history.statement).font(.system(size: 17, weight: .medium)).fixedSize(horizontal: false, vertical: true)
             Divider()
             HStack {
                 Text("电费 \(Int(history.electricCost))元")

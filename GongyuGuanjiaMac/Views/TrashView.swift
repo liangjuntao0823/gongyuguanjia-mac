@@ -30,7 +30,6 @@ struct TrashView: View {
     let onClose: () -> Void
 
     @State private var filter: TrashFilter = .all
-    @State private var showClearAllConfirm = false
 
     private var deletedDeals: [DealRecord] { manager.deals.filter { $0.isDeleted == true }.sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) } }
     private var deletedIncomes: [MiscIncome] { manager.miscIncomes.filter { $0.isDeleted == true }.sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) } }
@@ -118,10 +117,14 @@ struct TrashView: View {
             HStack {
                 Text("回收站").font(.system(size: 18, weight: .bold))
                 Text("共 \(totalCount) 条")
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.themeText3)
                 Spacer()
-                Button("清空回收站") { showClearAllConfirm = true }
+                Button("清空回收站") {
+                    MacAlert.confirm("清空回收站？",
+                                     message: "将彻底删除全部 \(totalCount) 条记录（房源媒体文件一并删除），且无法恢复。",
+                                     confirmTitle: "彻底清空") { clearAll() }
+                }
                     .macSecondaryButton()
                 Button("关闭") { onClose() }
                     .macPrimaryButton()
@@ -155,10 +158,10 @@ struct TrashView: View {
             if items.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "trash")
-                        .font(.system(size: 40))
+                        .font(.system(size: 40, weight: .medium))
                         .foregroundColor(.gray)
                     Text("回收站为空")
-                        .font(.system(size: 16))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.themeText3)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -170,11 +173,11 @@ struct TrashView: View {
                             .frame(width: 22)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(item.title).font(.system(size: 14, weight: .semibold))
-                            Text(item.subtitle).font(.system(size: 13)).foregroundColor(.themeText3)
+                            Text(item.subtitle).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                         }
                         Spacer()
                         Text(item.deletedAt.map { FormatKit.dateStr($0) } ?? "")
-                            .font(.system(size: 13))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.themeText3)
                         Button("还原") { item.restore() }.macSecondaryButton()
                         Button {
@@ -186,11 +189,7 @@ struct TrashView: View {
                 }
             }
         }
-        .confirmationDialog("清空回收站将彻底删除全部 \(totalCount) 条记录（房源媒体文件一并删除），且无法恢复。",
-                            isPresented: $showClearAllConfirm) {
-            Button("彻底清空", role: .destructive) { clearAll() }
-            Button("取消", role: .cancel) { showClearAllConfirm = false }
-        }
+        // v1.2.15：清空回收站确认改为 AppKit 原生 MacAlert
     }
 
     private func kindIcon(_ kind: TrashFilter) -> String {

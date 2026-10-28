@@ -22,8 +22,6 @@ struct DealsView: View {
     @State private var editingDeal: DealRecord?
     @State private var editingIncome: MiscIncome?
     @State private var editingExpense: MiscExpense?
-    @State private var deletingIncome: MiscIncome?
-    @State private var deletingExpense: MiscExpense?
 
     /// 年/月过滤（nil=全部；年筛选可选列表内出现过的年份）
     private var availableYears: [Int] {
@@ -154,20 +152,7 @@ struct DealsView: View {
         .sheet(item: $editingExpense) { exp in
             MiscEditor(manager: manager, expense: exp, isIncome: false) { editingExpense = nil }
         }
-        .confirmationDialog("确定删除这条杂项收入吗？删除后可在回收站还原。", isPresented: Binding(get: { deletingIncome != nil }, set: { if !$0 { deletingIncome = nil } })) {
-            Button("确定删除", role: .destructive) {
-                if let inc = deletingIncome { manager.softDeleteMiscIncome(inc); MacToastCenter.show("已删除") }
-                deletingIncome = nil
-            }
-            Button("取消", role: .cancel) { deletingIncome = nil }
-        }
-        .confirmationDialog("确定删除这条杂项支出吗？删除后可在回收站还原。", isPresented: Binding(get: { deletingExpense != nil }, set: { if !$0 { deletingExpense = nil } })) {
-            Button("确定删除", role: .destructive) {
-                if let exp = deletingExpense { manager.softDeleteMiscExpense(exp); MacToastCenter.show("已删除") }
-                deletingExpense = nil
-            }
-            Button("取消", role: .cancel) { deletingExpense = nil }
-        }
+        // v1.2.15：杂项删除确认改为 AppKit 原生 MacAlert（移除 SwiftUI confirmationDialog——多弹窗修饰符共存会互相屏蔽导致删除无反应）
     }
 
     // MARK: 成交列表
@@ -175,29 +160,60 @@ struct DealsView: View {
         Group {
             if deals.isEmpty {
                 VStack(spacing: 10) {
-                    Image(systemName: "doc.text").font(.system(size: 40)).foregroundColor(.gray)
-                    Text("暂无成交记录").font(.system(size: 16)).foregroundColor(.themeText3)
+                    Image(systemName: "doc.text").font(.system(size: 40, weight: .medium)).foregroundColor(.gray)
+                    Text("暂无成交记录").font(.system(size: 16, weight: .medium)).foregroundColor(.themeText3)
                     Button("新增成交") { showingAddDeal = true }.macSecondaryButton()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Table(deals, selection: $selection) {
-                    TableColumn("成交日期") { deal in Text(FormatKit.dateStr(deal.date)) }.width(95)
-                    TableColumn("房号") { deal in Text(deal.roomNumber) }.width(80)
-                    TableColumn("房东") { deal in Text(deal.landlord) }.width(70)
-                    TableColumn("户型") { deal in Text(deal.unitType) }.width(70)
-                    TableColumn("租期") { deal in Text(deal.leaseDuration) }.width(70)
-                    TableColumn("租金/月") { deal in Text("¥\(FormatKit.money(deal.rent))") }.width(90)
-                    TableColumn("押金") { deal in Text("¥\(FormatKit.money(deal.deposit))") }.width(80)
-                    TableColumn("中介费") { deal in Text("¥\(FormatKit.money(deal.totalFee))") }.width(80)
-                    TableColumn("经办人") { deal in Text(deal.manager) }.width(70)
+                    TableColumn("成交日期") { deal in
+                        dealCell(deal) { Text(FormatKit.dateStr(deal.date)) }
+                    }.width(95)
+                    TableColumn("房号") { deal in
+                        dealCell(deal) { Text(deal.roomNumber) }
+                    }.width(80)
+                    TableColumn("房东") { deal in
+                        dealCell(deal) { Text(deal.landlord) }
+                    }.width(70)
+                    TableColumn("户型") { deal in
+                        dealCell(deal) { Text(deal.unitType) }
+                    }.width(70)
+                    TableColumn("租期") { deal in
+                        dealCell(deal) { Text(deal.leaseDuration) }
+                    }.width(70)
+                    TableColumn("租金/月") { deal in
+                        dealCell(deal) { Text("¥\(FormatKit.money(deal.rent))") }
+                    }.width(90)
+                    TableColumn("押金") { deal in
+                        dealCell(deal) { Text("¥\(FormatKit.money(deal.deposit))") }
+                    }.width(80)
+                    TableColumn("中介费") { deal in
+                        dealCell(deal) { Text("¥\(FormatKit.money(deal.totalFee))") }
+                    }.width(80)
+                    TableColumn("经办人") { deal in
+                        dealCell(deal) { Text(deal.manager) }
+                    }.width(70)
                     TableColumn("操作") { deal in
                         HStack(spacing: 6) {
                             Button("详情") { viewingDeal = deal }.macSecondaryButton()
                             Button("编辑") { editingDeal = deal }.macSecondaryButton()
                             Button {
-                                manager.softDeleteDeal(deal); MacToastCenter.show("已删除，可在回收站还原")
+                                MacAlert.confirm("确定删除 \(deal.roomNumber) 这笔成交吗？", message: "删除后可在回收站还原。") {
+                                    manager.softDeleteDeal(deal); MacToastCenter.show("已删除，可在回收站还原")
+                                }
                             } label: { Image(systemName: "trash") }.macSecondaryButton()
+                        }
+                        .contextMenu {
+                            Button("详情") { viewingDeal = deal }
+                            Button("编辑") { editingDeal = deal }
+                            Divider()
+                            Button("删除", role: .destructive) {
+                                MacAlert.confirm("确定删除 \(deal.roomNumber) 这笔成交吗？", message: "删除后可在回收站还原。") {
+                                    manager.softDeleteDeal(deal)
+                                    MacToastCenter.show("已删除，可在回收站还原")
+                                }
+                            }
                         }
                     }.width(170)
                 }
@@ -207,13 +223,32 @@ struct DealsView: View {
                         Button("编辑") { editingDeal = deal }
                         Divider()
                         Button("删除", role: .destructive) {
-                            manager.softDeleteDeal(deal)
-                            MacToastCenter.show("已删除，可在回收站还原")
+                            MacAlert.confirm("确定删除 \(deal.roomNumber) 这笔成交吗？", message: "删除后可在回收站还原。") {
+                                manager.softDeleteDeal(deal)
+                                MacToastCenter.show("已删除，可在回收站还原")
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    /// 成交表格每行内容统一包右键菜单（macOS Table 行级右键不可靠，改为每个单元格 content 包裹，等效整行右键）
+    @ViewBuilder
+    private func dealCell<Content: View>(_ deal: DealRecord, @ViewBuilder content: () -> Content) -> some View {
+        content()
+            .contextMenu {
+                Button("详情") { viewingDeal = deal }
+                Button("编辑") { editingDeal = deal }
+                Divider()
+                Button("删除", role: .destructive) {
+                    MacAlert.confirm("确定删除 \(deal.roomNumber) 这笔成交吗？", message: "删除后可在回收站还原。") {
+                        manager.softDeleteDeal(deal)
+                        MacToastCenter.show("已删除，可在回收站还原")
+                    }
+                }
+            }
     }
 
     // MARK: 杂收杂支列表
@@ -237,9 +272,9 @@ struct DealsView: View {
     private func emptyMiscList(isIncome: Bool) -> some View {
         VStack(spacing: 10) {
             Image(systemName: isIncome ? "arrow.down.circle" : "arrow.up.circle")
-                .font(.system(size: 40)).foregroundColor(.gray)
+                .font(.system(size: 40, weight: .medium)).foregroundColor(.gray)
             Text(isIncome ? "暂无杂项收入" : "暂无杂项支出")
-                .font(.system(size: 16)).foregroundColor(.themeText3)
+                .font(.system(size: 16, weight: .medium)).foregroundColor(.themeText3)
             Button(isIncome ? "新增收入" : "新增支出") {
                 if isIncome { editingIncome = MiscIncome() } else { editingExpense = MiscExpense() }
             }.macSecondaryButton()
@@ -268,15 +303,20 @@ struct DealsView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.item).font(.system(size: 14, weight: .medium))
-                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 13)).foregroundColor(.themeText3) }
-                Text(FormatKit.dateStr(row.date)).font(.system(size: 11)).foregroundColor(.themeText3)
+                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3) }
+                Text(FormatKit.dateStr(row.date)).font(.system(size: 11, weight: .medium)).foregroundColor(.themeText3)
             }
             Spacer()
             Text("+¥\(FormatKit.money(row.amount))")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.themeRed)
             Button("编辑") { editingIncome = row }.macSecondaryButton()
-            Button { deletingIncome = row } label: { Image(systemName: "trash") }.macSecondaryButton()
+            Button {
+                MacAlert.confirm("确定删除这条杂项收入吗？", message: "删除后可在回收站还原。") {
+                    manager.softDeleteMiscIncome(row)
+                    MacToastCenter.show("已删除，可在回收站还原")
+                }
+            } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
         .padding(.vertical, 3)
         .background(highlightedID == row.id ? Color.yellow.opacity(0.3) : Color.clear)
@@ -289,8 +329,10 @@ struct DealsView: View {
             Button("编辑") { editingIncome = row }
             Divider()
             Button("删除", role: .destructive) {
-                manager.softDeleteMiscIncome(row)
-                MacToastCenter.show("已删除，可在回收站还原")
+                MacAlert.confirm("确定删除这条杂项收入吗？", message: "删除后可在回收站还原。") {
+                    manager.softDeleteMiscIncome(row)
+                    MacToastCenter.show("已删除，可在回收站还原")
+                }
             }
         }
     }
@@ -300,15 +342,20 @@ struct DealsView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.item).font(.system(size: 14, weight: .medium))
-                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 13)).foregroundColor(.themeText3) }
-                Text(FormatKit.dateStr(row.date)).font(.system(size: 11)).foregroundColor(.themeText3)
+                if !row.notes.isEmpty { Text(row.notes).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3) }
+                Text(FormatKit.dateStr(row.date)).font(.system(size: 11, weight: .medium)).foregroundColor(.themeText3)
             }
             Spacer()
             Text("-¥\(FormatKit.money(row.amount))")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.themeAccentDark)
             Button("编辑") { editingExpense = row }.macSecondaryButton()
-            Button { deletingExpense = row } label: { Image(systemName: "trash") }.macSecondaryButton()
+            Button {
+                MacAlert.confirm("确定删除这条杂项支出吗？", message: "删除后可在回收站还原。") {
+                    manager.softDeleteMiscExpense(row)
+                    MacToastCenter.show("已删除，可在回收站还原")
+                }
+            } label: { Image(systemName: "trash") }.macSecondaryButton()
         }
         .padding(.vertical, 3)
         .background(highlightedID == row.id ? Color.yellow.opacity(0.3) : Color.clear)
@@ -321,8 +368,10 @@ struct DealsView: View {
             Button("编辑") { editingExpense = row }
             Divider()
             Button("删除", role: .destructive) {
-                manager.softDeleteMiscExpense(row)
-                MacToastCenter.show("已删除，可在回收站还原")
+                MacAlert.confirm("确定删除这条杂项支出吗？", message: "删除后可在回收站还原。") {
+                    manager.softDeleteMiscExpense(row)
+                    MacToastCenter.show("已删除，可在回收站还原")
+                }
             }
         }
     }
@@ -505,7 +554,7 @@ struct DealEditor: View {
             HStack {
                 Text(deal == nil ? "新增成交" : "编辑成交").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19, weight: .medium)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
 
@@ -552,7 +601,7 @@ struct DealEditor: View {
                 }
             }
 
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14, weight: .medium)).foregroundColor(.themeDanger) }
 
             HStack {
                 Spacer()
@@ -640,15 +689,15 @@ struct DealDetailView: View {
             HStack {
                 Text("成交详情 · \(deal.roomNumber)").font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19, weight: .medium)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(rows, id: \.0) { row in
                         HStack(alignment: .top) {
-                            Text(row.0).font(.system(size: 14)).foregroundColor(.themeText3).frame(width: 80, alignment: .leading)
-                            Text(row.1).font(.system(size: 15)).textSelection(.enabled)
+                            Text(row.0).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3).frame(width: 80, alignment: .leading)
+                            Text(row.1).font(.system(size: 15, weight: .medium)).textSelection(.enabled)
                             Spacer()
                         }
                         Divider().opacity(0.4)
@@ -688,14 +737,14 @@ struct MiscEditor: View {
                 Text(isIncome ? (income == nil ? "新增收入" : "编辑收入") : (expense == nil ? "新增支出" : "编辑支出"))
                     .font(.system(size: 17, weight: .bold))
                 Spacer()
-                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19)).foregroundColor(.gray) }
+                Button { onClose() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 19, weight: .medium)).foregroundColor(.gray) }
                     .buttonStyle(.plain)
             }
             DatePicker(isIncome ? "收入日期" : "支出日期", selection: $date, displayedComponents: .date)
             TextField("项目", text: $item)
             TextField("金额", text: $amount)
             TextField("备注", text: $notes)
-            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14)).foregroundColor(.themeDanger) }
+            if !errorMessage.isEmpty { Text(errorMessage).font(.system(size: 14, weight: .medium)).foregroundColor(.themeDanger) }
             HStack {
                 Spacer()
                 Button("取消") { onClose() }.macSecondaryButton()

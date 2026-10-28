@@ -28,7 +28,7 @@ struct MainSidebar: View {
                         .padding(.leading, 14)
                         .padding(.top, 16)
                     Text("Mac 版 · v\(MacBridge.appVersion)")
-                        .font(.system(size: 14))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.themeText3)
                         .padding(.leading, 14)
                         .padding(.top, 1)
@@ -42,7 +42,7 @@ struct MainSidebar: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 18))
+                                .font(.system(size: 18, weight: .medium))
                                 .frame(width: 22)
                             Text(tab.rawValue)
                                 .font(.system(size: 16, weight: manager.selectedTab == tab ? .semibold : .regular))
@@ -63,9 +63,9 @@ struct MainSidebar: View {
                 // 底部用户信息
                 VStack(alignment: .leading, spacing: 4) {
                     Text("当前用户：\(CloudUser.displayName)")
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                     Text("云配置：\(CosConfig.load() != nil ? "已配置" : "未配置")")
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(CosConfig.load() != nil ? .themeAccent : .themeDanger)
                 }
                 .padding(12)
@@ -75,11 +75,16 @@ struct MainSidebar: View {
             .frame(width: sidebarWidth)
             .background(Color.themeHeader)
 
-            // 可拖拽分隔条：左右缩窄导航栏（150-280）
+            // 可拖拽分隔条：左右缩窄导航栏（150-280）；v1.2.15 恢复可见分割线（此前 fill 透明导致视觉无分隔）
             Rectangle()
                 .fill(Color.clear)
-                .frame(width: 6)
+                .frame(width: 8)
                 .contentShape(Rectangle())
+                .overlay(
+                    Rectangle()
+                        .fill(Color.themeBorder)
+                        .frame(width: 1)
+                )
                 .gesture(
                     DragGesture()
                         .onChanged { v in
@@ -166,14 +171,14 @@ struct InitWizardView: View {
                     onClose()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 19))
+                        .font(.system(size: 19, weight: .medium))
                         .foregroundColor(.gray)
                 }
                 .buttonStyle(.plain)
             }
 
             Text("填写与 iOS 版相同的腾讯云 COS 配置和云函数地址，房源数据即可与 iOS 版互通。")
-                .font(.system(size: 14))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.themeText2)
 
             Group {
@@ -189,7 +194,7 @@ struct InitWizardView: View {
 
             if !message.isEmpty {
                 Text(message)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(success ? .themeAccent : .themeDanger)
             }
 
@@ -279,7 +284,7 @@ struct GlobalSyncProgressBar: View {
                             .font(.system(size: 13, weight: .semibold))
                         Spacer()
                         Text("\(t.done)/\(t.total)")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                         if t.isRunning {
                             Button { minimized = true } label: {
                                 Image(systemName: "minus.circle").foregroundColor(.white.opacity(0.9))
@@ -299,7 +304,7 @@ struct GlobalSyncProgressBar: View {
                         .tint(Color.white)
                     if !t.isRunning {
                         Text(t.success ? "同步完成" : "同步完成，部分失败，详见房源列表 / 待补传媒体页")
-                            .font(.system(size: 11))
+                            .font(.system(size: 11, weight: .medium))
                     }
                 }
                 .padding(12)

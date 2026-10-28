@@ -19,7 +19,7 @@ struct ExportTableView: View {
             Text(title)
                 .font(.system(size: 22, weight: .bold))
             Text("导出时间：\(dateStr)")
-                .font(.system(size: 13))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.gray)
             Divider()
             // 表头
@@ -37,7 +37,7 @@ struct ExportTableView: View {
                 HStack(spacing: 0) {
                     ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
                         Text(cell)
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 6).padding(.vertical, 4)
                             .lineLimit(1)

@@ -17,7 +17,6 @@ struct DashboardView: View {
     @State private var showAddHouse = false
     @State private var showAllTodos = false
     @State private var editingTodo: TodoItem?
-    @State private var completingTodo: TodoItem?
 
     // MARK: 未收租 / 包租付租 快捷操作
     @State private var quickCollectProperty: Property?
@@ -358,30 +357,36 @@ struct DashboardView: View {
                             .buttonStyle(.plain)
                     }) {
                         if pendingTodos.isEmpty {
-                            Text("暂无待办事项").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无待办事项").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(pendingTodos) { item in
                                     HStack(spacing: 10) {
                                         Button {
-                                            completingTodo = item
+                                            MacAlert.confirm("确认已办？", message: "完成后将归档到已办。",
+                                                              confirmTitle: "确认", destructive: false) {
+                                                item.isCompleted = true
+                                                item.completedDate = Date()
+                                                try? manager.mainContext.save()
+                                                manager.refreshData()
+                                            }
                                         } label: {
                                             Image(systemName: "circle")
-                                                .font(.system(size: 17))
+                                                .font(.system(size: 17, weight: .medium))
                                                 .foregroundColor(.gray)
                                         }
                                         .buttonStyle(.plain)
                                         Text(item.content)
-                                            .font(.system(size: 16))
+                                            .font(.system(size: 16, weight: .medium))
                                             .lineLimit(2)
                                             .foregroundColor(.themeText)
                                         Spacer()
                                         if let reminder = item.reminderDate {
                                             Text("⏰ \(reminder.formatted(date: .abbreviated, time: .shortened))")
-                                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                                                .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                                         }
                                         Button("编辑") { editingTodo = item }
-                                            .font(.system(size: 14))
+                                            .font(.system(size: 14, weight: .medium))
                                             .foregroundColor(.themeAccent)
                                             .buttonStyle(.plain)
                                     }
@@ -400,7 +405,7 @@ struct DashboardView: View {
                     // 未收租提醒
                     DashboardSectionCard(title: "未收租提醒", subtitle: "\(rentReminders.count)套", isCollapsed: $rentReminderCollapsed) {
                         if rentReminders.isEmpty {
-                            Text("暂无未收租提醒").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无未收租提醒").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             // 房号左右两列均分排布（对齐用户要求：两列都排房号，不留空列）
                             let half = (rentReminders.count + 1) / 2
@@ -421,7 +426,7 @@ struct DashboardView: View {
                 HStack(spacing: 10) {
                     VStack(spacing: 2) {
                         Text("\(reminder.dueDay)").font(.system(size: 18, weight: .bold))
-                        Text("号交租").font(.system(size: 11))
+                        Text("号交租").font(.system(size: 11, weight: .medium))
                     }
                     .frame(width: 46)
                     .padding(.vertical, 6)
@@ -462,7 +467,7 @@ struct DashboardView: View {
                     // 包租房付租提醒
                     DashboardSectionCard(title: "包租房付租提醒", subtitle: "\(payoutReminders.count)套", isCollapsed: $payoutReminderCollapsed) {
                         if payoutReminders.isEmpty {
-                            Text("暂无付租提醒").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无付租提醒").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(payoutReminders) { reminder in
@@ -473,10 +478,10 @@ struct DashboardView: View {
                                                 .foregroundColor(reminder.isOverdue ? .themeRed : .themeText)
                                             HStack(spacing: 6) {
                                                 Text(reminder.roomNumber).font(.system(size: 15, weight: .bold))
-                                                Text("· \(reminder.paymentMethod)").font(.system(size: 14)).foregroundColor(.themeText2)
+                                                Text("· \(reminder.paymentMethod)").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                                             }
                                             Text("\(reminder.payMonth)月\(reminder.payDay)号付")
-                                                .font(.system(size: 13))
+                                                .font(.system(size: 13, weight: .medium))
                                                 .foregroundColor(reminder.isOverdue ? .themeRed : .themeText3)
                                         }
                                         Spacer()
@@ -510,7 +515,7 @@ struct DashboardView: View {
                     // 即将到期（前 3 套）
                     DashboardSectionCard(title: "即将到期", subtitle: "\(stats.expiringSoon.count)套", isCollapsed: $expiryCollapsed) {
                         if stats.expiringSoon.isEmpty {
-                            Text("暂无即将到期房源").font(.system(size: 15)).foregroundColor(.themeText3).padding(.vertical, 4)
+                            Text("暂无即将到期房源").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText3).padding(.vertical, 4)
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(Array(stats.expiringSoon.prefix(3))) { prop in
@@ -518,7 +523,7 @@ struct DashboardView: View {
                                         VStack(alignment: .leading, spacing: 5) {
                                             HStack(spacing: 8) {
                                                 Text(prop.roomNumber).font(.system(size: 20, weight: .bold))
-                                                Text("到期:\(prop.leaseEnd)").font(.system(size: 15)).foregroundColor(.themeText2)
+                                                Text("到期:\(prop.leaseEnd)").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                                             }
                                             HStack(spacing: 6) {
                                                 Text("房东: \(prop.landlord)")
@@ -607,21 +612,7 @@ struct DashboardView: View {
         // 待办
         .sheet(isPresented: $showAllTodos) { TodoViews(manager: manager) { showAllTodos = false } }
         .sheet(item: $editingTodo) { item in TodoFormView(manager: manager, item: item) { editingTodo = nil } }
-        .alert("确认已办？", isPresented: Binding(
-            get: { completingTodo != nil },
-            set: { if !$0 { completingTodo = nil } }
-        )) {
-            Button("取消", role: .cancel) { completingTodo = nil }
-            Button("确认") {
-                completingTodo?.isCompleted = true
-                completingTodo?.completedDate = Date()
-                try? manager.mainContext.save()
-                manager.refreshData()
-                completingTodo = nil
-            }
-        } message: {
-            Text("完成后将归档到已办。")
-        }
+        // v1.2.15：完成确认改为 AppKit 原生 MacAlert（与「编辑标题/副标题」输入 alert 共存会互相屏蔽导致点按钮无反应）
         // 提醒详情与快捷收付租
         .sheet(item: $quickCollectProperty) { prop in
             QuickCollectSheet(property: prop, rentText: $quickCollectRent) {
@@ -697,7 +688,7 @@ struct DashboardSectionHeader<Trailing: View>: View {
             HStack {
                 Text(title).font(.system(size: 16, weight: .semibold)).foregroundColor(.themeText)
                 if !subtitle.isEmpty {
-                    Text(subtitle).font(.system(size: 14)).foregroundColor(.themeText3)
+                    Text(subtitle).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                 }
                 Spacer(minLength: 8)
             }
@@ -754,10 +745,10 @@ struct QuickActionItem: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.system(size: 24, weight: .medium))
                     .foregroundColor(color)
                 Text(label)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.themeText)
             }
             .frame(maxWidth: .infinity)
@@ -791,12 +782,12 @@ struct KpiCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 7) {
-                Text(label).font(.system(size: 15)).foregroundColor(.themeText2)
+                Text(label).font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(value).font(.system(size: 24, weight: .bold)).foregroundColor(valueColor)
-                    Text(unit).font(.system(size: 14)).foregroundColor(.themeText3)
+                    Text(unit).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                 }
-                Text(foot).font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
+                Text(foot).font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3).lineLimit(1)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -961,11 +952,11 @@ struct MonthCountdownView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Text("\(month)月还剩").font(.system(size: 15)).foregroundColor(.themeText2)
+            Text("\(month)月还剩").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
             Text("\(days)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeAccentDark)
-            Text("天").font(.system(size: 15)).foregroundColor(.themeText2)
+            Text("天").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
             Text("\(hours)").font(.system(size: 14, weight: .bold)).foregroundColor(.themeAccentDark)
-            Text("小时，加油").font(.system(size: 15)).foregroundColor(.themeText2)
+            Text("小时，加油").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
         }
     }
 }
@@ -999,7 +990,7 @@ struct UserHeaderView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color(red: 0.91, green: 0.91, blue: 0.91))
                             .frame(width: 46, height: 46)
-                            .overlay(Image(systemName: "person.fill").font(.system(size: 21)).foregroundColor(.white))
+                            .overlay(Image(systemName: "person.fill").font(.system(size: 21, weight: .medium)).foregroundColor(.white))
                     }
                 }
             }
@@ -1018,7 +1009,7 @@ struct UserHeaderView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text(timeString).font(.system(size: 21, weight: .bold)).foregroundColor(.themeText)
-                Text(dateStringShort).font(.system(size: 15)).foregroundColor(.themeText2)
+                Text(dateStringShort).font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
             }
         }
         .padding(.horizontal, 18)

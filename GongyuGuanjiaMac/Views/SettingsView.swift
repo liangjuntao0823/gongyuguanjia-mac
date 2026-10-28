@@ -14,8 +14,6 @@ struct SettingsView: View {
     @State private var showCrashLogs = false
     @State private var showOpLogs = false
     @State private var showVersionHistory = false
-    @State private var pendingPullDetail = ""
-    @State private var showPullConfirm = false
     @State private var showInterconnection = false
     @State private var showManualSync = false
     @State private var showRemoteConfig = false
@@ -59,7 +57,7 @@ struct SettingsView: View {
                 if syncing {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
-                        Text("同步中…").font(.system(size: 14))
+                        Text("同步中…").font(.system(size: 14, weight: .medium))
                     }
                 }
             }
@@ -80,7 +78,7 @@ struct SettingsView: View {
                             .frame(width: 280)
                             Spacer()
                             Text("切换后立即生效")
-                                .font(.system(size: 12))
+                                .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.themeText3)
                         }
                     }
@@ -94,30 +92,30 @@ struct SettingsView: View {
                             Spacer()
                         }
                         if !syncMessage.isEmpty {
-                            Text(syncMessage).font(.system(size: 14))
+                            Text(syncMessage).font(.system(size: 14, weight: .medium))
                                 .foregroundColor(syncMessage.contains("✓") ? .themeAccent : .themeDanger)
                         }
                         Text("与 iOS 版共用同一云端：房源/媒体/分享页互通。用户名决定私有数据隔离。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                         // 远程配置中心（对齐 iOS v1.80-1.82，随云端同步走）
                         HStack(spacing: 10) {
                             Button("远程配置管理（公告/开关/参数/更新日志）") { showRemoteConfig = true }.macSecondaryButton()
                             Spacer()
                             Text(RemoteConfig.summary)
-                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                                .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                         }
                         if let ann = RemoteConfig.announcement, ann.enabled, !ann.text.isEmpty {
                             HStack(spacing: 8) {
                                 Image(systemName: "megaphone").foregroundColor(.orange)
-                                Text("公告：\(ann.text)").font(.system(size: 13)).foregroundColor(.themeText2)
+                                Text("公告：\(ann.text)").font(.system(size: 13, weight: .medium)).foregroundColor(.themeText2)
                                 if let link = ann.link, let url = URL(string: link) {
-                                    Link("查看", destination: url).font(.system(size: 13))
+                                    Link("查看", destination: url).font(.system(size: 13, weight: .medium))
                                 }
                                 Spacer()
                             }
                         }
                         Text("远程配置：云端 config.json 优先；断网读本地缓存；均无则用内置默认值。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                     }
 
                     // 备份与恢复（含自动备份设置，对齐 iOS 备份中心）
@@ -132,7 +130,7 @@ struct SettingsView: View {
                         Toggle("启用自动备份（备份成功后自动上传云端）", isOn: $autoBackupEnabled)
                             .onChange(of: autoBackupEnabled) { _, v in CloudBackupService.autoBackupEnabled = v }
                         HStack(spacing: 10) {
-                            Text("频率").font(.system(size: 15)).foregroundColor(.themeText2)
+                            Text("频率").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                             Picker("", selection: $autoBackupFrequency) {
                                 Text("每天").tag("daily")
                                 Text("每周").tag("weekly")
@@ -141,12 +139,12 @@ struct SettingsView: View {
                             .pickerStyle(.segmented)
                             .frame(width: 220)
                             Spacer()
-                            Text("保留").font(.system(size: 15)).foregroundColor(.themeText2)
+                            Text("保留").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                             Stepper("\(autoBackupRetentionDays) 天", value: $autoBackupRetentionDays, in: 1...30)
                             Spacer()
                         }
                         Text("快速备份含经营数据+房源字段；全量备份另含实拍媒体。自动备份 = 快速备份，超过保留天数的自动清理，手动备份不删除。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                     }
 
                     // 数据管理
@@ -159,12 +157,12 @@ struct SettingsView: View {
                         HStack(spacing: 10) {
                             Button("离线重建房源") { rebuildFromLocalLedger() }.macSecondaryButton()
                             Text("从本地账本镜像（media/<房号>/info.json）重建/补齐房源，无需联网")
-                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                                .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                             Spacer()
                         }
                         HStack(spacing: 10) {
                             Text("数据文件夹：\(DataRoot.directory.path)")
-                                .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
+                                .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3).lineLimit(1)
                             Spacer()
                             Button("打开") { openDataFolder() }.macSecondaryButton()
                         }
@@ -173,7 +171,7 @@ struct SettingsView: View {
                         if showMigrateTip {
                             HStack(spacing: 10) {
                                 Text(migratedTip)
-                                    .font(.system(size: 13)).foregroundColor(.themeText3).lineLimit(1)
+                                    .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3).lineLimit(1)
                                 Spacer()
                                 Button(migrating ? "迁移中…" : "迁移 1 座媒体目录") { migrateTower1Media() }
                                     .macSecondaryButton()
@@ -182,34 +180,34 @@ struct SettingsView: View {
                         }
                         HStack(spacing: 10) {
                             Text("已收录房源：\(manager.houses.filter { $0.isDeleted != true }.count) 套 · 文件夹大小：\(folderSizeText)")
-                                .font(.system(size: 13)).foregroundColor(.themeText3)
+                                .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                             Spacer()
                         }
                         if !clearMessage.isEmpty {
-                            Text(clearMessage).font(.system(size: 14)).foregroundColor(.themeText3)
+                            Text(clearMessage).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                         }
                     }
 
                     // 水电默认值
                     section("水电默认值") {
                         HStack(spacing: 10) {
-                            Text("电费单价").font(.system(size: 15)).foregroundColor(.themeText2)
+                            Text("电费单价").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                             TextField("0.8", text: $defaultElectricPrice)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 90)
                             Spacer()
-                            Text("水费单价").font(.system(size: 15)).foregroundColor(.themeText2)
+                            Text("水费单价").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                             TextField("5.5", text: $defaultWaterPrice)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 90)
                             Spacer()
-                            Text("默认总预存").font(.system(size: 15)).foregroundColor(.themeText2)
+                            Text("默认总预存").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                             TextField("0", text: $defaultUtilityPrepayment)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 90)
                         }
                         Text("默认单价和预存仅用于新增房源，不影响已生成的结算记录。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                     }
 
                     // 账单模板
@@ -219,7 +217,7 @@ struct SettingsView: View {
                             Spacer()
                         }
                         Text("用于收租详情的「分享收租账单」，文本与收款码实时生效。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                     }
 
 
@@ -229,7 +227,7 @@ struct SettingsView: View {
                             Toggle("启用提醒", isOn: $notifyEnabled)
                                 .onChange(of: notifyEnabled) { _, v in LocalNotificationManager.isEnabled = v }
                             Spacer()
-                            Text("提前提醒天数").font(.system(size: 14)).foregroundColor(.themeText2)
+                            Text("提前提醒天数").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                             TextField("3", text: $notifyAdvanceDays)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 60)
@@ -253,7 +251,7 @@ struct SettingsView: View {
                             Spacer()
                         }
                         Text("macOS 通知使用系统默认音；提前天数对收租/到期提醒生效。")
-                            .font(.system(size: 13)).foregroundColor(.themeText3)
+                            .font(.system(size: 13, weight: .medium)).foregroundColor(.themeText3)
                     }
 
                     // 日志与历史
@@ -283,25 +281,25 @@ struct SettingsView: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text("公寓管家 Mac 版").font(.system(size: 16, weight: .semibold))
                                     Text("版本 \(MacBridge.appVersion)（构建 \(MacBridge.appBuild)）")
-                                        .font(.system(size: 14)).foregroundColor(.themeText2)
+                                        .font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                                 }
                                 Spacer()
                             }
                             HStack(spacing: 10) {
-                                Text("开发者").font(.system(size: 15)).foregroundColor(.themeText2)
-                                Text("梁涛").font(.system(size: 15)).foregroundColor(.themeText)
+                                Text("开发者").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
+                                Text("梁涛").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText)
                                 Spacer()
                             }
                             HStack(spacing: 10) {
-                                Text("软件说明").font(.system(size: 15)).foregroundColor(.themeText2)
+                                Text("软件说明").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                                 Text("公寓管家 = 租房管家（经营）+ 房源管家（获客分享），与 iOS 版共用同一云端。")
-                                    .font(.system(size: 14)).foregroundColor(.themeText).lineLimit(2)
+                                    .font(.system(size: 14, weight: .medium)).foregroundColor(.themeText).lineLimit(2)
                                 Spacer()
                             }
                             HStack(spacing: 10) {
-                                Text("数据安全").font(.system(size: 15)).foregroundColor(.themeText2)
+                                Text("数据安全").font(.system(size: 15, weight: .medium)).foregroundColor(.themeText2)
                                 Text("数据存于本机「Application Support/公寓管家Mac」，云端仅在你配置后同步。")
-                                    .font(.system(size: 14)).foregroundColor(.themeText).lineLimit(2)
+                                    .font(.system(size: 14, weight: .medium)).foregroundColor(.themeText).lineLimit(2)
                                 Spacer()
                             }
                             HStack(spacing: 10) {
@@ -360,12 +358,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showManualSync) { ManualSyncView(manager: manager) { showManualSync = false } }
         .sheet(isPresented: $showBillTemplate) { BillTemplateSettingsView { showBillTemplate = false } }
         .sheet(isPresented: $showMediaPending) { MediaPendingView { showMediaPending = false } }
-        .alert("发现云端变化", isPresented: $showPullConfirm) {
-            Button("应用变更") { applyPendingPull() }.macPrimaryButton()
-            Button("取消", role: .cancel) { }
-        } message: {
-            Text(pendingPullDetail)
-        }
+        // v1.2.15：云端变化确认改为 AppKit 原生 MacAlert，避免与下方「清空数据」confirmationDialog 共存互相屏蔽
         .confirmationDialog("清空数据将删除所选板块的全部记录（删除前请先备份）。",
                             isPresented: $showClearSheet, titleVisibility: .visible) {
             Button("清空成交数据", role: .destructive) { performClear(kind: .deals) }
@@ -490,8 +483,9 @@ struct SettingsView: View {
             switch dry {
             case .success(_, _, _, let detail):
                 syncing = false
-                pendingPullDetail = detail
-                showPullConfirm = true
+                MacAlert.confirm("发现云端变化", message: detail, confirmTitle: "应用变更", destructive: false) {
+                    applyPendingPull()
+                }
             case .failure(let msg):
                 syncMessage = "同步失败：\(msg)"
                 syncing = false
@@ -609,6 +603,17 @@ enum ClearKind {
 struct VersionHistoryView: View {
     let onClose: () -> Void
     private let versions: [(String, String, [String])] = [
+        ("v1.2.15", "2026-11-01", [
+            "根治「点删除无反应」（用户第5次投诉，此前 4 个版本均未解决）：SwiftUI 同一视图链上多个确认弹窗修饰符（confirmationDialog/alert）在 macOS 上互相屏蔽，导致弹窗不弹出、点击无反应；房源/成交/杂收杂支/收租/包租/待办/回收站/备份恢复/水电结算/工作台/设置页全部确认弹窗统一改用 AppKit 原生 NSAlert，逐板块验证可弹可删",
+            "房源删除语义变更（与 iOS 对齐）：房源删除 = 直接彻底删除，不再进入回收站（列表删除/批量删除/详情页删除均立即删除本地与云端数据，不可恢复）；成交/收租/包租/待办/杂收杂支仍为软删除进回收站可还原",
+            "房源板块顶部「回收站」按钮移除（房源已不接入回收站，入口保留在 设置 → 数据管理）",
+            "房源卡片恢复 1.2.11 排版：第一行 房号+户型（左）· 房东名（中）· 价格（右）；第二行 备注（无则 -）· 双端标识（右）；缩略图保持正方形",
+            "房源户型筛选多选菜单：下拉列表每项前加复选框，支持全选/清空",
+            "成交板块新增单元格级右键菜单（详情/编辑/删除）；杂项收入/支出列表与右键删除均生效",
+            "汇总板块月度明细：去掉外层滚动框固定高度，表格自适应撑满到面板底部（消除下方大块空白），列宽自适应",
+            "App 内全部字体加黑一档（正文/标签/表单统一 medium/semibold，305 处）",
+            "左侧导航栏与右侧内容区之间恢复 1pt 分割线（深/浅色均可见）",
+        ]),
         ("v1.2.14", "2026-10-30", [
             "同步差异对齐：媒体名单以本地名写入云端（不再在 .mov/.mp4 间反复改写云端名单、消除每次同步差异写盘与日志噪音）",
             "分享页面缓存：生成页面与云端内容一致时零上传（不再全量重传媒体与页面，省流量提速）",
@@ -758,10 +763,10 @@ struct VersionHistoryView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 8) {
                                 Text(v.0).font(.system(size: 16, weight: .bold))
-                                Text(v.1).font(.system(size: 14)).foregroundColor(.themeText3)
+                                Text(v.1).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText3)
                             }
                             ForEach(v.2, id: \.self) { line in
-                                Text("• \(line)").font(.system(size: 14)).foregroundColor(.themeText2)
+                                Text("• \(line)").font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
                             }
                         }
                         .padding(12)
@@ -807,7 +812,7 @@ struct InterconnectionInfoView: View {
     private func infoRow(_ title: String, _ desc: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.system(size: 14, weight: .bold))
-            Text(desc).font(.system(size: 14)).foregroundColor(.themeText2)
+            Text(desc).font(.system(size: 14, weight: .medium)).foregroundColor(.themeText2)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
