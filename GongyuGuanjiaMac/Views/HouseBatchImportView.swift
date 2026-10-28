@@ -117,14 +117,14 @@ struct HouseBatchImportView: View {
                                 .font(.system(size: 13))
                                 .foregroundColor(.themeDanger)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
-                                .background(Color(hex: "FFEBEE"))
+                                .background(ThemeManager.isDark ? Color(red: 0.30, green: 0.16, blue: 0.16) : Color(hex: "FFEBEE"))
                                 .clipShape(Capsule())
                         } else if item.duplicate {
                             Text("重复跳过")
                                 .font(.system(size: 13))
                                 .foregroundColor(.themeWarning)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
-                                .background(Color(hex: "FFF3E0"))
+                                .background(ThemeManager.isDark ? Color(red: 0.30, green: 0.26, blue: 0.15) : Color(hex: "FFF3E0"))
                                 .clipShape(Capsule())
                         }
                     }

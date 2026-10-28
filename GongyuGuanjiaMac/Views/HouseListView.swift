@@ -825,20 +825,20 @@ struct CloudStatusBadge: View {
         case "both":
             Text("双端").font(.system(size: 11, weight: .semibold))
                 .padding(.horizontal, 6).padding(.vertical, 2)
-                .foregroundColor(Color(hex: "00695C"))
-                .background(Color(hex: "E0F2F1"))
+                .foregroundColor(ThemeManager.isDark ? Color(red: 0.55, green: 0.88, blue: 0.70) : Color(hex: "00695C"))
+                .background(ThemeManager.isDark ? Color(red: 0.15, green: 0.30, blue: 0.23) : Color(hex: "E0F2F1"))
                 .clipShape(Capsule())
         case "cloud":
             Text("云端").font(.system(size: 11, weight: .semibold))
                 .padding(.horizontal, 6).padding(.vertical, 2)
-                .foregroundColor(Color(hex: "1565C0"))
-                .background(Color(hex: "E3F2FD"))
+                .foregroundColor(ThemeManager.isDark ? Color(red: 0.58, green: 0.78, blue: 1.0) : Color(hex: "1565C0"))
+                .background(ThemeManager.isDark ? Color(red: 0.16, green: 0.24, blue: 0.36) : Color(hex: "E3F2FD"))
                 .clipShape(Capsule())
         case "local":
             Text("本地").font(.system(size: 11, weight: .semibold))
                 .padding(.horizontal, 6).padding(.vertical, 2)
-                .foregroundColor(Color(hex: "6D4C41"))
-                .background(Color(hex: "EFEBE9"))
+                .foregroundColor(ThemeManager.isDark ? Color(red: 0.88, green: 0.76, blue: 0.62) : Color(hex: "6D4C41"))
+                .background(ThemeManager.isDark ? Color(red: 0.30, green: 0.26, blue: 0.22) : Color(hex: "EFEBE9"))
                 .clipShape(Capsule())
         default:
             EmptyView()
