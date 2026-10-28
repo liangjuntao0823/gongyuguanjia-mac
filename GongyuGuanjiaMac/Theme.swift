@@ -34,9 +34,9 @@ enum ThemeManager {
 
 extension Color {
     static var themeBg: Color { ThemeManager.isDark ? Color(red: 0.09, green: 0.10, blue: 0.10) : Color(red: 0.96, green: 0.96, blue: 0.95) }
-    static var themePanel: Color { ThemeManager.isDark ? Color(red: 0.13, green: 0.14, blue: 0.14) : Color.themePanel }
+    static var themePanel: Color { ThemeManager.isDark ? Color(red: 0.13, green: 0.14, blue: 0.14) : Color(red: 0.99, green: 0.99, blue: 0.98) }
     static var themeCard: Color { ThemeManager.isDark ? Color(red: 0.16, green: 0.17, blue: 0.17) : Color.white }
-    static var themeHeader: Color { ThemeManager.isDark ? Color(red: 0.11, green: 0.12, blue: 0.12) : Color.themeHeader }
+    static var themeHeader: Color { ThemeManager.isDark ? Color(red: 0.11, green: 0.12, blue: 0.12) : Color(red: 0.96, green: 0.96, blue: 0.95) }
     static var themeText: Color { ThemeManager.isDark ? Color(red: 0.92, green: 0.93, blue: 0.92) : Color(red: 0.16, green: 0.19, blue: 0.18) }
     static var themeText2: Color { ThemeManager.isDark ? Color(red: 0.72, green: 0.74, blue: 0.72) : Color(red: 0.36, green: 0.39, blue: 0.38) }
     static var themeText3: Color { ThemeManager.isDark ? Color(red: 0.52, green: 0.55, blue: 0.53) : Color(red: 0.55, green: 0.58, blue: 0.57) }
